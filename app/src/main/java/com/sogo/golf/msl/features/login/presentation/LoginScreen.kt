@@ -29,7 +29,7 @@ fun LoginScreen(navController: NavController, viewModel: NavViewModel) {
         Button(
             onClick = {
                 viewModel.login()
-                navController.navigate("screen1") {
+                navController.navigate("homescreen") {
                     popUpTo("login") { inclusive = true }
                 }
             }

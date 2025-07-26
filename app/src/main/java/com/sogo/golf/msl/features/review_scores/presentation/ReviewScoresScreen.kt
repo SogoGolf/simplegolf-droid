@@ -38,7 +38,7 @@ private fun ReviewScoresPortrait(navController: NavController, viewModel: NavVie
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Screen 5") },
+                title = { Text("ReviewScores") },
                 actions = {
                     // Logout button
                     Button(
@@ -60,12 +60,12 @@ private fun ReviewScoresPortrait(navController: NavController, viewModel: NavVie
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Welcome to Screen 5")
+                Text("Welcome to ReviewScores")
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(onClick = { navController.popBackStack() }) {
-                    Text("Back to Screen 4")
+                    Text("Back to Play Round")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

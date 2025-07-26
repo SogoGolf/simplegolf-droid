@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.sogo.golf.msl.domain.repository.AuthRepository
 import com.sogo.golf.msl.features.choose_playing_partner.presentation.ChoosePlayingPartnerScreen
 import com.sogo.golf.msl.features.competitions.presentation.CompetitionsScreen
 import com.sogo.golf.msl.features.home.presentation.HomeScreen
@@ -34,6 +36,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var authManager: AuthManager
 
+    @Inject
+    lateinit var authRepository: AuthRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -41,31 +46,28 @@ class MainActivity : ComponentActivity() {
             MSLGolfTheme {
                 val navController = rememberNavController()
                 val viewModel: NavViewModel = hiltViewModel()
+                val authState by viewModel.authState.collectAsState()
 
-                // Determine start destination based on login status and finished round
+                // Only build back stack on cold start (savedInstanceState == null)
+                val shouldBuildBackStack = remember { savedInstanceState == null }
+
                 val startDestination = when {
-                    !authManager.isUserLoggedIn() -> "login"
-                    authManager.isFinishedRound() -> "playroundscreen"
+                    !authState.isLoggedIn -> "login"
+                    authState.hasFinishedRound -> "playroundscreen"
                     else -> "homescreen"
                 }
 
                 var hasBuiltBackStack by remember { mutableStateOf(false) }
 
-                // Build the virtual back stack if starting at screen4
-                LaunchedEffect(startDestination) {
-                    if (startDestination == "playroundscreen" && !hasBuiltBackStack) {
-                        // User is logged in and finished round, build full back stack for screen4
-                        // Navigate through the flow to build proper back stack
+                // Build the "virtual" back stack if starting at play round screen
+                LaunchedEffect(startDestination, shouldBuildBackStack) {
+                    if (shouldBuildBackStack && startDestination == "playroundscreen" && !hasBuiltBackStack) {
                         navController.navigate("homescreen") {
-                            popUpTo("playroundscreen") { inclusive = true }
+                            popUpTo(0) { inclusive = true }
                         }
                         navController.navigate("competitionscreen")
                         navController.navigate("choosepartnerscreen")
                         navController.navigate("playroundscreen")
-
-                        hasBuiltBackStack = true
-                    } else if (startDestination == "homescreen" && !hasBuiltBackStack) {
-                        // User is logged in but not finished round, start at screen1 normally
                         hasBuiltBackStack = true
                     }
                 }
@@ -81,7 +83,6 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("competitionscreen") {
                         SetPortraitOrientation()
-//                        Screen(navController, "Screen 2", "choosepartnerscreen")
                         CompetitionsScreen(navController, "Competitions", "choosepartnerscreen")
                     }
                     composable("choosepartnerscreen") {

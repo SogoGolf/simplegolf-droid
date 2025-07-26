@@ -25,7 +25,7 @@ fun WebAuthScreen(
     // Observe auth success event
     LaunchedEffect(Unit) {
         viewModel.authSuccessEvent.collect {
-            navController.navigate("screen1") {
+            navController.navigate("homescreen") {
                 popUpTo("login") { inclusive = true }
             }
         }

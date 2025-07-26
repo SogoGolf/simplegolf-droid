@@ -15,25 +15,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 
 @Composable
 fun CompetitionsScreen(navController: NavController, title: String, nextRoute: String) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = title)
-        Spacer(modifier = Modifier.height(16.dp))
-        Row {
-            if (navController.previousBackStackEntry != null) {
-                Button(onClick = { navController.popBackStack() }) {
-                    Text("Back")
+    ScreenWithDrawer(navController = navController) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = title)
+            Spacer(modifier = Modifier.height(16.dp))
+            Row {
+                if (navController.previousBackStackEntry != null) {
+                    Button(onClick = { navController.popBackStack() }) {
+                        Text("Back")
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
                 }
-                Spacer(modifier = Modifier.width(16.dp))
-            }
-            Button(onClick = { navController.navigate(nextRoute) }) {
-                Text("Next")
+                Button(onClick = { navController.navigate(nextRoute) }) {
+                    Text("Next")
+                }
             }
         }
     }

@@ -103,7 +103,7 @@ private fun Screen4Portrait(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Screen 4") },
+                title = { Text("Play Round") },
                 actions = {
                     // Logout button
                     Button(
@@ -167,7 +167,7 @@ private fun Screen4Portrait(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("When ON: App restarts at Screen 4")
+                Text("When ON: App restarts at PlayRound")
                 Text("When OFF: App restarts at Screen 1", style = MaterialTheme.typography.bodySmall)
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -183,7 +183,7 @@ private fun Screen4Portrait(
                 Button(
                     onClick = { navController.navigate("reviewscreen") }
                 ) {
-                    Text("Go to Screen 5")
+                    Text("Go to ReviewScores")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

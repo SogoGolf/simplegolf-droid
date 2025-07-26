@@ -1,5 +1,6 @@
 package com.sogo.golf.msl.features.home.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,25 +16,47 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 
 @Composable
 fun HomeScreen(navController: NavController, title: String, nextRoute: String) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = title)
-        Spacer(modifier = Modifier.height(16.dp))
-        Row {
-            if (navController.previousBackStackEntry != null) {
-                Button(onClick = { navController.popBackStack() }) {
-                    Text("Back")
+
+    // Prevent going back from home screen
+    BackHandler {
+        // Do nothing - home is the root screen
+    }
+
+//    Column(
+//        modifier = Modifier.fillMaxSize().padding(16.dp),
+//        verticalArrangement = Arrangement.Center,
+//        horizontalAlignment = Alignment.CenterHorizontally
+//    ) {
+//        Text(text = title)
+//        Spacer(modifier = Modifier.height(16.dp))
+//        Row {
+//            if (navController.previousBackStackEntry != null) {
+//                Button(onClick = { navController.popBackStack() }) {
+//                    Text("Back")
+//                }
+//                Spacer(modifier = Modifier.width(16.dp))
+//            }
+//            Button(onClick = { navController.navigate(nextRoute) }) {
+//                Text("Next")
+//            }
+//        }
+//    }
+    ScreenWithDrawer(navController = navController) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = title)
+            Spacer(modifier = Modifier.height(16.dp))
+            Row {
+                Button(onClick = { navController.navigate(nextRoute) }) {
+                    Text("Next")
                 }
-                Spacer(modifier = Modifier.width(16.dp))
-            }
-            Button(onClick = { navController.navigate(nextRoute) }) {
-                Text("Next")
             }
         }
     }
