@@ -1,4 +1,4 @@
-package com.nav.testing
+package com.nav.msl
 
 import android.app.Activity
 import android.content.pm.ActivityInfo

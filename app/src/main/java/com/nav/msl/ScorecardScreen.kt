@@ -1,4 +1,4 @@
-package com.nav.testing
+package com.nav.msl
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

@@ -1,4 +1,4 @@
-package com.nav.testing
+package com.nav.msl
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp

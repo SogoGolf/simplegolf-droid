@@ -1,4 +1,4 @@
-package com.nav.testing
+package com.nav.msl
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

@@ -1,6 +1,5 @@
-package com.nav.testing.ui.theme
+package com.nav.msl.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

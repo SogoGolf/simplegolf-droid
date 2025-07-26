@@ -1,4 +1,4 @@
-package com.nav.testing
+package com.nav.msl
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

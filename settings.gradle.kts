@@ -21,6 +21,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "navtesting"
+rootProject.name = "SimpleGolf"
 include(":app")
  
