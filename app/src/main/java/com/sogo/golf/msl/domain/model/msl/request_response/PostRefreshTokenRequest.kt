@@ -1,0 +1,11 @@
+package com.sogo.golf.msl.domain.model.msl.request_response
+
+data class PostRefreshTokenRequest(
+    val refreshToken: String
+)
+/*
+example payload (note the CAPS case):
+{
+    "Refresh_Token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzeXN0ZW0iOiJzb2dvc3BvcnRzcHR5bHRkIiwibmFtZWlkIjoiNTQ3OSIsIm1lbWJlcmlkIjoiNjMwNzAiLCJjbHViaWQiOiI1MDA1MyIsImF1dGhtZXRob2QiOiJyZWZyZXNoIiwianRpIjoiY2Q2OWM3NzItNGYwMS00YjE0LTgxM2MtOTQwNWNiMjRkOGRjIiwibmJmIjoxNjk4MTMyODU2LCJleHAiOjE3Mjk2Njg4NTYsImlhdCI6MTY5ODEzMjg1NiwiaXNzIjoiTVAiLCJhdWQiOiJodHRwczovL3Rlc3QudmVudWUubXBvd2VybXNsLmNvbS9tcHNhcGkvIn0.mFs7ysLWp8elcGCxCuImZuXcpVYIY6ImB2XWu4V14lE"
+}
+ */
