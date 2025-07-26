@@ -8,11 +8,11 @@ plugins {
 
 
 android {
-    namespace = "com.nav.testing"
+    namespace = "com.sogo.golf.msl"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nav.testing"
+        applicationId = "com.sogo.golf.msl"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
