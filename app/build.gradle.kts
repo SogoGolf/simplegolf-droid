@@ -77,6 +77,56 @@ dependencies {
 
     implementation(libs.threetenabp)
 
+    //force app updates
+    implementation(libs.app.update)
+    implementation(libs.app.update.ktx)
+
+    //RevenueCat
+    implementation(libs.purchases)
+    implementation(libs.purchases.ui)
+
+    //OneSignal
+//    implementation(libs.onesignal)
+
+    //Retrofit
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
+
+    //Sentry
+//    implementation(libs.sentry.android)
+
+    //Mixpanel
+    implementation(libs.mixpanel.android)
+
+    //Encrypted shared preferences
+    implementation(libs.androidx.security.crypto)
+
+    //JWT Decoder
+    implementation(libs.jwtdecode)
+
+    //Signatures
+    implementation(libs.signature.pad)
+
+    //Icons
+    implementation(libs.icons.lucide)
+
+    //Images
+    implementation(libs.coil.compose)
+
+    //Firebase (excluding Analytics)
+    // Import the Firebase BoM (using older version compatible with Kotlin 1.9)
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.storage)
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.messaging.ktx)
+
+    //Amplitude analytics
+    implementation(libs.analytics.android)
+
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
