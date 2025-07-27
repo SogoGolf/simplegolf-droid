@@ -1,3 +1,4 @@
+// app/src/main/java/com/sogo/golf/msl/data/local/database/dao/MslGolferDao.kt
 package com.sogo.golf.msl.data.local.database.dao
 
 import androidx.room.Dao

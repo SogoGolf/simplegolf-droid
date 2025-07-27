@@ -206,6 +206,11 @@ private fun ClubDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
+    // ✅ Sort clubs alphabetically by name
+    val sortedClubs = remember(clubs) {
+        clubs.sortedBy { it.name.lowercase() }
+    }
+
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it }
@@ -229,7 +234,8 @@ private fun ClubDropdown(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            clubs.forEach { club ->
+            // ✅ Use sortedClubs instead of clubs
+            sortedClubs.forEach { club ->
                 DropdownMenuItem(
                     text = {
                         Column {

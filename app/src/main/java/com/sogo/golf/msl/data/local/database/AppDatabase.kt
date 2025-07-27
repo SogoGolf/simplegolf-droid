@@ -14,15 +14,15 @@ import com.sogo.golf.msl.data.local.database.entities.MslGolferEntity
     entities = [
         CompetitionEntity::class,
         MslGolferEntity::class,
-        MslGameEntity::class // NEW: Add game entity
+        MslGameEntity::class
     ],
-    version = 4, // Increment from 3 to 4
+    version = 5, // Keep incremented version
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun competitionDao(): CompetitionDao
     abstract fun mslGolferDao(): MslGolferDao
-    abstract fun mslGameDao(): MslGameDao // NEW: Add game DAO
+    abstract fun mslGameDao(): MslGameDao
 
     companion object {
         const val DATABASE_NAME = "msl_golf_database"

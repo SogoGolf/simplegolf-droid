@@ -1,3 +1,4 @@
+// app/src/main/java/com/sogo/golf/msl/data/repository/local/MslGolferLocalDbRepositoryImpl.kt
 package com.sogo.golf.msl.data.repository.local
 
 import android.util.Log
@@ -38,13 +39,24 @@ class MslGolferLocalDbRepositoryImpl @Inject constructor(
     override suspend fun saveGolfer(golfer: MslGolfer) {
         Log.d(TAG, "saveGolfer called for: ${golfer.firstName} ${golfer.surname} (${golfer.golfLinkNo})")
 
+        // Check current count before replace
+        val countBefore = golferDao.getGolferCount()
+        Log.d(TAG, "Golfers in database before replace: $countBefore")
+
+        // SINGLE RECORD PATTERN: Clear existing golfer and insert new one
+        golferDao.clearGolfer()
+        Log.d(TAG, "Cleared all existing golfers")
+
         val entity = MslGolferEntity.fromDomainModel(golfer)
         Log.d(TAG, "Created entity: $entity")
 
         golferDao.insertGolfer(entity)
-        Log.d(TAG, "Golfer saved to database")
+        Log.d(TAG, "Golfer inserted to database")
 
-        // Verify it was saved
+        // Verify the single-record pattern worked
+        val countAfter = golferDao.getGolferCount()
+        Log.d(TAG, "Golfers in database after replace: $countAfter (should be 1)")
+
         val savedEntity = golferDao.getGolferByGolfLinkNo(golfer.golfLinkNo)
         Log.d(TAG, "Verification - saved entity: $savedEntity")
     }
