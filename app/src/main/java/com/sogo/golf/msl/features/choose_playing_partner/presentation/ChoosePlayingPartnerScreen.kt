@@ -49,6 +49,12 @@ fun ChoosePlayingPartnerScreen(
     val selectedPartner by viewModel.selectedPartner.collectAsState()
     val markerUiState by viewModel.markerUiState.collectAsState()
 
+
+    // 🔧 NEW: Clear selection when returning to screen
+    LaunchedEffect(Unit) {
+        viewModel.onScreenResumed()
+    }
+
     // Handle navigation on successful marker selection
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect {

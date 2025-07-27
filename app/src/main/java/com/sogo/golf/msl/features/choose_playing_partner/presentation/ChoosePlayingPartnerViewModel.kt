@@ -73,6 +73,20 @@ class ChoosePlayingPartnerViewModel @Inject constructor(
             initialValue = null
         )
 
+
+    init {
+        viewModelScope.launch {
+            localGame.collect { game ->
+                android.util.Log.d("ChoosePartnerVM", "=== PARTNER SCREEN GAME DATA UPDATED ===")
+                android.util.Log.d("ChoosePartnerVM", "Playing partners count: ${game?.playingPartners?.size ?: 0}")
+                game?.playingPartners?.forEach { partner ->
+                    android.util.Log.d("ChoosePartnerVM",
+                        "Partner: ${partner.firstName} ${partner.lastName} - Marked by: ${partner.markedByGolfLinkNumber ?: "NONE"}")
+                }
+            }
+        }
+    }
+
     // Method to select a playing partner (only one can be selected)
     fun selectPartner(partner: MslPlayingPartner) {
         _selectedPartner.value = if (_selectedPartner.value == partner) {
@@ -306,5 +320,10 @@ class ChoosePlayingPartnerViewModel @Inject constructor(
         } catch (e: Exception) {
             android.util.Log.w("ChoosePartnerVM", "⚠️ Exception while refreshing data", e)
         }
+    }
+
+    fun onScreenResumed() {
+        android.util.Log.d("ChoosePartnerVM", "🔄 Screen resumed - clearing selection to ensure fresh state")
+        _selectedPartner.value = null
     }
 }
