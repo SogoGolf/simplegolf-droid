@@ -46,7 +46,6 @@ fun LoginScreen(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-
     // Handle auth success
     LaunchedEffect(Unit) {
         loginViewModel.authSuccessEvent.collect {
@@ -63,32 +62,18 @@ fun LoginScreen(
         }
     }
 
-    // Set status bar and navigation bar colors to match the screen background
-    LaunchedEffect(Unit) {
+    // Set system bar colors - this runs every time the screen is displayed
+    LaunchedEffect(view) {
         val window = (view.context as androidx.activity.ComponentActivity).window
         val windowInsetsController = WindowCompat.getInsetsController(window, view)
 
-        // Set status bar and navigation bar to match MSLColors.PrimaryDark (#054868)
+        // Set status bar and navigation bar to MSL blue (#054868)
         window.statusBarColor = android.graphics.Color.parseColor("#032F45")
         window.navigationBarColor = android.graphics.Color.parseColor("#032F45")
 
         // Set status bar content to light (white icons) since we're using dark background
         windowInsetsController.isAppearanceLightStatusBars = false
         windowInsetsController.isAppearanceLightNavigationBars = false
-    }
-
-    // Reset system bar colors when leaving this screen
-    DisposableEffect(Unit) {
-        onDispose {
-            val window = (view.context as androidx.activity.ComponentActivity).window
-            val windowInsetsController = WindowCompat.getInsetsController(window, view)
-
-            // Reset to transparent/system default
-            window.statusBarColor = android.graphics.Color.TRANSPARENT
-            window.navigationBarColor = android.graphics.Color.TRANSPARENT
-            windowInsetsController.isAppearanceLightStatusBars = true
-            windowInsetsController.isAppearanceLightNavigationBars = true
-        }
     }
 
     // Show error dialog
@@ -157,7 +142,7 @@ fun LoginScreen(
                 .fillMaxWidth() // Make text fill the width of its container
                 .padding(start = 16.dp)
                 .align(Alignment.Start) // Align the text to the start (left) of the screen
-                //.padding(start = 0.dp)
+            //.padding(start = 0.dp)
         )
         Text(
             "Get started by finding your home club",
@@ -274,8 +259,6 @@ fun LoginScreen(
                 ) {
                     Text("Continue")
                 }
-
-
 
                 Spacer(modifier = Modifier.height(16.dp))
 
