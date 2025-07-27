@@ -5,9 +5,9 @@ import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
 import com.sogo.golf.msl.data.local.database.entities.CompetitionEntity
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.domain.model.NetworkResult
-import com.sogo.golf.msl.domain.model.msl.Competition
-import com.sogo.golf.msl.domain.model.msl.Player
-import com.sogo.golf.msl.domain.model.msl.Hole
+import com.sogo.golf.msl.domain.model.msl.MslCompetition
+import com.sogo.golf.msl.domain.model.msl.MslHole
+import com.sogo.golf.msl.domain.model.msl.MslPlayer
 import com.sogo.golf.msl.domain.repository.CompetitionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -25,7 +25,7 @@ class CompetitionRepositoryImpl @Inject constructor(
     }
 
     // Get local competition data (always available)
-    override fun getCurrentCompetition(): Flow<Competition?> {
+    override fun getCurrentCompetition(): Flow<MslCompetition?> {
         Log.d(TAG, "getCurrentCompetition called")
         return competitionDao.getCurrentCompetition()
             .map { entity ->
@@ -35,7 +35,7 @@ class CompetitionRepositoryImpl @Inject constructor(
     }
 
     // Get all competitions
-    override fun getAllCompetitions(): Flow<List<Competition>> {
+    override fun getAllCompetitions(): Flow<List<MslCompetition>> {
         Log.d(TAG, "getAllCompetitions called")
         return competitionDao.getAllCompetitions()
             .map { entities ->
@@ -45,14 +45,14 @@ class CompetitionRepositoryImpl @Inject constructor(
     }
 
     // Fetch from network and save locally
-    override suspend fun fetchAndSaveCompetition(competitionId: String): NetworkResult<Competition> {
+    override suspend fun fetchAndSaveCompetition(competitionId: String): NetworkResult<MslCompetition> {
         Log.d(TAG, "fetchAndSaveCompetition called with ID: $competitionId")
 
         return safeNetworkCall {
             // Mock competition for now
-            val mockCompetition = Competition(
+            val mockCompetition = MslCompetition(
                 players = listOf(
-                    Player(
+                    MslPlayer(
                         firstName = "John",
                         lastName = "Doe",
                         dailyHandicap = 15,
@@ -66,7 +66,7 @@ class CompetitionRepositoryImpl @Inject constructor(
                         slopeRating = 113,
                         scratchRating = 72.0,
                         holes = listOf(
-                            Hole(
+                            MslHole(
                                 par = 4,
                                 strokes = 0,
                                 strokeIndexes = listOf(1),
@@ -92,7 +92,7 @@ class CompetitionRepositoryImpl @Inject constructor(
     }
 
     // Save competition locally
-    private suspend fun saveCompetitionLocally(competition: Competition, competitionId: String) {
+    private suspend fun saveCompetitionLocally(competition: MslCompetition, competitionId: String) {
         Log.d(TAG, "saveCompetitionLocally called with ID: $competitionId")
 
         val entity = CompetitionEntity.fromDomainModel(competition, competitionId)
@@ -126,7 +126,7 @@ class CompetitionRepositoryImpl @Inject constructor(
     }
 
     // Get unsynced competitions for background sync
-    override suspend fun getUnsyncedCompetitions(): List<Competition> {
+    override suspend fun getUnsyncedCompetitions(): List<MslCompetition> {
         val entities = competitionDao.getUnsyncedCompetitions()
         Log.d(TAG, "getUnsyncedCompetitions: ${entities.size} entities")
         return entities.map { it.toDomainModel() }

@@ -9,15 +9,18 @@ import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.*
 import com.sogo.golf.msl.domain.repository.MslRepository
 import android.util.Log
+import com.sogo.golf.msl.di.MslGolfApi
+import com.sogo.golf.msl.di.MslSogoApi
+import com.sogo.golf.msl.di.MslMpsApi
 import com.sogo.golf.msl.MslTokenManager
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class MslRepositoryImpl @Inject constructor(
-    private val mslGolfApiService: MslApiService,
-    private val mslSogoApiService: MslApiService, // We'll need separate instances
-    private val mslMpsApiService: MslApiService,   // for different base URLs
+    @MslGolfApi private val mslGolfApiService: MslApiService,
+    @MslSogoApi private val mslSogoApiService: MslApiService,
+    @MslMpsApi private val mslMpsApiService: MslApiService,
     private val networkChecker: NetworkChecker,
     private val mslTokenManager: MslTokenManager
 ) : BaseRepository(networkChecker), MslRepository {
@@ -66,13 +69,13 @@ class MslRepositoryImpl @Inject constructor(
     override suspend fun exchangeAuthCodeForTokens(
         authCode: String,
         preliminaryToken: String
-    ): NetworkResult<MslAuthTokens> {
+    ): NetworkResult<MslTokens> {
         return safeNetworkCall {
             Log.d(TAG, "Exchanging auth code for tokens")
 
             val request = PostAuthTokenRequestDto(code = authCode)
             val response = mslMpsApiService.exchangeAuthCode(
-                preliminaryToken = preliminaryToken,
+                preliminaryToken = "Bearer $preliminaryToken",
                 request = request
             )
 
@@ -81,7 +84,7 @@ class MslRepositoryImpl @Inject constructor(
                     ?: throw Exception("Empty auth token response")
 
                 // Save tokens securely
-                val mslTokens = com.sogo.golf.msl.domain.model.auth.MslTokens(
+                val mslTokens = MslTokens(
                     accessToken = authTokens.accessToken,
                     refreshToken = authTokens.refreshToken,
                     tokenType = authTokens.tokenType,
@@ -124,7 +127,7 @@ class MslRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun refreshTokens(): NetworkResult<MslAuthTokens> {
+    override suspend fun refreshTokens(): NetworkResult<MslTokens> {
         return safeNetworkCall {
             Log.d(TAG, "Refreshing MSL tokens")
 
@@ -138,7 +141,7 @@ class MslRepositoryImpl @Inject constructor(
                     ?: throw Exception("Empty refresh token response")
 
                 // Save new tokens
-                val mslTokens = com.sogo.golf.msl.domain.model.auth.MslTokens(
+                val mslTokens = MslTokens(
                     accessToken = newTokens.accessToken,
                     refreshToken = newTokens.refreshToken,
                     tokenType = newTokens.tokenType,

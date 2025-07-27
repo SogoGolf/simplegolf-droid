@@ -1,6 +1,6 @@
 package com.sogo.golf.msl.domain.model.msl
 
-data class MslAuthTokens(
+data class MslTokens(
     val accessToken: String,
     val refreshToken: String,
     val tokenType: String,

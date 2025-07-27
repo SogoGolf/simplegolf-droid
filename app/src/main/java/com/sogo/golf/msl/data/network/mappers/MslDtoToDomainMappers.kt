@@ -36,8 +36,8 @@ fun MslGolferDto.toDomainModel(): MslGolfer {
     )
 }
 
-fun PostAuthTokenResponseDto.toDomainModel(): MslAuthTokens {
-    return MslAuthTokens(
+fun PostAuthTokenResponseDto.toDomainModel(): MslTokens {
+    return MslTokens(
         accessToken = accessToken,
         refreshToken = refreshToken,
         tokenType = tokenType,

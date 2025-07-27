@@ -1,14 +1,14 @@
 package com.sogo.golf.msl.domain.repository
 
 import com.sogo.golf.msl.domain.model.NetworkResult
-import com.sogo.golf.msl.domain.model.msl.Competition
+import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import kotlinx.coroutines.flow.Flow
 
 interface CompetitionRepository {
-    fun getCurrentCompetition(): Flow<Competition?>
-    fun getAllCompetitions(): Flow<List<Competition>>
-    suspend fun fetchAndSaveCompetition(competitionId: String): NetworkResult<Competition>
+    fun getCurrentCompetition(): Flow<MslCompetition?>
+    fun getAllCompetitions(): Flow<List<MslCompetition>>
+    suspend fun fetchAndSaveCompetition(competitionId: String): NetworkResult<MslCompetition>
     suspend fun syncCompetitionToServer(competitionId: String): NetworkResult<Unit>
-    suspend fun getUnsyncedCompetitions(): List<Competition>
+    suspend fun getUnsyncedCompetitions(): List<MslCompetition>
     suspend fun clearAllCompetitions()
 }

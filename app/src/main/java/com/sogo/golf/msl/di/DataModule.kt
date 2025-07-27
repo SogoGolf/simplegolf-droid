@@ -4,8 +4,10 @@ import com.sogo.golf.msl.data.local.preferences.AuthPreferences
 import com.sogo.golf.msl.data.local.preferences.AuthPreferencesImpl
 import com.sogo.golf.msl.data.repository.AuthRepositoryImpl
 import com.sogo.golf.msl.data.repository.CompetitionRepositoryImpl
+import com.sogo.golf.msl.data.repository.MslRepositoryImpl
 import com.sogo.golf.msl.domain.repository.AuthRepository
 import com.sogo.golf.msl.domain.repository.CompetitionRepository
+import com.sogo.golf.msl.domain.repository.MslRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -29,4 +31,9 @@ abstract class DataModule {
     abstract fun bindCompetitionRepository(
         competitionRepositoryImpl: CompetitionRepositoryImpl
     ): CompetitionRepository
+
+    @Binds
+    abstract fun bindMslRepository(
+        mslRepositoryImpl: MslRepositoryImpl
+    ): MslRepository
 }
