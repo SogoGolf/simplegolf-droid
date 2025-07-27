@@ -38,6 +38,7 @@ fun WebAuthScreen(
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
     val uiState by loginViewModel.uiState.collectAsState()
+    val selectedClub = uiState.selectedClub
 
     // Observe auth success event
     LaunchedEffect(Unit) {
@@ -49,9 +50,8 @@ fun WebAuthScreen(
     }
 
     // Get the auth URL for the selected club
-    val authUrl = remember(uiState.selectedClub) {
-        val selectedClub = uiState.selectedClub
-        if (selectedClub != null) {
+    val authUrl = remember(selectedClub) {
+        if (selectedClub != null && selectedClub.name.isNotBlank()) {
             // Derive auth path from club name
             val authPath = selectedClub.name
                 .lowercase()
@@ -59,10 +59,14 @@ fun WebAuthScreen(
                 .replace("golf", "golf")
                 .replace("club", "club")
 
-            "https://id.micropower.com.au/$authPath?returnUrl=msl://success"
+            val url = "https://id.micropower.com.au/$authPath?returnUrl=msl://success"
+            android.util.Log.d("WebAuthScreen", "Generated auth URL: $url for club: ${selectedClub.name}")
+            url
         } else {
             // Fallback to default
-            "https://id.micropower.com.au/goldencreekgolfclub?returnUrl=msl://success"
+            val url = "https://id.micropower.com.au/goldencreekgolfclub?returnUrl=msl://success"
+            android.util.Log.w("WebAuthScreen", "No club selected, using fallback URL: $url")
+            url
         }
     }
 
@@ -135,7 +139,7 @@ fun WebAuthScreen(
                 ) {
                     CircularProgressIndicator()
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Loading ${uiState.selectedClub?.name ?: "club"} login...")
+                    Text("Loading ${selectedClub?.name ?: "club"} login...")
                 }
             }
         }
@@ -159,7 +163,6 @@ fun WebAuthScreen(
                         "Exchanging tokens with MSL API",
                         style = MaterialTheme.typography.bodySmall
                     )
-                    val selectedClub = uiState.selectedClub
                     if (selectedClub != null) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -172,6 +175,8 @@ fun WebAuthScreen(
         }
     }
 }
+
+
 
 //    package com.sogo.golf.msl.features.login.presentation
 //

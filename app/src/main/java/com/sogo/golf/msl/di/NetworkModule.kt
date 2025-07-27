@@ -3,7 +3,12 @@ package com.sogo.golf.msl.di
 import android.content.Context
 import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.data.network.NetworkChecker
-import com.sogo.golf.msl.data.network.api.MslApiService
+import com.sogo.golf.msl.data.network.api.GolfApiService
+import com.sogo.golf.msl.data.network.api.SogoApiService
+import com.sogo.golf.msl.data.network.api.MpsAuthApiService
+import com.sogo.golf.msl.data.network.interceptors.GolfApiAuthInterceptor
+import com.sogo.golf.msl.data.network.interceptors.SogoApiAuthInterceptor
+import com.sogo.golf.msl.data.network.interceptors.MpsAuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,17 +22,18 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class MslGolfApi
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class MslSogoApi
+annotation class GolfApi
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class MslMpsApi
+annotation class SogoApi
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class MpsAuthApi
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -53,7 +59,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(
+    fun provideBaseOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
@@ -64,57 +70,79 @@ object NetworkModule {
             .build()
     }
 
+    // Golf API - golf-api.micropower.com.au
     @Provides
     @Singleton
-    @MslGolfApi
-    fun provideMslGolfRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @GolfApi
+    fun provideGolfApiRetrofit(
+        baseOkHttpClient: OkHttpClient,
+        golfApiAuthInterceptor: GolfApiAuthInterceptor
+    ): Retrofit {
+        val golfApiClient = baseOkHttpClient.newBuilder()
+            .addInterceptor(golfApiAuthInterceptor)
+            .build()
+
         return Retrofit.Builder()
             .baseUrl("https://${BuildConfig.MSL_GOLF_URL}/")
-            .client(okHttpClient)
+            .client(golfApiClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
+    // Sogo API - sogo-api.azure-api.net
     @Provides
     @Singleton
-    @MslSogoApi
-    fun provideMslSogoRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @SogoApi
+    fun provideSogoApiRetrofit(
+        baseOkHttpClient: OkHttpClient,
+        sogoApiAuthInterceptor: SogoApiAuthInterceptor
+    ): Retrofit {
+        val sogoApiClient = baseOkHttpClient.newBuilder()
+            .addInterceptor(sogoApiAuthInterceptor)
+            .build()
+
         return Retrofit.Builder()
             .baseUrl("https://${BuildConfig.SOGO_MSL_AUTH_URL}/")
-            .client(okHttpClient)
+            .client(sogoApiClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
+    // MPS Auth API - mpsapi.micropower.com.au
     @Provides
     @Singleton
-    @MslMpsApi
-    fun provideMslMpsRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @MpsAuthApi
+    fun provideMpsAuthApiRetrofit(
+        baseOkHttpClient: OkHttpClient,
+        mpsAuthInterceptor: MpsAuthInterceptor
+    ): Retrofit {
+        val mpsAuthApiClient = baseOkHttpClient.newBuilder()
+            .addInterceptor(mpsAuthInterceptor)
+            .build()
+
         return Retrofit.Builder()
             .baseUrl("https://${BuildConfig.MSL_BASE_URL_AUTH}/")
-            .client(okHttpClient)
+            .client(mpsAuthApiClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
+    // API Service Providers
     @Provides
     @Singleton
-    @MslGolfApi
-    fun provideMslGolfApiService(@MslGolfApi retrofit: Retrofit): MslApiService {
-        return retrofit.create(MslApiService::class.java)
+    fun provideGolfApiService(@GolfApi retrofit: Retrofit): GolfApiService {
+        return retrofit.create(GolfApiService::class.java)
     }
 
     @Provides
     @Singleton
-    @MslSogoApi
-    fun provideMslSogoApiService(@MslSogoApi retrofit: Retrofit): MslApiService {
-        return retrofit.create(MslApiService::class.java)
+    fun provideSogoApiService(@SogoApi retrofit: Retrofit): SogoApiService {
+        return retrofit.create(SogoApiService::class.java)
     }
 
     @Provides
     @Singleton
-    @MslMpsApi
-    fun provideMslMpsApiService(@MslMpsApi retrofit: Retrofit): MslApiService {
-        return retrofit.create(MslApiService::class.java)
+    fun provideMpsAuthApiService(@MpsAuthApi retrofit: Retrofit): MpsAuthApiService {
+        return retrofit.create(MpsAuthApiService::class.java)
     }
 }

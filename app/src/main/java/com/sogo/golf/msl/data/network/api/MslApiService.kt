@@ -14,14 +14,14 @@ interface MslApiService {
     ): Response<List<MslClubDto>>
 
     // Step 2: Get preliminary token (Sogo API)
-    @POST("v1/msl/token")
+    @POST("msl/token")
     @Headers("Ocp-Apim-Subscription-Key: f128c9a7885d4820b9604f185dfe310f")
     suspend fun getPreliminaryToken(
         @Body request: PostPrelimTokenRequestDto
     ): Response<PostPrelimTokenResponseDto>
 
     // Step 3: Exchange auth code for access token (MPS API)
-    @POST("v1/security/authorisation/authcode")
+    @POST("security/authorisation/authcode")
     suspend fun exchangeAuthCode(
         @Header("Authorization") preliminaryToken: String,
         @Body request: PostAuthTokenRequestDto
@@ -30,12 +30,11 @@ interface MslApiService {
     // Step 4: Get golfer data
     @GET("{clubId}/golfer")
     suspend fun getGolfer(
-        @Path("clubId") clubId: String,
-        @Header("Authorization") accessToken: String
+        @Path("clubId") clubId: String
     ): Response<MslGolferDto>
 
     // Token refresh endpoint
-    @POST("v1/security/authorisation/refresh")
+    @POST("security/authorisation/refresh")
     suspend fun refreshToken(
         @Header("Authorization") refreshToken: String
     ): Response<PostAuthTokenResponseDto>

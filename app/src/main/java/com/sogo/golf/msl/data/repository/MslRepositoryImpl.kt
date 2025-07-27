@@ -9,18 +9,21 @@ import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.*
 import com.sogo.golf.msl.domain.repository.MslRepository
 import android.util.Log
-import com.sogo.golf.msl.di.MslGolfApi
-import com.sogo.golf.msl.di.MslSogoApi
-import com.sogo.golf.msl.di.MslMpsApi
 import com.sogo.golf.msl.MslTokenManager
+import com.sogo.golf.msl.data.network.api.GolfApiService
+import com.sogo.golf.msl.data.network.api.MpsAuthApiService
+import com.sogo.golf.msl.data.network.api.SogoApiService
+import com.sogo.golf.msl.di.GolfApi
+import com.sogo.golf.msl.di.MpsAuthApi
+import com.sogo.golf.msl.di.SogoApi
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class MslRepositoryImpl @Inject constructor(
-    @MslGolfApi private val mslGolfApiService: MslApiService,
-    @MslSogoApi private val mslSogoApiService: MslApiService,
-    @MslMpsApi private val mslMpsApiService: MslApiService,
+    private val golfApiService: GolfApiService,
+    private val sogoApiService: SogoApiService,
+    private val mpsAuthApiService: MpsAuthApiService,
     private val networkChecker: NetworkChecker,
     private val mslTokenManager: MslTokenManager
 ) : BaseRepository(networkChecker), MslRepository {
@@ -34,9 +37,8 @@ class MslRepositoryImpl @Inject constructor(
             Log.d(TAG, "Getting clubs for company code: ${BuildConfig.MSL_COMPANY_CODE}")
             Log.d(TAG, "Using authorization: ${BuildConfig.SOGO_AUTHORIZATION}")
 
-            val response = mslGolfApiService.getClubs(
-                companyCode = BuildConfig.MSL_COMPANY_CODE,
-                authorization = BuildConfig.SOGO_AUTHORIZATION
+            val response = golfApiService.getClubs(
+                companyCode = BuildConfig.MSL_COMPANY_CODE
             )
 
             if (response.isSuccessful) {
@@ -62,7 +64,7 @@ class MslRepositoryImpl @Inject constructor(
             Log.d(TAG, "Getting preliminary token for club: $clubId")
 
             val request = PostPrelimTokenRequestDto(clubId = clubId)
-            val response = mslSogoApiService.getPreliminaryToken(request)
+            val response = sogoApiService.getPreliminaryToken(request)
 
             if (response.isSuccessful) {
                 val prelimToken = response.body()?.toDomainModel()
@@ -86,7 +88,7 @@ class MslRepositoryImpl @Inject constructor(
             Log.d(TAG, "Exchanging auth code for tokens")
 
             val request = PostAuthTokenRequestDto(code = authCode)
-            val response = mslMpsApiService.exchangeAuthCode(
+            val response = mpsAuthApiService.exchangeAuthCode(
                 preliminaryToken = "Bearer $preliminaryToken",
                 request = request
             )
@@ -122,9 +124,8 @@ class MslRepositoryImpl @Inject constructor(
             val authHeader = mslTokenManager.getAuthorizationHeader()
                 ?: throw Exception("No access token available")
 
-            val response = mslGolfApiService.getGolfer(
+            val response = golfApiService.getGolfer(
                 clubId = clubId,
-                accessToken = authHeader
             )
 
             if (response.isSuccessful) {
@@ -148,7 +149,7 @@ class MslRepositoryImpl @Inject constructor(
             val currentTokens = mslTokenManager.getTokens()
                 ?: throw Exception("No refresh token available")
 
-            val response = mslMpsApiService.refreshToken("Bearer ${currentTokens.refreshToken}")
+            val response = mpsAuthApiService.refreshToken(PostRefreshTokenRequestDto("Bearer ${currentTokens.refreshToken}"))
 
             if (response.isSuccessful) {
                 val newTokens = response.body()?.toDomainModel()

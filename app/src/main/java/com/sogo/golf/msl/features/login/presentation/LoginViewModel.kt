@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sogo.golf.msl.data.manager.ClubSelectionManager
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.MslClub
 import com.sogo.golf.msl.domain.repository.MslRepository
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,19 +30,12 @@ data class LoginUiState(
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val mslRepository: MslRepository,
-    private val processMslAuthCodeUseCase: ProcessMslAuthCodeUseCase
+    private val processMslAuthCodeUseCase: ProcessMslAuthCodeUseCase,
+    private val clubSelectionManager: ClubSelectionManager
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "LoginViewModel"
-
-        // Map club names to their auth URL paths
-        private val CLUB_AUTH_PATHS = mapOf(
-            // You'll need to populate this based on actual club data
-            "Golden Creek Golf Club" to "goldencreekgolfclub",
-            "Murwillumbah Golf Club" to "murwillumbahgolfclub",
-            // Add more as needed
-        )
     }
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -54,6 +49,19 @@ class LoginViewModel @Inject constructor(
 
     init {
         loadClubs()
+
+        // Observe club selection changes
+        viewModelScope.launch {
+            combine(
+                clubSelectionManager.allClubs,
+                clubSelectionManager.selectedClub
+            ) { clubs, selectedClub ->
+                _uiState.value = _uiState.value.copy(
+                    clubs = clubs,
+                    selectedClub = selectedClub
+                )
+            }.collect { }
+        }
     }
 
     private fun loadClubs() {
@@ -66,10 +74,14 @@ class LoginViewModel @Inject constructor(
             when (val result = mslRepository.getClubs()) {
                 is NetworkResult.Success -> {
                     Log.d(TAG, "Loaded ${result.data.size} clubs")
+                    result.data.forEachIndexed { index, club ->
+                        Log.d(TAG, "Club $index: ${club.name} (ID: ${club.clubId})")
+                    }
+
+                    clubSelectionManager.setAllClubs(result.data)
+
                     _uiState.value = _uiState.value.copy(
-                        isLoadingClubs = false,
-                        clubs = result.data,
-                        selectedClub = result.data.firstOrNull() // Auto-select first club
+                        isLoadingClubs = false
                     )
                 }
                 is NetworkResult.Error -> {
@@ -88,14 +100,12 @@ class LoginViewModel @Inject constructor(
 
     fun selectClub(club: MslClub) {
         Log.d(TAG, "Selected club: ${club.name} (ID: ${club.clubId})")
-        _uiState.value = _uiState.value.copy(
-            selectedClub = club,
-            errorMessage = null
-        )
+        clubSelectionManager.setSelectedClub(club)
+        _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 
     fun startWebAuth() {
-        val selectedClub = _uiState.value.selectedClub
+        val selectedClub = clubSelectionManager.getSelectedClub()
         if (selectedClub == null) {
             _uiState.value = _uiState.value.copy(
                 errorMessage = "Please select a club first"
@@ -114,6 +124,7 @@ class LoginViewModel @Inject constructor(
 
         val authUrl = "https://id.micropower.com.au/$authPath?returnUrl=msl://success"
         Log.d(TAG, "Starting web auth with URL: $authUrl")
+        Log.d(TAG, "Selected club: ${selectedClub.name} (ID: ${selectedClub.clubId})")
 
         viewModelScope.launch {
             _navigateToWebAuth.emit(authUrl)
@@ -121,11 +132,15 @@ class LoginViewModel @Inject constructor(
     }
 
     private fun getAuthPathForClub(club: MslClub): String? {
-        // First try exact name match
-        CLUB_AUTH_PATHS[club.name]?.let { return it }
 
         // Then try to derive from club name (convert to lowercase, remove spaces, etc.)
-        val derivedPath = club.name
+        val clubName = club.name
+        if (clubName.isBlank()) {
+            Log.w(TAG, "Club name is blank for club ID: ${club.clubId}")
+            return null
+        }
+
+        val derivedPath = clubName
             .lowercase()
             .replace(" ", "")
             .replace("golf", "golf")
@@ -193,7 +208,7 @@ class LoginViewModel @Inject constructor(
     }
 
     private fun processAuthCode(authCode: String) {
-        val selectedClub = _uiState.value.selectedClub
+        val selectedClub = clubSelectionManager.getSelectedClub()
         if (selectedClub == null) {
             _uiState.value = _uiState.value.copy(
                 errorMessage = "No club selected"
