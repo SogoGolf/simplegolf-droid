@@ -1,9 +1,11 @@
 package com.sogo.golf.msl.di
 
 import com.sogo.golf.msl.domain.repository.AuthRepository
+import com.sogo.golf.msl.domain.repository.MslRepository
 import com.sogo.golf.msl.domain.usecase.auth.GetAuthStateUseCase
 import com.sogo.golf.msl.domain.usecase.auth.LoginUseCase
 import com.sogo.golf.msl.domain.usecase.auth.LogoutUseCase
+import com.sogo.golf.msl.domain.usecase.auth.ProcessMslAuthCodeUseCase
 import com.sogo.golf.msl.domain.usecase.auth.SetFinishedRoundUseCase
 import dagger.Module
 import dagger.Provides
@@ -33,4 +35,10 @@ object DomainModule {
     fun provideSetFinishedRoundUseCase(
         authRepository: AuthRepository
     ): SetFinishedRoundUseCase = SetFinishedRoundUseCase(authRepository)
+
+    @Provides
+    fun provideProcessMslAuthCodeUseCase(
+        mslRepository: MslRepository,
+        authRepository: AuthRepository
+    ): ProcessMslAuthCodeUseCase = ProcessMslAuthCodeUseCase(mslRepository, authRepository)
 }

@@ -32,15 +32,26 @@ class MslRepositoryImpl @Inject constructor(
     override suspend fun getClubs(): NetworkResult<List<MslClub>> {
         return safeNetworkCall {
             Log.d(TAG, "Getting clubs for company code: ${BuildConfig.MSL_COMPANY_CODE}")
+            Log.d(TAG, "Using authorization: ${BuildConfig.SOGO_AUTHORIZATION}")
 
-            val response = mslGolfApiService.getClubs(BuildConfig.MSL_COMPANY_CODE)
+            val response = mslGolfApiService.getClubs(
+                companyCode = BuildConfig.MSL_COMPANY_CODE,
+                authorization = BuildConfig.SOGO_AUTHORIZATION
+            )
 
             if (response.isSuccessful) {
-                val clubs = response.body()?.toDomainModel() ?: emptyList()
+                val rawClubs = response.body()
+                Log.d(TAG, "Raw response body: $rawClubs")
+
+                val clubs = rawClubs?.toDomainModel() ?: emptyList()
                 Log.d(TAG, "Successfully retrieved ${clubs.size} clubs")
+                clubs.forEach { club ->
+                    Log.d(TAG, "Club: ${club.name} (ID: ${club.clubId})")
+                }
                 clubs
             } else {
                 Log.e(TAG, "Failed to get clubs: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to get clubs: ${response.message()}")
             }
         }
@@ -61,6 +72,7 @@ class MslRepositoryImpl @Inject constructor(
                 prelimToken
             } else {
                 Log.e(TAG, "Failed to get preliminary token: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to get preliminary token: ${response.message()}")
             }
         }
@@ -97,6 +109,7 @@ class MslRepositoryImpl @Inject constructor(
                 authTokens
             } else {
                 Log.e(TAG, "Failed to exchange auth code: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to exchange auth code: ${response.message()}")
             }
         }
@@ -122,6 +135,7 @@ class MslRepositoryImpl @Inject constructor(
                 golfer
             } else {
                 Log.e(TAG, "Failed to get golfer: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to get golfer: ${response.message()}")
             }
         }
@@ -154,6 +168,7 @@ class MslRepositoryImpl @Inject constructor(
                 newTokens
             } else {
                 Log.e(TAG, "Failed to refresh tokens: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to refresh tokens: ${response.message()}")
             }
         }

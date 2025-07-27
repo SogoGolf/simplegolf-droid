@@ -1,35 +1,244 @@
 package com.sogo.golf.msl.features.login.presentation
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sogo.golf.msl.domain.model.NetworkResult
+import com.sogo.golf.msl.domain.model.msl.MslClub
+import com.sogo.golf.msl.domain.repository.MslRepository
+import com.sogo.golf.msl.domain.usecase.auth.ProcessMslAuthCodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class LoginUiState(
+    val isLoadingClubs: Boolean = false,
+    val clubs: List<MslClub> = emptyList(),
+    val selectedClub: MslClub? = null,
+    val isProcessingAuth: Boolean = false,
+    val errorMessage: String? = null
+)
+
 @HiltViewModel
-class LoginViewModel @Inject constructor() : ViewModel() {
+class LoginViewModel @Inject constructor(
+    private val mslRepository: MslRepository,
+    private val processMslAuthCodeUseCase: ProcessMslAuthCodeUseCase
+) : ViewModel() {
 
     companion object {
         private const val TAG = "LoginViewModel"
+
+        // Map club names to their auth URL paths
+        private val CLUB_AUTH_PATHS = mapOf(
+            // You'll need to populate this based on actual club data
+            "Golden Creek Golf Club" to "goldencreekgolfclub",
+            "Murwillumbah Golf Club" to "murwillumbahgolfclub",
+            // Add more as needed
+        )
     }
+
+    private val _uiState = MutableStateFlow(LoginUiState())
+    val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     private val _authSuccessEvent = MutableSharedFlow<Unit>()
     val authSuccessEvent: SharedFlow<Unit> = _authSuccessEvent
 
-    val authUrl: String
-        get() = "https://id.micropower.com.au/goldencreekgolfclub?returnUrl=msl://success"
+    private val _navigateToWebAuth = MutableSharedFlow<String>()
+    val navigateToWebAuth: SharedFlow<String> = _navigateToWebAuth
+
+    init {
+        loadClubs()
+    }
+
+    private fun loadClubs() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoadingClubs = true,
+                errorMessage = null
+            )
+
+            when (val result = mslRepository.getClubs()) {
+                is NetworkResult.Success -> {
+                    Log.d(TAG, "Loaded ${result.data.size} clubs")
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingClubs = false,
+                        clubs = result.data,
+                        selectedClub = result.data.firstOrNull() // Auto-select first club
+                    )
+                }
+                is NetworkResult.Error -> {
+                    Log.e(TAG, "Failed to load clubs: ${result.error}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingClubs = false,
+                        errorMessage = "Failed to load clubs: ${result.error.toUserMessage()}"
+                    )
+                }
+                is NetworkResult.Loading -> {
+                    // Already handled above
+                }
+            }
+        }
+    }
+
+    fun selectClub(club: MslClub) {
+        Log.d(TAG, "Selected club: ${club.name} (ID: ${club.clubId})")
+        _uiState.value = _uiState.value.copy(
+            selectedClub = club,
+            errorMessage = null
+        )
+    }
+
+    fun startWebAuth() {
+        val selectedClub = _uiState.value.selectedClub
+        if (selectedClub == null) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Please select a club first"
+            )
+            return
+        }
+
+        // Get the auth path for this club
+        val authPath = getAuthPathForClub(selectedClub)
+        if (authPath == null) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Club ${selectedClub.name} is not supported for web authentication"
+            )
+            return
+        }
+
+        val authUrl = "https://id.micropower.com.au/$authPath?returnUrl=msl://success"
+        Log.d(TAG, "Starting web auth with URL: $authUrl")
+
+        viewModelScope.launch {
+            _navigateToWebAuth.emit(authUrl)
+        }
+    }
+
+    private fun getAuthPathForClub(club: MslClub): String? {
+        // First try exact name match
+        CLUB_AUTH_PATHS[club.name]?.let { return it }
+
+        // Then try to derive from club name (convert to lowercase, remove spaces, etc.)
+        val derivedPath = club.name
+            .lowercase()
+            .replace(" ", "")
+            .replace("golf", "golf")
+            .replace("club", "club")
+
+        Log.d(TAG, "Derived auth path for ${club.name}: $derivedPath")
+        return derivedPath
+    }
 
     fun handleUrlRedirect(url: String) {
         Log.d(TAG, "=== URL REDIRECT RECEIVED ===")
         Log.d(TAG, "Full URL: $url")
 
         if (url.startsWith("msl://success")) {
-            viewModelScope.launch {
-                _authSuccessEvent.emit(Unit)
+            try {
+                val uri = Uri.parse(url)
+
+                Log.d(TAG, "=== URL PARSING ===")
+                Log.d(TAG, "Query: ${uri.query}")
+
+                // Log all query parameters
+                Log.d(TAG, "=== QUERY PARAMETERS ===")
+                uri.queryParameterNames?.forEach { paramName ->
+                    val paramValue = uri.getQueryParameter(paramName)
+                    Log.d(TAG, "$paramName = $paramValue")
+                }
+
+                // Look for auth code
+                val code = uri.getQueryParameter("code")
+                val token = uri.getQueryParameter("token")
+                val accessToken = uri.getQueryParameter("access_token")
+                val authCode = uri.getQueryParameter("authCode")
+                val error = uri.getQueryParameter("error")
+
+                // Check if there's an error
+                if (error != null) {
+                    Log.e(TAG, "Authentication error: $error")
+                    val errorDescription = uri.getQueryParameter("error_description")
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "Authentication failed: $error - $errorDescription"
+                    )
+                    return
+                }
+
+                // Extract the auth code
+                val extractedCode = code ?: authCode ?: token ?: accessToken
+
+                if (extractedCode != null) {
+                    Log.d(TAG, "✅ Authentication successful - extracted code: ${extractedCode.take(10)}...")
+                    processAuthCode(extractedCode)
+                } else {
+                    Log.w(TAG, "⚠️ No auth code found in success URL")
+                    _uiState.value = _uiState.value.copy(
+                        errorMessage = "No authentication code received"
+                    )
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Error parsing auth URL", e)
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Error processing authentication response: ${e.message}"
+                )
             }
         }
+    }
+
+    private fun processAuthCode(authCode: String) {
+        val selectedClub = _uiState.value.selectedClub
+        if (selectedClub == null) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "No club selected"
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(
+                    isProcessingAuth = true,
+                    errorMessage = null
+                )
+
+                Log.d(TAG, "Processing auth code for club: ${selectedClub.name} (${selectedClub.clubId})")
+
+                val result = processMslAuthCodeUseCase(authCode, selectedClub.clubId.toString())
+
+                if (result.isSuccess) {
+                    Log.d(TAG, "✅ MSL authentication completed successfully")
+                    _authSuccessEvent.emit(Unit)
+                } else {
+                    val error = result.exceptionOrNull()?.message ?: "Authentication failed"
+                    Log.e(TAG, "❌ MSL authentication failed: $error")
+                    _uiState.value = _uiState.value.copy(
+                        isProcessingAuth = false,
+                        errorMessage = error
+                    )
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Exception during auth code processing", e)
+                _uiState.value = _uiState.value.copy(
+                    isProcessingAuth = false,
+                    errorMessage = "Authentication failed: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
+
+    fun retryLoadClubs() {
+        loadClubs()
     }
 }

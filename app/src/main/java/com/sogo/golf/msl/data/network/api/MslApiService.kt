@@ -6,10 +6,11 @@ import retrofit2.http.*
 
 interface MslApiService {
 
-    // Step 1: Get list of clubs
+    // Step 1: Get list of clubs with proper authorization
     @GET("v2/{companyCode}/clubs")
     suspend fun getClubs(
-        @Path("companyCode") companyCode: String
+        @Path("companyCode") companyCode: String,
+        @Header("Authorization") authorization: String
     ): Response<List<MslClubDto>>
 
     // Step 2: Get preliminary token (Sogo API)

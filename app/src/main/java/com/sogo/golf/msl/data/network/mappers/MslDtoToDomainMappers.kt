@@ -8,15 +8,15 @@ fun MslClubDto.toDomainModel(): MslClub {
     return MslClub(
         clubId = clubId,
         name = name,
-        logoUrl = logoUrl.takeIf { it.isNotBlank() },
-        tenantId = tenantId,
+        logoUrl = logoUrl?.takeIf { it.isNotBlank() },
+        tenantId = tenantId ?: "",
         latitude = latitude,
         longitude = longitude,
         isGuestRegistrationEnabled = isGuestRegistrationEnabled,
         isChappGuestRegistrationEnabled = isChappGuestRegistrationEnabled,
-        posLocationId = posLocationId,
-        posTerminalId = posTerminalId,
-        resourceId = resourceId
+        posLocationId = posLocationId ?: "",
+        posTerminalId = posTerminalId ?: "",
+        resourceId = resourceId ?: ""
     )
 }
 
@@ -24,14 +24,14 @@ fun MslGolferDto.toDomainModel(): MslGolfer {
     return MslGolfer(
         firstName = firstName,
         surname = surname,
-        email = email?.takeIf { it.isNotBlank() },
+        email = email?.takeIf { !it.isNullOrBlank() },
         golfLinkNo = golfLinkNo,
         dateOfBirth = dateOfBirth,
-        mobileNo = mobileNo?.takeIf { it.isNotBlank() },
-        gender = gender?.takeIf { it.isNotBlank() },
+        mobileNo = mobileNo?.takeIf { !it.isNullOrBlank() },
+        gender = gender?.takeIf { !it.isNullOrBlank() },
         country = country ?: "australia",
-        state = state?.takeIf { it.isNotBlank() },
-        postCode = postCode?.takeIf { it.isNotBlank() },
+        state = state?.takeIf { !it.isNullOrBlank() },
+        postCode = postCode?.takeIf { !it.isNullOrBlank() },
         primary = primary
     )
 }
@@ -55,5 +55,13 @@ fun PostPrelimTokenResponseDto.toDomainModel(): MslPreliminaryToken {
 
 // List mappers
 fun List<MslClubDto>.toDomainModel(): List<MslClub> {
-    return map { it.toDomainModel() }
+    return mapNotNull { clubDto ->
+        try {
+            clubDto.toDomainModel()
+        } catch (e: Exception) {
+            // Log the problematic club and skip it
+            android.util.Log.e("MslMappers", "Failed to map club: $clubDto", e)
+            null
+        }
+    }
 }
