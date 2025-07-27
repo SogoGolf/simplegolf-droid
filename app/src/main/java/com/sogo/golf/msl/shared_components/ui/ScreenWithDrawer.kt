@@ -6,7 +6,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
+import com.sogo.golf.msl.features.home.presentation.HomeViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -17,11 +20,15 @@ fun ScreenWithDrawer(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
+    // ✅ GET THE USE CASE
+    val getCurrentGolferUseCase: GetMslGolferUseCase = hiltViewModel<HomeViewModel>().getMslGolferUseCase
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             AppDrawer(
                 navController = navController,
+                getMslGolferUseCase = getCurrentGolferUseCase,
                 onCloseDrawer = {
                     scope.launch {
                         drawerState.close()

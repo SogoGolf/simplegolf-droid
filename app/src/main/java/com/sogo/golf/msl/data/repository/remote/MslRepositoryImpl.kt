@@ -126,8 +126,19 @@ class MslRepositoryImpl @Inject constructor(
             )
 
             if (response.isSuccessful) {
-                val golfer = response.body()?.toDomainModel()
+                val rawGolferDto = response.body()
+
+                // ✅ LOG THE RAW API RESPONSE
+                Log.d(TAG, "=== RAW MSL GOLFER API RESPONSE ===")
+                Log.d(TAG, "Raw DTO: $rawGolferDto")
+                Log.d(TAG, "Raw primary field: ${rawGolferDto?.primary}")
+
+                val golfer = rawGolferDto?.toDomainModel()
                     ?: throw Exception("Empty golfer response")
+
+                // ✅ LOG THE MAPPED DOMAIN MODEL
+                Log.d(TAG, "=== AFTER MAPPING TO DOMAIN MODEL ===")
+                Log.d(TAG, "Domain handicap: ${golfer.primary}")
 
                 Log.d(TAG, "Successfully retrieved golfer: ${golfer.firstName} ${golfer.surname}")
                 golfer

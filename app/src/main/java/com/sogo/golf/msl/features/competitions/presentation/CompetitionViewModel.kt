@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
+import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CompetitionViewModel @Inject constructor(
-    private val competitionRepository: MslCompetitionLocalDbRepository
+    private val competitionRepository: MslCompetitionLocalDbRepository,
+    private val getMslGolferUseCase: GetMslGolferUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompetitionUiState())
@@ -23,6 +25,14 @@ class CompetitionViewModel @Inject constructor(
 
     // Always observe local competition data (works offline)
     val currentCompetition = competitionRepository.getCurrentCompetition()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    // ✅ ADD GOLFER STATEFLOW
+    val currentGolfer = getMslGolferUseCase()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

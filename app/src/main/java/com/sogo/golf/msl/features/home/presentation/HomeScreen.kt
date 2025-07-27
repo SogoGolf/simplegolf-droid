@@ -208,6 +208,21 @@ fun HomeScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ✅ NEW: Get Golfer from LOCAL DATABASE button
+            Button(
+                onClick = {
+                    homeViewModel.getGolferFromLocalDatabase()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Text("Test: Get Golfer from LOCAL DATABASE")
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
 
             // Navigation button

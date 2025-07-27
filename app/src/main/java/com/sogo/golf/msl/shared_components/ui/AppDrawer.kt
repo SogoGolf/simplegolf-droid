@@ -9,12 +9,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 
 @Composable
 fun AppDrawer(
     navController: NavController,
-    onCloseDrawer: () -> Unit
+    onCloseDrawer: () -> Unit,
+    getMslGolferUseCase: GetMslGolferUseCase
 ) {
+    val currentGolfer by getMslGolferUseCase()
+        .collectAsState(initial = null)
+
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -24,6 +29,16 @@ fun AppDrawer(
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {
+        // ✅ DISPLAY GOLFER NAME
+        currentGolfer?.let { golfer ->
+            Text(
+                text = "${golfer.firstName} ${golfer.surname}",
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
         Text(
             text = "Menu",
             style = MaterialTheme.typography.headlineMedium,
