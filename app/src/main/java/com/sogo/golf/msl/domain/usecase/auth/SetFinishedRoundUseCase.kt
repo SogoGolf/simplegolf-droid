@@ -1,6 +1,6 @@
 package com.sogo.golf.msl.domain.usecase.auth
 
-import com.sogo.golf.msl.domain.repository.AuthRepository
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import javax.inject.Inject
 
 class SetFinishedRoundUseCase @Inject constructor(

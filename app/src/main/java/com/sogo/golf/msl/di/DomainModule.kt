@@ -1,13 +1,15 @@
 package com.sogo.golf.msl.di
 
-import com.sogo.golf.msl.domain.repository.AuthRepository
-import com.sogo.golf.msl.domain.repository.MslRepository
+import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
+import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.auth.GetAuthStateUseCase
 import com.sogo.golf.msl.domain.usecase.auth.LoginUseCase
 import com.sogo.golf.msl.domain.usecase.auth.LogoutUseCase
 import com.sogo.golf.msl.domain.usecase.auth.ProcessMslAuthCodeUseCase
 import com.sogo.golf.msl.domain.usecase.auth.SetFinishedRoundUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
+import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -40,11 +42,17 @@ object DomainModule {
     @Provides
     fun provideProcessMslAuthCodeUseCase(
         mslRepository: MslRepository,
-        authRepository: AuthRepository
-    ): ProcessMslAuthCodeUseCase = ProcessMslAuthCodeUseCase(mslRepository, authRepository)
+        authRepository: AuthRepository,
+        mslGolferLocalDbRepository: MslGolferLocalDbRepository
+    ): ProcessMslAuthCodeUseCase = ProcessMslAuthCodeUseCase(mslRepository, authRepository, mslGolferLocalDbRepository)
 
     @Provides
     fun provideGetGameUseCase(
         mslRepository: MslRepository
     ): GetGameUseCase = GetGameUseCase(mslRepository)
+
+    @Provides
+    fun provideGetCurrentGolferUseCase(
+        mslGolferLocalDbRepository: MslGolferLocalDbRepository
+    ): GetMslGolferUseCase = GetMslGolferUseCase(mslGolferLocalDbRepository)
 }

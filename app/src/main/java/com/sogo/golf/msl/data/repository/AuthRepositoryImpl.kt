@@ -2,7 +2,8 @@ package com.sogo.golf.msl.data.repository
 
 import com.sogo.golf.msl.data.local.preferences.AuthPreferences
 import com.sogo.golf.msl.domain.model.AuthState
-import com.sogo.golf.msl.domain.repository.AuthRepository
+import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,7 +19,8 @@ import javax.inject.Singleton
 
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
-    private val authPreferences: AuthPreferences
+    private val authPreferences: AuthPreferences,
+    private val mslGolferLocalDbRepository: MslGolferLocalDbRepository
 ) : AuthRepository {
 
     // Repository scope for initialization
@@ -69,7 +71,12 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             authPreferences.setLoggedIn(false)
             authPreferences.setFinishedRound(false)
+
+            // ✅ CLEAR GOLFER DATA ON LOGOUT
+            mslGolferLocalDbRepository.clearGolfer()
+
             _authState.value = AuthState(isLoggedIn = false, hasFinishedRound = false)
+
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

@@ -1,7 +1,7 @@
 package com.sogo.golf.msl.domain.usecase.auth
 
 import com.sogo.golf.msl.domain.model.AuthState
-import com.sogo.golf.msl.domain.repository.AuthRepository
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 

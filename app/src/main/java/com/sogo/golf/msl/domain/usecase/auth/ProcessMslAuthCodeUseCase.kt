@@ -2,13 +2,15 @@ package com.sogo.golf.msl.domain.usecase.auth
 
 import android.util.Log
 import com.sogo.golf.msl.domain.model.NetworkResult
-import com.sogo.golf.msl.domain.repository.AuthRepository
-import com.sogo.golf.msl.domain.repository.MslRepository
+import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
+import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import javax.inject.Inject
 
 class ProcessMslAuthCodeUseCase @Inject constructor(
     private val mslRepository: MslRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val mslGolferLocalDbRepository: MslGolferLocalDbRepository
 ) {
     companion object {
         private const val TAG = "ProcessMslAuthCode"
@@ -50,6 +52,12 @@ class ProcessMslAuthCodeUseCase @Inject constructor(
                         when (golferResult) {
                             is NetworkResult.Success -> {
                                 Log.d(TAG, "Successfully retrieved golfer: ${golferResult.data.firstName} ${golferResult.data.surname}")
+
+                                // ✅ SAVE GOLFER TO DATABASE FOR GLOBAL ACCESS
+                                Log.d(TAG, "Saving golfer to database...")
+                                mslGolferLocalDbRepository.saveGolfer(golferResult.data)
+                                Log.d(TAG, "✅ Golfer saved to database successfully")
+
                             }
                             is NetworkResult.Error -> {
                                 Log.w(TAG, "Could not retrieve golfer data: ${golferResult.error}")

@@ -1,4 +1,4 @@
-package com.sogo.golf.msl.domain.repository
+package com.sogo.golf.msl.domain.repository.remote
 
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.*

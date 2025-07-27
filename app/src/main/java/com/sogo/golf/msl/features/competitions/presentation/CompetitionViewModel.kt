@@ -3,7 +3,7 @@ package com.sogo.golf.msl.features.competitions.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
-import com.sogo.golf.msl.domain.repository.CompetitionRepository
+import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CompetitionViewModel @Inject constructor(
-    private val competitionRepository: CompetitionRepository
+    private val competitionRepository: MslCompetitionLocalDbRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompetitionUiState())

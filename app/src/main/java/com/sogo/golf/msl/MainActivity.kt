@@ -18,7 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.sogo.golf.msl.domain.repository.AuthRepository
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.features.choose_playing_partner.presentation.ChoosePlayingPartnerScreen
 import com.sogo.golf.msl.features.competitions.presentation.CompetitionsScreen
 import com.sogo.golf.msl.features.home.presentation.HomeScreen

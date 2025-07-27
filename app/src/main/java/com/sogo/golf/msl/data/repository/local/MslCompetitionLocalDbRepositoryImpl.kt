@@ -1,24 +1,25 @@
-package com.sogo.golf.msl.data.repository
+package com.sogo.golf.msl.data.repository.local
 
 import android.util.Log
 import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
 import com.sogo.golf.msl.data.local.database.entities.CompetitionEntity
 import com.sogo.golf.msl.data.network.NetworkChecker
+import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import com.sogo.golf.msl.domain.model.msl.MslHole
 import com.sogo.golf.msl.domain.model.msl.MslPlayer
-import com.sogo.golf.msl.domain.repository.CompetitionRepository
+import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class CompetitionRepositoryImpl @Inject constructor(
+class MslCompetitionLocalDbRepositoryImpl @Inject constructor(
     private val networkChecker: NetworkChecker,
     private val competitionDao: CompetitionDao
-) : BaseRepository(networkChecker), CompetitionRepository {
+) : BaseRepository(networkChecker), MslCompetitionLocalDbRepository {
 
     companion object {
         private const val TAG = "CompetitionRepo"

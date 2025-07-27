@@ -3,11 +3,13 @@ package com.sogo.golf.msl.di
 import com.sogo.golf.msl.data.local.preferences.AuthPreferences
 import com.sogo.golf.msl.data.local.preferences.AuthPreferencesImpl
 import com.sogo.golf.msl.data.repository.AuthRepositoryImpl
-import com.sogo.golf.msl.data.repository.CompetitionRepositoryImpl
-import com.sogo.golf.msl.data.repository.MslRepositoryImpl
-import com.sogo.golf.msl.domain.repository.AuthRepository
-import com.sogo.golf.msl.domain.repository.CompetitionRepository
-import com.sogo.golf.msl.domain.repository.MslRepository
+import com.sogo.golf.msl.data.repository.local.MslCompetitionLocalDbRepositoryImpl
+import com.sogo.golf.msl.data.repository.local.MslGolferLocalDbRepositoryImpl
+import com.sogo.golf.msl.data.repository.remote.MslRepositoryImpl
+import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
+import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
+import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -28,12 +30,17 @@ abstract class DataModule {
     ): AuthRepository
 
     @Binds
-    abstract fun bindCompetitionRepository(
-        competitionRepositoryImpl: CompetitionRepositoryImpl
-    ): CompetitionRepository
+    abstract fun bindMslCompetitionLocalDbRepository(
+        mslCompetitionLocalDbRepositoryImpl: MslCompetitionLocalDbRepositoryImpl
+    ): MslCompetitionLocalDbRepository
 
     @Binds
     abstract fun bindMslRepository(
         mslRepositoryImpl: MslRepositoryImpl
     ): MslRepository
+
+    @Binds
+    abstract fun bindMslGolferLocalDbRepository(
+        mslGolferLocalDbRepositoryImpl: MslGolferLocalDbRepositoryImpl
+    ): MslGolferLocalDbRepository
 }

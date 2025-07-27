@@ -1,4 +1,4 @@
-package com.sogo.golf.msl.data.repository
+package com.sogo.golf.msl.data.repository.remote
 
 import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.data.network.NetworkChecker
@@ -6,12 +6,13 @@ import com.sogo.golf.msl.data.network.dto.*
 import com.sogo.golf.msl.data.network.mappers.*
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.*
-import com.sogo.golf.msl.domain.repository.MslRepository
+import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import android.util.Log
 import com.sogo.golf.msl.MslTokenManager
 import com.sogo.golf.msl.data.network.api.GolfApiService
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.api.SogoApiService
+import com.sogo.golf.msl.data.repository.BaseRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 

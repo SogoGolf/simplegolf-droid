@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.sogo.golf.msl.data.local.database.AppDatabase
 import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
+import com.sogo.golf.msl.data.local.database.dao.MslGolferDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,5 +46,10 @@ object DatabaseModule {
     @Provides
     fun provideCompetitionDao(database: AppDatabase): CompetitionDao {
         return database.competitionDao()
+    }
+
+    @Provides
+    fun provideGolferDao(database: AppDatabase): MslGolferDao {
+        return database.mslGolferDao()
     }
 }

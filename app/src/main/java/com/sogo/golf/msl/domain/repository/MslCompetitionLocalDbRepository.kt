@@ -4,7 +4,7 @@ import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import kotlinx.coroutines.flow.Flow
 
-interface CompetitionRepository {
+interface MslCompetitionLocalDbRepository {
     fun getCurrentCompetition(): Flow<MslCompetition?>
     fun getAllCompetitions(): Flow<List<MslCompetition>>
     suspend fun fetchAndSaveCompetition(competitionId: String): NetworkResult<MslCompetition>

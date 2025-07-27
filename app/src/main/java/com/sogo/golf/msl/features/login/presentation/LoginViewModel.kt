@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.data.manager.ClubSelectionManager
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.MslClub
-import com.sogo.golf.msl.domain.repository.MslRepository
+import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.auth.ProcessMslAuthCodeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
