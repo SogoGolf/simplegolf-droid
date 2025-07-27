@@ -67,8 +67,12 @@ dependencies {
     implementation(libs.androidx.material3)
 
     implementation(libs.hilt.android)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.common)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
+
+    implementation(libs.gson)
 
     // Room Database
     implementation(libs.room.runtime)
