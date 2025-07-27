@@ -1,7 +1,10 @@
+// Update to app/src/main/java/com/sogo/golf/msl/di/DataModule.kt
 package com.sogo.golf.msl.di
 
 import com.sogo.golf.msl.data.local.preferences.AuthPreferences
 import com.sogo.golf.msl.data.local.preferences.AuthPreferencesImpl
+import com.sogo.golf.msl.data.local.preferences.ClubPreferences
+import com.sogo.golf.msl.data.local.preferences.ClubPreferencesImpl
 import com.sogo.golf.msl.data.repository.AuthRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslCompetitionLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslGolferLocalDbRepositoryImpl
@@ -23,6 +26,11 @@ abstract class DataModule {
     abstract fun bindAuthPreferences(
         authPreferencesImpl: AuthPreferencesImpl
     ): AuthPreferences
+
+    @Binds
+    abstract fun bindClubPreferences(
+        clubPreferencesImpl: ClubPreferencesImpl
+    ): ClubPreferences
 
     @Binds
     abstract fun bindAuthRepository(

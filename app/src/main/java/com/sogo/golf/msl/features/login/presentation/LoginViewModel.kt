@@ -1,3 +1,4 @@
+// Update to app/src/main/java/com/sogo/golf/msl/features/login/presentation/LoginViewModel.kt
 package com.sogo.golf.msl.features.login.presentation
 
 import android.net.Uri
@@ -9,6 +10,7 @@ import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.MslClub
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.auth.ProcessMslAuthCodeUseCase
+import com.sogo.golf.msl.domain.usecase.club.SetSelectedClubUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +33,8 @@ data class LoginUiState(
 class LoginViewModel @Inject constructor(
     private val mslRepository: MslRepository,
     private val processMslAuthCodeUseCase: ProcessMslAuthCodeUseCase,
-    private val clubSelectionManager: ClubSelectionManager
+    private val clubSelectionManager: ClubSelectionManager,
+    private val setSelectedClubUseCase: SetSelectedClubUseCase // NEW: Inject the use case
 ) : ViewModel() {
 
     companion object {
@@ -102,6 +105,16 @@ class LoginViewModel @Inject constructor(
         Log.d(TAG, "Selected club: ${club.name} (ID: ${club.clubId})")
         clubSelectionManager.setSelectedClub(club)
         _uiState.value = _uiState.value.copy(errorMessage = null)
+
+        // NEW: Store the club selection in SharedPreferences immediately
+        viewModelScope.launch {
+            try {
+                setSelectedClubUseCase(club)
+                Log.d(TAG, "✅ Club stored in SharedPreferences: ${club.name} (ID: ${club.clubId}, TenantID: ${club.tenantId})")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to store club in SharedPreferences", e)
+            }
+        }
     }
 
     fun startWebAuth() {

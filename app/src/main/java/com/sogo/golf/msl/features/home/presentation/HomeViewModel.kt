@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
@@ -22,7 +23,8 @@ class HomeViewModel @Inject constructor(
     private val getGameUseCase: GetGameUseCase,
     val getMslGolferUseCase: GetMslGolferUseCase,
     private val getCompetitionUseCase: GetCompetitionUseCase,
-    private val mslGolferLocalDbRepository: MslGolferLocalDbRepository
+    private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
+    private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -37,7 +39,7 @@ class HomeViewModel @Inject constructor(
         )
 
 
-    fun getGame(clubId: String = "670229") { // Default game ID for testing
+    fun getGame() { // Default game ID for testing
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoadingGame = true,
@@ -45,7 +47,9 @@ class HomeViewModel @Inject constructor(
                 gameSuccessMessage = null
             )
 
-            when (val result = getGameUseCase(clubId)) {
+            val selectedClub = getMslClubAndTenantIdsUseCase() ?: return@launch
+
+            when (val result = getGameUseCase(selectedClub.clubId.toString())) {
                 is NetworkResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoadingGame = false,
