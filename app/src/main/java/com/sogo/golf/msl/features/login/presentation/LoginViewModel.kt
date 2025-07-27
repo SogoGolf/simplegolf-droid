@@ -81,7 +81,7 @@ class LoginViewModel @Inject constructor(
                         Log.d(TAG, "Club $index: ${club.name} (ID: ${club.clubId})")
                     }
 
-                    clubSelectionManager.setAllClubs(result.data)
+                    clubSelectionManager.setAllClubs(result.data.sortedBy { it.name })
 
                     _uiState.value = _uiState.value.copy(
                         isLoadingClubs = false

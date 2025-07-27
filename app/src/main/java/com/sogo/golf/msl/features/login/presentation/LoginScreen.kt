@@ -1,18 +1,25 @@
 package com.sogo.golf.msl.features.login.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.sogo.golf.msl.R
+import com.sogo.golf.msl.features.login.components.SearchableClubDropdown
 import com.sogo.golf.msl.navigation.NavViewModel
+import com.sogo.golf.msl.ui.theme.MSLColors
 
 @Composable
 fun LoginScreen(
@@ -65,6 +72,7 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MSLColors.PrimaryDark) // NEW: Set background to primary dark
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -72,7 +80,8 @@ fun LoginScreen(
     ) {
         Text(
             text = "SimpleGolf Login",
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.White // NEW: White text for dark background
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -81,7 +90,7 @@ fun LoginScreen(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                containerColor = MSLColors.PrimaryDark
             )
         ) {
             Column(
@@ -89,7 +98,8 @@ fun LoginScreen(
             ) {
                 Text(
                     text = "Select Your Golf Club",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -101,9 +111,15 @@ fun LoginScreen(
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color.White
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Loading clubs...")
+                            Text(
+                                "Loading clubs...",
+                                color = Color.White
+                            )
                         }
                     }
 
@@ -114,7 +130,8 @@ fun LoginScreen(
                         ) {
                             Text(
                                 text = "No clubs available",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
@@ -126,12 +143,13 @@ fun LoginScreen(
                     }
 
                     else -> {
-                        ClubDropdown(
+                        SearchableClubDropdown(
                             clubs = uiState.clubs,
                             selectedClub = uiState.selectedClub,
                             onClubSelected = { club ->
                                 loginViewModel.selectClub(club)
-                            }
+                            },
+                            isLoading = uiState.isLoadingClubs
                         )
                     }
                 }
@@ -145,42 +163,63 @@ fun LoginScreen(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = Color.White)
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Processing authentication...")
+                Text(
+                    "Processing authentication...",
+                    color = Color.White
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     "Exchanging tokens with MSL API",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.7f)
                 )
             }
         } else {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(R.drawable.simple_golf_transparent)
+                        .memoryCacheKey("center_logo")
+                        .build(),
+                    contentDescription = "Your Image Description",
+                    contentScale = ContentScale.Fit,
+                )
+
                 Button(
                     onClick = {
                         loginViewModel.startWebAuth()
                     },
                     enabled = uiState.selectedClub != null && !uiState.isLoadingClubs,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFC107), // Yellow button
+                        contentColor = Color.Black
+                    )
                 ) {
                     Text("Login with MSL")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                OutlinedButton(
-                    onClick = {
-                        navViewModel.login()
-                        navController.navigate("homescreen") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Quick Login (Skip Auth)")
-                }
+//                OutlinedButton(
+//                    onClick = {
+//                        navViewModel.login()
+//                        navController.navigate("homescreen") {
+//                            popUpTo("login") { inclusive = true }
+//                        }
+//                    },
+//                    modifier = Modifier.fillMaxWidth(),
+//                    colors = ButtonDefaults.outlinedButtonColors(
+//                        contentColor = Color.White
+//                    ),
+//                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White)
+//                ) {
+//                    Text("Quick Login (Skip Auth)")
+//                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -189,69 +228,9 @@ fun LoginScreen(
                     Text(
                         text = "Selected: ${selectedClub.name}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color.White.copy(alpha = 0.8f)
                     )
                 }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ClubDropdown(
-    clubs: List<com.sogo.golf.msl.domain.model.msl.MslClub>,
-    selectedClub: com.sogo.golf.msl.domain.model.msl.MslClub?,
-    onClubSelected: (com.sogo.golf.msl.domain.model.msl.MslClub) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    // ✅ Sort clubs alphabetically by name
-    val sortedClubs = remember(clubs) {
-        clubs.sortedBy { it.name.lowercase() }
-    }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it }
-    ) {
-        OutlinedTextField(
-            value = selectedClub?.name ?: "Select a club",
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Dropdown arrow"
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor()
-        )
-
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            // ✅ Use sortedClubs instead of clubs
-            sortedClubs.forEach { club ->
-                DropdownMenuItem(
-                    text = {
-                        Column {
-                            Text(club.name)
-                            Text(
-                                text = "ID: ${club.clubId}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                        }
-                    },
-                    onClick = {
-                        onClubSelected(club)
-                        expanded = false
-                    }
-                )
             }
         }
     }
