@@ -5,7 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.MslPlayingPartner
+import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.marker.RemoveMarkerUseCase
@@ -36,7 +39,10 @@ class ChoosePlayingPartnerViewModel @Inject constructor(
     private val selectMarkerUseCase: SelectMarkerUseCase,
     private val removeMarkerUseCase: RemoveMarkerUseCase,
     private val fetchAndSaveGameUseCase: FetchAndSaveGameUseCase,
-    private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase
+    private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
+    private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
+    private val mslRepository: MslRepository,
+    private val mslGolferLocalDbRepository: MslGolferLocalDbRepository
 ) : ViewModel() {
 
     // State for selected playing partner
@@ -151,8 +157,9 @@ class ChoosePlayingPartnerViewModel @Inject constructor(
                         markerSuccessMessage = "✅ Marker removed from $partnerName successfully!"
                     )
 
-                    // NEW: Refresh game data to update marker assignments
-                    refreshGameData()
+                    // CRITICAL: Refresh both game and golfer data after successful marker removal
+                    android.util.Log.d("ChoosePartnerVM", "🔄 Refreshing game and golfer data after marker removal...")
+                    refreshAllDataAfterMarkerOperation()
                 }
                 is NetworkResult.Error -> {
                     android.util.Log.e("ChoosePartnerVM", "❌ ERROR: Failed to remove marker: ${result.error}")
@@ -205,11 +212,12 @@ class ChoosePlayingPartnerViewModel @Inject constructor(
                         markerSuccessMessage = "✅ $partnerName selected as marker successfully!"
                     )
 
+                    // CRITICAL: Refresh both game and golfer data after successful marker selection
+                    android.util.Log.d("ChoosePartnerVM", "🔄 Refreshing game and golfer data after marker selection...")
+                    refreshAllDataAfterMarkerOperation()
+
                     // NEW: Only emit navigation event on SUCCESS
                     _navigationEvent.emit(Unit)
-
-                    // NEW: Refresh game data to update marker assignments
-                    refreshGameData()
                 }
                 is NetworkResult.Error -> {
                     android.util.Log.e("ChoosePartnerVM", "❌ ERROR: Failed to select marker: ${result.error}")
@@ -241,35 +249,62 @@ class ChoosePlayingPartnerViewModel @Inject constructor(
         }
     }
 
-    // NEW: Method to refresh game data after marker operations
-    private fun refreshGameData() {
-        viewModelScope.launch {
-            try {
-                // Get the current club ID to refresh game data
-                val selectedClub = getMslClubAndTenantIdsUseCase()
-                if (selectedClub?.clubId != null) {
-                    android.util.Log.d("ChoosePartnerVM", "Refreshing game data after marker operation...")
+    // NEW: CRITICAL - Comprehensive data refresh after marker operations
+    private suspend fun refreshAllDataAfterMarkerOperation() {
+        try {
+            // Get the current club ID
+            val selectedClub = getMslClubAndTenantIdsUseCase()
+            if (selectedClub?.clubId != null) {
+                val clubIdStr = selectedClub.clubId.toString()
 
-                    when (val result = fetchAndSaveGameUseCase(selectedClub.clubId.toString())) {
-                        is NetworkResult.Success -> {
-                            android.util.Log.d("ChoosePartnerVM", "✅ Game data refreshed successfully")
-                            // The local game StateFlow will automatically update with fresh data
-                        }
-                        is NetworkResult.Error -> {
-                            android.util.Log.w("ChoosePartnerVM", "⚠️ Failed to refresh game data: ${result.error}")
-                            // Don't show error to user - marker operation was successful
-                        }
-                        is NetworkResult.Loading -> {
-                            // Ignore
-                        }
+                android.util.Log.d("ChoosePartnerVM", "🔄 Step 1: Refreshing golfer data...")
+
+                // Step 1: Refresh golfer data from API and save to local DB
+                when (val golferResult = mslRepository.getGolfer(clubIdStr)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("ChoosePartnerVM", "✅ Fresh golfer data retrieved, saving to DB...")
+                        mslGolferLocalDbRepository.saveGolfer(golferResult.data)
+                        android.util.Log.d("ChoosePartnerVM", "✅ Golfer data saved to local DB")
                     }
-                } else {
-                    android.util.Log.w("ChoosePartnerVM", "⚠️ No club selected, cannot refresh game data")
+                    is NetworkResult.Error -> {
+                        android.util.Log.w("ChoosePartnerVM", "⚠️ Failed to refresh golfer data: ${golferResult.error}")
+                    }
+                    is NetworkResult.Loading -> { /* Ignore */ }
                 }
-            } catch (e: Exception) {
-                android.util.Log.w("ChoosePartnerVM", "⚠️ Exception while refreshing game data", e)
-                // Don't show error to user - marker operation was successful
+
+                android.util.Log.d("ChoosePartnerVM", "🔄 Step 2: Refreshing game data...")
+
+                // Step 2: Refresh game data from API and save to local DB
+                when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("ChoosePartnerVM", "✅ Game data refreshed successfully")
+                        android.util.Log.d("ChoosePartnerVM", "Updated playing partners: ${gameResult.data.playingPartners.size}")
+                    }
+                    is NetworkResult.Error -> {
+                        android.util.Log.w("ChoosePartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
+                    }
+                    is NetworkResult.Loading -> { /* Ignore */ }
+                }
+
+                android.util.Log.d("ChoosePartnerVM", "🔄 Step 3: Refreshing competition data...")
+
+                // Step 3: Refresh competition data from API and save to local DB
+                when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("ChoosePartnerVM", "✅ Competition data refreshed successfully")
+                    }
+                    is NetworkResult.Error -> {
+                        android.util.Log.w("ChoosePartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
+                    }
+                    is NetworkResult.Loading -> { /* Ignore */ }
+                }
+
+                android.util.Log.d("ChoosePartnerVM", "✅ All data refresh operations completed")
+            } else {
+                android.util.Log.w("ChoosePartnerVM", "⚠️ No club selected, cannot refresh data")
             }
+        } catch (e: Exception) {
+            android.util.Log.w("ChoosePartnerVM", "⚠️ Exception while refreshing data", e)
         }
     }
 }

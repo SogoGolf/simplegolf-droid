@@ -55,7 +55,7 @@ fun SplashScreen(
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.simplegolf_splashlogo),
+            painter = painterResource(id = R.drawable.simple_golf_transparent),
             contentDescription = "SimpleGolf Logo",
             modifier = Modifier
                 .size(250.dp)

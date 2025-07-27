@@ -106,7 +106,7 @@ object DomainModule {
         competitionRepository: MslCompetitionLocalDbRepository
     ): FetchAndSaveCompetitionUseCase = FetchAndSaveCompetitionUseCase(competitionRepository)
 
-    // NEW: Marker UseCases
+    // Marker UseCases
     @Provides
     fun provideSelectMarkerUseCase(
         mslRepository: MslRepository

@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -58,6 +60,7 @@ fun ChoosePlayingPartnerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -177,10 +180,11 @@ fun ChoosePlayingPartnerScreen(
                             )
                         }
                         else -> {
-                            LazyColumn(
+                            // Replace LazyColumn with regular Column for better scrolling behavior
+                            Column(
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                items(localGame!!.playingPartners) { partner ->
+                                localGame!!.playingPartners.forEach { partner ->
                                     val isSelected = viewModel.isPartnerSelected(partner)
                                     val isMarkedByMe = currentGolfer?.let { golfer ->
                                         partner.markedByGolfLinkNumber == golfer.golfLinkNo
@@ -311,8 +315,6 @@ fun ChoosePlayingPartnerScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
             // Navigation buttons
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -383,6 +385,9 @@ fun ChoosePlayingPartnerScreen(
                     }
                 }
             }
+
+            // Add some bottom padding for better scrolling experience
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         // Network messages for marker API
