@@ -238,4 +238,68 @@ class MslRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    // NEW: Select Marker implementation
+    override suspend fun selectMarker(playerGolfLinkNumber: String): NetworkResult<Unit> {
+        return safeNetworkCall {
+            Log.d(TAG, "Selecting marker for player: $playerGolfLinkNumber")
+
+            val request = PutMarkerRequestDto(playerGolfLinkNumber = playerGolfLinkNumber)
+            val response = golfApiService.putMarker(
+                companyCode = BuildConfig.MSL_COMPANY_CODE,
+                request = request
+            )
+
+            if (response.isSuccessful) {
+                val markerResponse = response.body()
+
+                Log.d(TAG, "=== PUT MARKER API RESPONSE ===")
+                Log.d(TAG, "Raw response: $markerResponse")
+
+                if (markerResponse?.errorMessage == null) {
+                    Log.d(TAG, "✅ Successfully selected marker for player: $playerGolfLinkNumber")
+                    Unit // Return Unit for success
+                } else {
+                    Log.e(TAG, "❌ API returned error: ${markerResponse.errorMessage}")
+                    throw Exception("Failed to select marker: ${markerResponse.errorMessage}")
+                }
+            } else {
+                Log.e(TAG, "❌ Failed to select marker: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to select marker: ${response.message()}")
+            }
+        }
+    }
+
+    // NEW: Remove Marker implementation
+    override suspend fun removeMarker(playerGolfLinkNumber: String): NetworkResult<Unit> {
+        return safeNetworkCall {
+            Log.d(TAG, "Removing marker for player: $playerGolfLinkNumber")
+
+            val request = DeleteMarkerRequestDto(playerGolfLinkNumber = playerGolfLinkNumber)
+            val response = golfApiService.deleteMarker(
+                companyCode = BuildConfig.MSL_COMPANY_CODE,
+                request = request
+            )
+
+            if (response.isSuccessful) {
+                val markerResponse = response.body()
+
+                Log.d(TAG, "=== DELETE MARKER API RESPONSE ===")
+                Log.d(TAG, "Raw response: $markerResponse")
+
+                if (markerResponse?.errorMessage == null) {
+                    Log.d(TAG, "✅ Successfully removed marker for player: $playerGolfLinkNumber")
+                    Unit // Return Unit for success
+                } else {
+                    Log.e(TAG, "❌ API returned error: ${markerResponse.errorMessage}")
+                    throw Exception("Failed to remove marker: ${markerResponse.errorMessage}")
+                }
+            } else {
+                Log.e(TAG, "❌ Failed to remove marker: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to remove marker: ${response.message()}")
+            }
+        }
+    }
 }

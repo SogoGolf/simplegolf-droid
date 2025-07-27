@@ -1,15 +1,9 @@
+// app/src/main/java/com/sogo/golf/msl/data/network/api/MslGolfApiService.kt
 package com.sogo.golf.msl.data.network.api
 
 import com.sogo.golf.msl.data.network.dto.*
-import com.sogo.golf.msl.domain.model.msl.MslCompetition
-import com.sogo.golf.msl.domain.model.msl.MslGame
-import com.sogo.golf.msl.domain.model.msl.request_response.DeleteMarkerRequest
-import com.sogo.golf.msl.domain.model.msl.request_response.DeleteMarkerResponse
-import com.sogo.golf.msl.domain.model.msl.request_response.PutMarkerRequest
-import com.sogo.golf.msl.domain.model.msl.request_response.PutMarkerResponse
 import retrofit2.Response
 import retrofit2.http.*
-
 
 interface GolfApiService {
 
@@ -37,14 +31,14 @@ interface GolfApiService {
         @Path("clubId") clubId: String
     ): Response<MslCompetitionDto>
 
-    // Marker endpoints
+    // NEW: Marker endpoints
     @PUT("v2/{companyCode}/marker")
     suspend fun putMarker(
         @Path("companyCode") companyCode: String,
         @Body request: PutMarkerRequestDto
     ): Response<PutMarkerResponseDto>
 
-    @DELETE("v2/{companyCode}/marker")
+    @HTTP(method = "DELETE", path = "v2/{companyCode}/marker", hasBody = true)
     suspend fun deleteMarker(
         @Path("companyCode") companyCode: String,
         @Body request: DeleteMarkerRequestDto

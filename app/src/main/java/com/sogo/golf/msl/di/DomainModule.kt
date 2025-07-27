@@ -20,6 +20,8 @@ import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
+import com.sogo.golf.msl.domain.usecase.marker.SelectMarkerUseCase
+import com.sogo.golf.msl.domain.usecase.marker.RemoveMarkerUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import dagger.Module
 import dagger.Provides
@@ -83,7 +85,7 @@ object DomainModule {
         clubPreferences: ClubPreferences
     ): SetSelectedClubUseCase = SetSelectedClubUseCase(clubPreferences)
 
-    // NEW: Game UseCases
+    // Game UseCases
     @Provides
     fun provideGetLocalGameUseCase(
         gameRepository: MslGameLocalDbRepository
@@ -103,4 +105,15 @@ object DomainModule {
     fun provideFetchAndSaveCompetitionUseCase(
         competitionRepository: MslCompetitionLocalDbRepository
     ): FetchAndSaveCompetitionUseCase = FetchAndSaveCompetitionUseCase(competitionRepository)
+
+    // NEW: Marker UseCases
+    @Provides
+    fun provideSelectMarkerUseCase(
+        mslRepository: MslRepository
+    ): SelectMarkerUseCase = SelectMarkerUseCase(mslRepository)
+
+    @Provides
+    fun provideRemoveMarkerUseCase(
+        mslRepository: MslRepository
+    ): RemoveMarkerUseCase = RemoveMarkerUseCase(mslRepository)
 }

@@ -9,15 +9,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -29,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
+import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
 
 @Composable
 fun ChoosePlayingPartnerScreen(
@@ -40,6 +45,14 @@ fun ChoosePlayingPartnerScreen(
     val localGame by viewModel.localGame.collectAsState()
     val currentGolfer by viewModel.currentGolfer.collectAsState()
     val selectedPartner by viewModel.selectedPartner.collectAsState()
+    val markerUiState by viewModel.markerUiState.collectAsState()
+
+    // Handle navigation on successful marker selection
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect {
+            navController.navigate(nextRoute)
+        }
+    }
 
     ScreenWithDrawer(navController = navController) {
         Column(
@@ -169,6 +182,9 @@ fun ChoosePlayingPartnerScreen(
                             ) {
                                 items(localGame!!.playingPartners) { partner ->
                                     val isSelected = viewModel.isPartnerSelected(partner)
+                                    val isMarkedByMe = currentGolfer?.let { golfer ->
+                                        partner.markedByGolfLinkNumber == golfer.golfLinkNo
+                                    } ?: false
 
                                     Card(
                                         modifier = Modifier
@@ -177,30 +193,44 @@ fun ChoosePlayingPartnerScreen(
                                                 viewModel.selectPartner(partner)
                                             },
                                         colors = CardDefaults.cardColors(
-                                            containerColor = if (isSelected) {
-                                                Color.Yellow
-                                            } else {
-                                                MaterialTheme.colorScheme.surface
+                                            containerColor = when {
+                                                isSelected -> Color.Yellow
+                                                isMarkedByMe -> MaterialTheme.colorScheme.secondaryContainer
+                                                else -> MaterialTheme.colorScheme.surface
                                             }
                                         )
                                     ) {
                                         Column(
                                             modifier = Modifier.padding(12.dp)
                                         ) {
-                                            // Partner name
-                                            val partnerName = when {
-                                                partner.firstName != null && partner.lastName != null ->
-                                                    "${partner.firstName} ${partner.lastName}"
-                                                partner.firstName != null -> partner.firstName!!
-                                                partner.lastName != null -> partner.lastName!!
-                                                else -> "Unknown Player"
-                                            }
+                                            // Partner name with marker indicator
+                                            Row(
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                val partnerName = when {
+                                                    partner.firstName != null && partner.lastName != null ->
+                                                        "${partner.firstName} ${partner.lastName}"
+                                                    partner.firstName != null -> partner.firstName!!
+                                                    partner.lastName != null -> partner.lastName!!
+                                                    else -> "Unknown Player"
+                                                }
 
-                                            Text(
-                                                text = partnerName,
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.SemiBold
-                                            )
+                                                Text(
+                                                    text = partnerName,
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+
+                                                if (isMarkedByMe) {
+                                                    Text(
+                                                        text = "✓ MARKED BY YOU",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.secondary,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
 
                                             // Partner details
                                             partner.golfLinkNumber?.let { golfLink ->
@@ -284,17 +314,88 @@ fun ChoosePlayingPartnerScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             // Navigation buttons
-            Row {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 if (navController.previousBackStackEntry != null) {
-                    Button(onClick = { navController.popBackStack() }) {
+                    Button(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text("Back")
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
                 }
-                Button(onClick = { navController.navigate(nextRoute) }) {
-                    Text("Next")
+
+                // NEW: Remove Marker button
+                Button(
+                    onClick = { viewModel.removeMarker() },
+                    enabled = viewModel.hasPartnerMarkedByMe() && !markerUiState.isRemovingMarker && !markerUiState.isSelectingMarker,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    if (markerUiState.isRemovingMarker) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Removing...")
+                        }
+                    } else {
+                        Text("Remove Marker")
+                    }
+                }
+
+                // UPDATED: Next button waits for API success before navigating
+                Button(
+                    onClick = {
+                        if (selectedPartner != null) {
+                            viewModel.selectMarker() // Call API first, navigation handled by LaunchedEffect
+                        } else {
+                            // If no partner selected, proceed directly
+                            viewModel.proceedWithoutMarker()
+                        }
+                    },
+                    enabled = !markerUiState.isSelectingMarker && !markerUiState.isRemovingMarker,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (markerUiState.isSelectingMarker) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Selecting...")
+                        }
+                    } else {
+                        Text("Next")
+                    }
                 }
             }
         }
+
+        // Network messages for marker API
+        NetworkMessageSnackbar(
+            message = markerUiState.markerErrorMessage,
+            isError = true,
+            onDismiss = { viewModel.clearMarkerMessages() }
+        )
+
+        NetworkMessageSnackbar(
+            message = markerUiState.markerSuccessMessage,
+            isError = false,
+            onDismiss = { viewModel.clearMarkerMessages() }
+        )
     }
 }
