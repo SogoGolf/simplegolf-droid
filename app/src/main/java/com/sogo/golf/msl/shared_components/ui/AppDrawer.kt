@@ -16,6 +16,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.sogo.golf.msl.ui.theme.AccessibleText
+import com.sogo.golf.msl.ui.theme.GolferNameText
+import com.sogo.golf.msl.ui.theme.MSLTypography
 
 
 @Composable
@@ -36,11 +39,17 @@ fun AppDrawer(
     ) {
         // ✅ DISPLAY GOLFER NAME
         drawerViewModel.currentGolfer.let { golfer ->
-            Text(
-                text = "${golfer.value?.firstName ?: "-"} ${golfer.value?.surname ?: "-"}",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
-                modifier = Modifier.padding(bottom = 8.dp)
+            GolferNameText(
+                firstName = golfer.value?.firstName ?: "-",
+                lastName = golfer.value?.surname ?: "-",
+                isCurrentPlayer = true
+            )
+
+            // ✅ Use accessible text with proper styling
+            AccessibleText(
+                text = "Golf Link: ${golfer.value?.golfLinkNo ?: "-"}",
+                style = MSLTypography.caption,
+                contentDescription = "Golf Link Number: ${golfer.value?.golfLinkNo ?: "-"}"
             )
         }
 
