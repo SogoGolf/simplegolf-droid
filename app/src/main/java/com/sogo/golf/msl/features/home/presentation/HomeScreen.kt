@@ -28,6 +28,17 @@ fun HomeScreen(
 
     val uiState by competitionViewModel.uiState.collectAsState()
     val currentCompetition by competitionViewModel.currentCompetition.collectAsState()
+1
+    // DEBUG: Log what we're actually getting
+    LaunchedEffect(currentCompetition) {
+        android.util.Log.d("HomeScreen", "=== UI DEBUG ===")
+        android.util.Log.d("HomeScreen", "currentCompetition: $currentCompetition")
+        android.util.Log.d("HomeScreen", "currentCompetition == null: ${currentCompetition == null}")
+        if (currentCompetition != null) {
+            android.util.Log.d("HomeScreen", "players.size: ${currentCompetition!!.players.size}")
+            android.util.Log.d("HomeScreen", "players.isEmpty(): ${currentCompetition!!.players.isEmpty()}")
+        }
+    }
 
     ScreenWithDrawer(navController = navController) {
         Column(
@@ -62,21 +73,35 @@ fun HomeScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    // SIMPLE DEBUG: Show exactly what we have
                     Text(
-                        text = competitionViewModel.getCompetitionSummary(),
+                        text = when {
+                            currentCompetition == null -> "❌ currentCompetition is NULL"
+                            currentCompetition!!.players.isEmpty() -> "⚠️ currentCompetition exists but players is EMPTY"
+                            else -> "✅ currentCompetition exists with ${currentCompetition!!.players.size} players"
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
                     )
 
+                    // Show the actual summary from ViewModel
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = competitionViewModel.getCompetitionSummary(),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
+
                     // Show player names if available
-                    val playerNames = competitionViewModel.getPlayerNames()
-                    if (playerNames.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Players: ${playerNames.take(3).joinToString(", ")}${if (playerNames.size > 3) " and ${playerNames.size - 3} more..." else ""}",
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center
-                        )
+                    currentCompetition?.let { competition ->
+                        if (competition.players.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Players: ${competition.players.joinToString(", ") { "${it.firstName} ${it.lastName}".trim() }}",
+                                style = MaterialTheme.typography.bodySmall,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
             }
@@ -108,30 +133,6 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Additional action buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                // Refresh button
-                OutlinedButton(
-                    onClick = { competitionViewModel.refreshCompetition() },
-                    enabled = !uiState.isLoading
-                ) {
-                    Text("Refresh")
-                }
-
-                // Clear button (for testing)
-                OutlinedButton(
-                    onClick = { competitionViewModel.clearAllCompetitions() },
-                    enabled = !uiState.isLoading
-                ) {
-                    Text("Clear Data")
-                }
-            }
-
             Spacer(modifier = Modifier.height(32.dp))
 
             // Navigation button
@@ -142,7 +143,7 @@ fun HomeScreen(
             }
         }
 
-        // Network messages (only show when user takes action)
+        // Network messages
         NetworkMessageSnackbar(
             message = uiState.errorMessage,
             isError = true,

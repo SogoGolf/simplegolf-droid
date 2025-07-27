@@ -1,10 +1,9 @@
 package com.sogo.golf.msl.features.competitions.presentation
 
-import CompetitionRepositoryImpl
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
-import com.sogo.golf.msl.domain.model.msl.Competition
+import com.sogo.golf.msl.domain.repository.CompetitionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,7 +15,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CompetitionViewModel @Inject constructor(
-    private val competitionRepository: CompetitionRepositoryImpl
+    private val competitionRepository: CompetitionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompetitionUiState())
@@ -110,5 +109,27 @@ class CompetitionViewModel @Inject constructor(
             errorMessage = null,
             successMessage = null
         )
+    }
+
+    // Debug function to check what's in the database
+    fun debugDatabaseContents() {
+        viewModelScope.launch {
+            try {
+                val unsynced = competitionRepository.getUnsyncedCompetitions()
+                android.util.Log.d("CompetitionViewModel", "Unsynced competitions: ${unsynced.size}")
+                unsynced.forEachIndexed { index, comp ->
+                    android.util.Log.d("CompetitionViewModel", "Competition $index: ${comp.players.size} players")
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    successMessage = "Database contains ${unsynced.size} competitions"
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("CompetitionViewModel", "Error checking database", e)
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Error checking database: ${e.message}"
+                )
+            }
+        }
     }
 }

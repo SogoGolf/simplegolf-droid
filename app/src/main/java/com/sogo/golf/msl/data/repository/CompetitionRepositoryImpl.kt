@@ -1,9 +1,14 @@
+package com.sogo.golf.msl.data.repository
+
+import android.util.Log
 import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
 import com.sogo.golf.msl.data.local.database.entities.CompetitionEntity
 import com.sogo.golf.msl.data.network.NetworkChecker
-import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.Competition
+import com.sogo.golf.msl.domain.model.msl.Player
+import com.sogo.golf.msl.domain.model.msl.Hole
+import com.sogo.golf.msl.domain.repository.CompetitionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -13,31 +18,41 @@ import javax.inject.Singleton
 class CompetitionRepositoryImpl @Inject constructor(
     private val networkChecker: NetworkChecker,
     private val competitionDao: CompetitionDao
-    // private val mslApi: MslApi  // Your API interface when you add it
-) : BaseRepository(networkChecker) {
+) : BaseRepository(networkChecker), CompetitionRepository {
+
+    companion object {
+        private const val TAG = "CompetitionRepo"
+    }
 
     // Get local competition data (always available)
-    fun getCurrentCompetition(): Flow<Competition?> {
+    override fun getCurrentCompetition(): Flow<Competition?> {
+        Log.d(TAG, "getCurrentCompetition called")
         return competitionDao.getCurrentCompetition()
-            .map { entity -> entity?.toDomainModel() }
+            .map { entity ->
+                Log.d(TAG, "getCurrentCompetition mapped: entity = $entity")
+                entity?.toDomainModel()
+            }
     }
 
     // Get all competitions
-    fun getAllCompetitions(): Flow<List<Competition>> {
+    override fun getAllCompetitions(): Flow<List<Competition>> {
+        Log.d(TAG, "getAllCompetitions called")
         return competitionDao.getAllCompetitions()
-            .map { entities -> entities.map { it.toDomainModel() } }
+            .map { entities ->
+                Log.d(TAG, "getAllCompetitions mapped: ${entities.size} entities")
+                entities.map { it.toDomainModel() }
+            }
     }
 
     // Fetch from network and save locally
-    suspend fun fetchAndSaveCompetition(competitionId: String): NetworkResult<Competition> {
-        return safeNetworkCall {
-            // TODO: Replace with actual API call
-            // val competition = mslApi.getCompetition(competitionId)
+    override suspend fun fetchAndSaveCompetition(competitionId: String): NetworkResult<Competition> {
+        Log.d(TAG, "fetchAndSaveCompetition called with ID: $competitionId")
 
+        return safeNetworkCall {
             // Mock competition for now
             val mockCompetition = Competition(
                 players = listOf(
-                    com.sogo.golf.msl.domain.model.msl.Player(
+                    Player(
                         firstName = "John",
                         lastName = "Doe",
                         dailyHandicap = 15,
@@ -51,7 +66,7 @@ class CompetitionRepositoryImpl @Inject constructor(
                         slopeRating = 113,
                         scratchRating = 72.0,
                         holes = listOf(
-                            com.sogo.golf.msl.domain.model.msl.Hole(
+                            Hole(
                                 par = 4,
                                 strokes = 0,
                                 strokeIndexes = listOf(1),
@@ -65,8 +80,12 @@ class CompetitionRepositoryImpl @Inject constructor(
                 )
             )
 
+            Log.d(TAG, "Created mock competition with ${mockCompetition.players.size} players")
+
             // Save to local database
             saveCompetitionLocally(mockCompetition, competitionId)
+
+            Log.d(TAG, "Mock competition saved successfully")
 
             mockCompetition
         }
@@ -74,29 +93,49 @@ class CompetitionRepositoryImpl @Inject constructor(
 
     // Save competition locally
     private suspend fun saveCompetitionLocally(competition: Competition, competitionId: String) {
+        Log.d(TAG, "saveCompetitionLocally called with ID: $competitionId")
+
         val entity = CompetitionEntity.fromDomainModel(competition, competitionId)
+        Log.d(TAG, "Created entity: $entity")
+
         competitionDao.insertCompetition(entity)
+        Log.d(TAG, "Entity inserted into database")
+
+        // Verify it was saved
+        val savedEntity = competitionDao.getCompetitionById(competitionId)
+        Log.d(TAG, "Verification - saved entity: $savedEntity")
+
+        // Get all competitions to see what's in the database
+        val allCompetitions = competitionDao.getUnsyncedCompetitions()
+        Log.d(TAG, "All competitions in database: ${allCompetitions.size}")
     }
 
     // Sync competition to server
-    suspend fun syncCompetitionToServer(competitionId: String): NetworkResult<Unit> {
+    override suspend fun syncCompetitionToServer(competitionId: String): NetworkResult<Unit> {
         return safeNetworkCall {
             val competition = competitionDao.getCompetitionById(competitionId)
+            Log.d(TAG, "syncCompetitionToServer - found competition: $competition")
+
             // TODO: Replace with actual API call
             // mslApi.submitCompetition(competition)
 
             // Mark as synced
             competitionDao.markAsSynced(competitionId)
+            Log.d(TAG, "Competition marked as synced")
         }
     }
 
     // Get unsynced competitions for background sync
-    suspend fun getUnsyncedCompetitions(): List<Competition> {
-        return competitionDao.getUnsyncedCompetitions().map { it.toDomainModel() }
+    override suspend fun getUnsyncedCompetitions(): List<Competition> {
+        val entities = competitionDao.getUnsyncedCompetitions()
+        Log.d(TAG, "getUnsyncedCompetitions: ${entities.size} entities")
+        return entities.map { it.toDomainModel() }
     }
 
     // Clear all competitions (useful for logout)
-    suspend fun clearAllCompetitions() {
+    override suspend fun clearAllCompetitions() {
+        Log.d(TAG, "clearAllCompetitions called")
         competitionDao.clearAllCompetitions()
+        Log.d(TAG, "All competitions cleared from database")
     }
 }

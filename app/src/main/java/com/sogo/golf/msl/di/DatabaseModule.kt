@@ -1,12 +1,11 @@
 package com.sogo.golf.msl.di
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import com.sogo.golf.msl.data.local.database.AppDatabase
 import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
-//import com.sogo.golf.msl.data.local.database.dao.RoundDao
-//import com.sogo.golf.msl.data.local.database.dao.ScoreDao
-//import com.sogo.golf.msl.data.local.database.dao.UserDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,29 +20,27 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+        Log.d("DatabaseModule", "Creating database...")
+
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .fallbackToDestructiveMigration() // For now, since we're adding new entity
+            .fallbackToDestructiveMigration(dropAllTables = true) // Updated API
+            .addCallback(object : RoomDatabase.Callback() {
+                override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                    super.onCreate(db)
+                    Log.d("DatabaseModule", "Database created")
+                }
+
+                override fun onOpen(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                    super.onOpen(db)
+                    Log.d("DatabaseModule", "Database opened")
+                }
+            })
             .build()
     }
-
-//    @Provides
-//    fun provideUserDao(database: AppDatabase): UserDao {
-//        return database.userDao()
-//    }
-//
-//    @Provides
-//    fun provideRoundDao(database: AppDatabase): RoundDao {
-//        return database.roundDao()
-//    }
-//
-//    @Provides
-//    fun provideScoreDao(database: AppDatabase): ScoreDao {
-//        return database.scoreDao()
-//    }
 
     @Provides
     fun provideCompetitionDao(database: AppDatabase): CompetitionDao {

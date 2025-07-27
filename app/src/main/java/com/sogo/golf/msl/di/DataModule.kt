@@ -3,7 +3,9 @@ package com.sogo.golf.msl.di
 import com.sogo.golf.msl.data.local.preferences.AuthPreferences
 import com.sogo.golf.msl.data.local.preferences.AuthPreferencesImpl
 import com.sogo.golf.msl.data.repository.AuthRepositoryImpl
+import com.sogo.golf.msl.data.repository.CompetitionRepositoryImpl
 import com.sogo.golf.msl.domain.repository.AuthRepository
+import com.sogo.golf.msl.domain.repository.CompetitionRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -22,4 +24,9 @@ abstract class DataModule {
     abstract fun bindAuthRepository(
         authRepositoryImpl: AuthRepositoryImpl
     ): AuthRepository
+
+    @Binds
+    abstract fun bindCompetitionRepository(
+        competitionRepositoryImpl: CompetitionRepositoryImpl
+    ): CompetitionRepository
 }
