@@ -1,24 +1,29 @@
 package com.sogo.golf.msl.shared_components.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
+
 
 @Composable
 fun AppDrawer(
     navController: NavController,
     onCloseDrawer: () -> Unit,
-    getMslGolferUseCase: GetMslGolferUseCase
+    drawerViewModel: DrawerViewModel = hiltViewModel() // Own ViewModel
 ) {
-    val currentGolfer by getMslGolferUseCase()
-        .collectAsState(initial = null)
 
     Column(
         modifier = Modifier
@@ -30,9 +35,9 @@ fun AppDrawer(
         horizontalAlignment = Alignment.Start
     ) {
         // ✅ DISPLAY GOLFER NAME
-        currentGolfer?.let { golfer ->
+        drawerViewModel.currentGolfer.let { golfer ->
             Text(
-                text = "${golfer.firstName} ${golfer.surname}",
+                text = "${golfer.value?.firstName ?: "-"} ${golfer.value?.surname ?: "-"}",
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.White,
                 modifier = Modifier.padding(bottom = 8.dp)
