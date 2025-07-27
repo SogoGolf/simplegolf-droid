@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.usecase.competition.GetCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +21,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val getGameUseCase: GetGameUseCase,
     val getMslGolferUseCase: GetMslGolferUseCase,
+    private val getCompetitionUseCase: GetCompetitionUseCase,
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository
 ) : ViewModel() {
 
@@ -55,6 +57,45 @@ class HomeViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isLoadingGame = false,
                         gameErrorMessage = result.error.toUserMessage()
+                    )
+                }
+                is NetworkResult.Loading -> {
+                    // Already handled above
+                }
+            }
+        }
+    }
+
+    fun getCompetition(clubId: String = "670229") { // Default club ID for testing (same as game)
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoadingCompetition = true,
+                competitionErrorMessage = null,
+                competitionSuccessMessage = null
+            )
+
+            android.util.Log.d("HomeViewModel", "=== GETTING COMPETITION FROM API ===")
+            android.util.Log.d("HomeViewModel", "Club ID: $clubId")
+
+            when (val result = getCompetitionUseCase(clubId)) {
+                is NetworkResult.Success -> {
+                    android.util.Log.d("HomeViewModel", "✅ SUCCESS: Retrieved competition from API:")
+                    android.util.Log.d("HomeViewModel", "  Players count: ${result.data.players.size}")
+                    result.data.players.forEach { player ->
+                        android.util.Log.d("HomeViewModel", "  Player: ${player.firstName} ${player.lastName} - ${player.competitionName}")
+                    }
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingCompetition = false,
+                        competitionData = result.data,
+                        competitionSuccessMessage = "✅ Competition loaded from API! Found ${result.data.players.size} players"
+                    )
+                }
+                is NetworkResult.Error -> {
+                    android.util.Log.e("HomeViewModel", "❌ ERROR: Failed to get competition from API: ${result.error}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingCompetition = false,
+                        competitionErrorMessage = result.error.toUserMessage()
                     )
                 }
                 is NetworkResult.Loading -> {
@@ -131,6 +172,21 @@ class HomeViewModel @Inject constructor(
         return when {
             golfer == null -> "No golfer data available"
             else -> "Welcome ${golfer.firstName} ${golfer.surname} (Handicap: ${golfer.primary})"
+        }
+    }
+
+    // Example method showing how to use competition data
+    fun getCompetitionSummary(): String {
+        val competition = _uiState.value.competitionData
+        return when {
+            competition == null -> "No competition data available"
+            competition.players.isEmpty() -> "Competition loaded but no players found"
+            else -> {
+                val playerCount = competition.players.size
+                val competitionName = competition.players.firstOrNull()?.competitionName ?: "Unknown"
+                val competitionType = competition.players.firstOrNull()?.competitionType ?: "Unknown"
+                "Competition: $competitionName ($competitionType) with $playerCount players"
+            }
         }
     }
 }

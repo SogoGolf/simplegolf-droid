@@ -10,4 +10,5 @@ interface MslRepository {
     suspend fun getGolfer(clubId: String): NetworkResult<MslGolfer>
     suspend fun refreshTokens(): NetworkResult<MslTokens>
     suspend fun getGame(clubId: String): NetworkResult<MslGame>
+    suspend fun getCompetition(clubId: String): NetworkResult<MslCompetition>
 }

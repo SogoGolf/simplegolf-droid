@@ -32,9 +32,9 @@ interface GolfApiService {
     ): Response<MslGameDto>
 
     // Get competition data
-    @GET("v2/{competitionId}/competition")
+    @GET("v2/{clubId}/competition")
     suspend fun getCompetition(
-        @Path("competitionId") competitionId: String
+        @Path("clubId") clubId: String
     ): Response<MslCompetitionDto>
 
     // Marker endpoints

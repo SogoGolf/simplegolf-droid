@@ -1,5 +1,7 @@
 package com.sogo.golf.msl.data.network.dto
 
+import com.sogo.golf.msl.domain.model.msl.MslPlayer
+
 data class MslPlayerDto(
     val firstName: String?,
     val lastName: String?,
@@ -15,3 +17,21 @@ data class MslPlayerDto(
     val scratchRating: Double,
     val holes: List<MslHoleDto>
 )
+
+fun MslPlayerDto.toDomainModel(): MslPlayer {
+    return MslPlayer(
+        firstName = firstName,
+        lastName = lastName,
+        dailyHandicap = dailyHandicap,
+        golfLinkNumber = golfLinkNumber,
+        competitionName = competitionName,
+        competitionType = competitionType,
+        teeName = teeName,
+        teeColour = teeColour,
+        teeColourName = teeColourName,
+        scoreType = scoreType,
+        slopeRating = slopeRating,
+        scratchRating = scratchRating,
+        holes = holes.map { it.toDomainModel() }
+    )
+}

@@ -8,6 +8,7 @@ import com.sogo.golf.msl.domain.usecase.auth.LoginUseCase
 import com.sogo.golf.msl.domain.usecase.auth.LogoutUseCase
 import com.sogo.golf.msl.domain.usecase.auth.ProcessMslAuthCodeUseCase
 import com.sogo.golf.msl.domain.usecase.auth.SetFinishedRoundUseCase
+import com.sogo.golf.msl.domain.usecase.competition.GetCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import dagger.Module
@@ -55,4 +56,9 @@ object DomainModule {
     fun provideGetCurrentGolferUseCase(
         mslGolferLocalDbRepository: MslGolferLocalDbRepository
     ): GetMslGolferUseCase = GetMslGolferUseCase(mslGolferLocalDbRepository)
+
+    @Provides
+    fun provideGetCompetitionUseCase(
+        mslRepository: MslRepository
+    ): GetCompetitionUseCase = GetCompetitionUseCase(mslRepository)
 }

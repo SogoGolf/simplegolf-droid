@@ -24,7 +24,7 @@ class CompetitionViewModel @Inject constructor(
     val uiState: StateFlow<CompetitionUiState> = _uiState.asStateFlow()
 
     // Always observe local competition data (works offline)
-    val currentCompetition = competitionRepository.getCurrentCompetition()
+    val currentCompetition = competitionRepository.getCompetition()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

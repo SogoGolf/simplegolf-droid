@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.sogo.golf.msl.features.competitions.presentation.CompetitionViewModel
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
 
@@ -19,7 +18,6 @@ fun HomeScreen(
     navController: NavController,
     title: String,
     nextRoute: String,
-    competitionViewModel: CompetitionViewModel = hiltViewModel(),
     homeViewModel: HomeViewModel = hiltViewModel()
 ) {
     // Prevent going back from home screen
@@ -27,20 +25,7 @@ fun HomeScreen(
         // Do nothing - home is the root screen
     }
 
-    val competitionUiState by competitionViewModel.uiState.collectAsState()
-    val currentCompetition by competitionViewModel.currentCompetition.collectAsState()
     val homeUiState by homeViewModel.uiState.collectAsState()
-
-    // DEBUG: Log what we're actually getting
-    LaunchedEffect(currentCompetition) {
-        android.util.Log.d("HomeScreen", "=== UI DEBUG ===")
-        android.util.Log.d("HomeScreen", "currentCompetition: $currentCompetition")
-        android.util.Log.d("HomeScreen", "currentCompetition == null: ${currentCompetition == null}")
-        if (currentCompetition != null) {
-            android.util.Log.d("HomeScreen", "players.size: ${currentCompetition!!.players.size}")
-            android.util.Log.d("HomeScreen", "players.isEmpty(): ${currentCompetition!!.players.isEmpty()}")
-        }
-    }
 
     ScreenWithDrawer(navController = navController) {
         Column(
@@ -57,7 +42,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Competition status card
+            // Competition status card - NOW USING API DATA
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -69,18 +54,18 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Competition Status",
+                        text = "Competition Status (API)",
                         style = MaterialTheme.typography.titleMedium
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // SIMPLE DEBUG: Show exactly what we have
+                    // Show API competition data
                     Text(
                         text = when {
-                            currentCompetition == null -> "❌ currentCompetition is NULL"
-                            currentCompetition!!.players.isEmpty() -> "⚠️ currentCompetition exists but players is EMPTY"
-                            else -> "✅ currentCompetition exists with ${currentCompetition!!.players.size} players"
+                            homeUiState.competitionData == null -> "❌ No competition data from API"
+                            homeUiState.competitionData!!.players.isEmpty() -> "⚠️ Competition exists but players is EMPTY"
+                            else -> "✅ Competition loaded with ${homeUiState.competitionData!!.players.size} players"
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
@@ -89,13 +74,13 @@ fun HomeScreen(
                     // Show the actual summary from ViewModel
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = competitionViewModel.getCompetitionSummary(),
+                        text = homeViewModel.getCompetitionSummary(),
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center
                     )
 
                     // Show player names if available
-                    currentCompetition?.let { competition ->
+                    homeUiState.competitionData?.let { competition ->
                         if (competition.players.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -156,15 +141,15 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Get Competition Data button
+            // Get Competition Data button - NOW USING API
             Button(
                 onClick = {
-                    competitionViewModel.fetchCompetitionData()
+                    homeViewModel.getCompetition() // Uses the API instead of local mock
                 },
-                enabled = !competitionUiState.isLoading,
+                enabled = !homeUiState.isLoadingCompetition,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (competitionUiState.isLoading) {
+                if (homeUiState.isLoadingCompetition) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
@@ -177,7 +162,7 @@ fun HomeScreen(
                         Text("Loading...")
                     }
                 } else {
-                    Text("Get Competition Data")
+                    Text("Get Competition Data (API)")
                 }
             }
 
@@ -210,7 +195,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ✅ NEW: Get Golfer from LOCAL DATABASE button
+            // ✅ Get Golfer from LOCAL DATABASE button
             Button(
                 onClick = {
                     homeViewModel.getGolferFromLocalDatabase()
@@ -233,19 +218,6 @@ fun HomeScreen(
             }
         }
 
-        // Network messages for competition
-        NetworkMessageSnackbar(
-            message = competitionUiState.errorMessage,
-            isError = true,
-            onDismiss = { competitionViewModel.clearMessages() }
-        )
-
-        NetworkMessageSnackbar(
-            message = competitionUiState.successMessage,
-            isError = false,
-            onDismiss = { competitionViewModel.clearMessages() }
-        )
-
         // Network messages for game
         NetworkMessageSnackbar(
             message = homeUiState.gameErrorMessage,
@@ -255,6 +227,19 @@ fun HomeScreen(
 
         NetworkMessageSnackbar(
             message = homeUiState.gameSuccessMessage,
+            isError = false,
+            onDismiss = { homeViewModel.clearMessages() }
+        )
+
+        // NEW: Network messages for competition
+        NetworkMessageSnackbar(
+            message = homeUiState.competitionErrorMessage,
+            isError = true,
+            onDismiss = { homeViewModel.clearMessages() }
+        )
+
+        NetworkMessageSnackbar(
+            message = homeUiState.competitionSuccessMessage,
             isError = false,
             onDismiss = { homeViewModel.clearMessages() }
         )

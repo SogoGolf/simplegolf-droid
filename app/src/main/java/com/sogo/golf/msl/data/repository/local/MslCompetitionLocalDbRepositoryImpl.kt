@@ -26,7 +26,7 @@ class MslCompetitionLocalDbRepositoryImpl @Inject constructor(
     }
 
     // Get local competition data (always available)
-    override fun getCurrentCompetition(): Flow<MslCompetition?> {
+    override fun getCompetition(): Flow<MslCompetition?> {
         Log.d(TAG, "getCurrentCompetition called")
         return competitionDao.getCurrentCompetition()
             .map { entity ->

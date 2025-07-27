@@ -203,4 +203,39 @@ class MslRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun getCompetition(clubId: String): NetworkResult<MslCompetition> {
+        return safeNetworkCall {
+            Log.d(TAG, "Getting competition data for club: $clubId")
+
+            // Headers automatically added by GolfApiAuthInterceptor
+            val response = golfApiService.getCompetition(clubId = clubId)
+
+            if (response.isSuccessful) {
+                val rawCompetitionDto = response.body()
+
+                // ✅ LOG THE RAW API RESPONSE
+                Log.d(TAG, "=== RAW MSL COMPETITION API RESPONSE ===")
+                Log.d(TAG, "Raw DTO: $rawCompetitionDto")
+                Log.d(TAG, "Players count: ${rawCompetitionDto?.players?.size}")
+
+                val competition = rawCompetitionDto?.toDomainModel()
+                    ?: throw Exception("Empty competition response")
+
+                // ✅ LOG THE MAPPED DOMAIN MODEL
+                Log.d(TAG, "=== AFTER MAPPING TO DOMAIN MODEL ===")
+                Log.d(TAG, "Competition players count: ${competition.players.size}")
+                competition.players.forEach { player ->
+                    Log.d(TAG, "Player: ${player.firstName} ${player.lastName} - ${player.competitionName}")
+                }
+
+                Log.d(TAG, "Successfully retrieved competition with ${competition.players.size} players")
+                competition
+            } else {
+                Log.e(TAG, "Failed to get competition: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to get competition: ${response.message()}")
+            }
+        }
+    }
 }

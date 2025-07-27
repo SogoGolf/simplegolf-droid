@@ -53,13 +53,10 @@ fun WebAuthScreen(
     val authUrl = remember(selectedClub) {
         if (selectedClub != null && selectedClub.name.isNotBlank()) {
             // Derive auth path from club name
-            val authPath = selectedClub.name
-                .lowercase()
-                .replace(" ", "")
-                .replace("golf", "golf")
-                .replace("club", "club")
 
-            val url = "https://id.micropower.com.au/$authPath?returnUrl=msl://success"
+            val tenantId = selectedClub.tenantId
+
+            val url = "https://id.micropower.com.au/$tenantId?returnUrl=msl://success"
             android.util.Log.d("WebAuthScreen", "Generated auth URL: $url for club: ${selectedClub.name}")
             url
         } else {
