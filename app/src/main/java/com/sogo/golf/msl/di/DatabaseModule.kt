@@ -1,3 +1,4 @@
+// app/src/main/java/com/sogo/golf/msl/di/DatabaseModule.kt
 package com.sogo.golf.msl.di
 
 import android.content.Context
@@ -6,6 +7,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.sogo.golf.msl.data.local.database.AppDatabase
 import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
+import com.sogo.golf.msl.data.local.database.dao.MslGameDao
 import com.sogo.golf.msl.data.local.database.dao.MslGolferDao
 import dagger.Module
 import dagger.Provides
@@ -51,5 +53,10 @@ object DatabaseModule {
     @Provides
     fun provideGolferDao(database: AppDatabase): MslGolferDao {
         return database.mslGolferDao()
+    }
+
+    @Provides
+    fun provideGameDao(database: AppDatabase): MslGameDao { // NEW: Provide game DAO
+        return database.mslGameDao()
     }
 }

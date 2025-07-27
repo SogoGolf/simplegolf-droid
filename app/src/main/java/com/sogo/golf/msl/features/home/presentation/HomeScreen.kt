@@ -1,6 +1,9 @@
+// Update to app/src/main/java/com/sogo/golf/msl/features/home/presentation/HomeScreen.kt
 package com.sogo.golf.msl.features.home.presentation
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,21 +29,22 @@ fun HomeScreen(
     }
 
     val homeUiState by homeViewModel.uiState.collectAsState()
+    val localGame by homeViewModel.localGame.collectAsState()
+    val scrollState = rememberScrollState()
 
     ScreenWithDrawer(navController = navController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(scrollState) // Add scroll capability
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.spacedBy(16.dp), // Consistent spacing
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.headlineMedium
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             // Competition status card - NOW USING API DATA
             Card(
@@ -93,8 +97,6 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
             // Game Data Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -107,39 +109,60 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Game Data",
+                        text = "Game Data (Local + API)",
                         style = MaterialTheme.typography.titleMedium
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    homeUiState.gameData?.let { game ->
+                    // Show both API and local game data
+                    Text(
+                        text = when {
+                            homeUiState.gameData != null -> "✅ API: Game loaded - Competition ${homeUiState.gameData!!.mainCompetitionId}"
+                            else -> "❌ No game data from API"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Show local game data using the StateFlow
+                    Text(
+                        text = when {
+                            localGame != null -> "✅ DB: Game in database - Competition ${localGame!!.mainCompetitionId}"
+                            else -> "❌ No game data in local database"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Show the game summary
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = homeViewModel.getGameSummary(),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Show game details if available
+                    (homeUiState.gameData ?: localGame)?.let { game ->
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "✅ Game loaded: Competition ${game.mainCompetitionId}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Starting Hole: ${game.startingHoleNumber}",
+                            text = "Starting Hole: ${game.startingHoleNumber} | Partners: ${game.playingPartners.size} | Competitions: ${game.competitions.size}",
                             style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = "Partners: ${game.playingPartners.size}",
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center
-                        )
-                    } ?: run {
-                        Text(
-                            text = "No game data loaded",
-                            style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Competition API Buttons Section
+            Text(
+                text = "Competition Actions",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
 
             // Get Competition Data button - NOW USING API
             Button(
@@ -162,13 +185,18 @@ fun HomeScreen(
                         Text("Loading...")
                     }
                 } else {
-                    Text("Get Competition Data (API)")
+                    Text("📊 Get Competition Data (API)")
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Game API Buttons Section
+            Text(
+                text = "Game Actions",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
 
-            // Get Game button
+            // Get Game button (API only)
             Button(
                 onClick = {
                     homeViewModel.getGame()
@@ -189,13 +217,46 @@ fun HomeScreen(
                         Text("Loading...")
                     }
                 } else {
-                    Text("Get Game")
+                    Text("🎮 Get Game (API Only)")
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // Get Game and Save to Database button
+            Button(
+                onClick = {
+                    homeViewModel.getGameAndSaveToDatabase()
+                },
+                enabled = !homeUiState.isLoadingGame,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                if (homeUiState.isLoadingGame) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Saving...")
+                    }
+                } else {
+                    Text("📥 Get Game (API) & Save to Database")
+                }
+            }
 
-            // ✅ Get Golfer from LOCAL DATABASE button
+            // Local Database Test Section
+            Text(
+                text = "Local Database Tests",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            // Get Golfer from LOCAL DATABASE button
             Button(
                 onClick = {
                     homeViewModel.getGolferFromLocalDatabase()
@@ -205,17 +266,59 @@ fun HomeScreen(
                     containerColor = MaterialTheme.colorScheme.secondary
                 )
             ) {
-                Text("Test: Get Golfer from LOCAL DATABASE")
+                Text("👤 Get Golfer from LOCAL DATABASE")
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            // Get Game from Local Database button
+            Button(
+                onClick = {
+                    homeViewModel.getGameFromLocalDatabase()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Text("📱 Get Game from LOCAL DATABASE")
+            }
+
+            // Debug Section
+            Text(
+                text = "Debug Tools",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.tertiary
+            )
+
+            // Test Club Storage button
+            Button(
+                onClick = {
+                    homeViewModel.testClubStorage()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiary
+                )
+            ) {
+                Text("🔧 TEST: Club Storage Debug")
+            }
+
+            // Navigation Section
+            Text(
+                text = "Navigation",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
 
             // Navigation button
             Button(
-                onClick = { navController.navigate(nextRoute) }
+                onClick = { navController.navigate(nextRoute) },
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Next")
+                Text("➡️ Next: $nextRoute")
             }
+
+            // Add some bottom padding so the last button isn't cut off
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         // Network messages for game

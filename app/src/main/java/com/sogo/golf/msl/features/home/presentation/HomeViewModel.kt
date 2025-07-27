@@ -1,3 +1,4 @@
+// Update to app/src/main/java/com/sogo/golf/msl/features/home/presentation/HomeViewModel.kt
 package com.sogo.golf.msl.features.home.presentation
 
 import androidx.lifecycle.ViewModel
@@ -5,8 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import com.sogo.golf.msl.domain.usecase.club.SetSelectedClubUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
+import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +28,11 @@ class HomeViewModel @Inject constructor(
     val getMslGolferUseCase: GetMslGolferUseCase,
     private val getCompetitionUseCase: GetCompetitionUseCase,
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
-    private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase
+    // NEW: Add game storage use cases
+    private val getLocalGameUseCase: GetLocalGameUseCase,
+    private val fetchAndSaveGameUseCase: FetchAndSaveGameUseCase,
+    private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
+    private val setSelectedClubUseCase: SetSelectedClubUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -38,8 +46,15 @@ class HomeViewModel @Inject constructor(
             initialValue = null
         )
 
+    // NEW: ✅ GLOBAL GAME ACCESS FROM LOCAL DATABASE
+    val localGame = getLocalGameUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
 
-    fun getGame() { // Default game ID for testing
+    fun getGame(clubId: String = "670229") { // Default game ID for testing
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoadingGame = true,
@@ -47,17 +62,55 @@ class HomeViewModel @Inject constructor(
                 gameSuccessMessage = null
             )
 
-            val selectedClub = getMslClubAndTenantIdsUseCase() ?: return@launch
-
-            when (val result = getGameUseCase(selectedClub.clubId.toString())) {
+            when (val result = getGameUseCase(clubId)) {
                 is NetworkResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoadingGame = false,
                         gameData = result.data,
-                        gameSuccessMessage = "Game data loaded successfully!"
+                        gameSuccessMessage = "Game data loaded from API successfully!"
                     )
                 }
                 is NetworkResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingGame = false,
+                        gameErrorMessage = result.error.toUserMessage()
+                    )
+                }
+                is NetworkResult.Loading -> {
+                    // Already handled above
+                }
+            }
+        }
+    }
+
+    // NEW: ✅ GET GAME AND SAVE TO LOCAL DATABASE
+    fun getGameAndSaveToDatabase(clubId: String = "670229") {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoadingGame = true,
+                gameErrorMessage = null,
+                gameSuccessMessage = null
+            )
+
+            android.util.Log.d("HomeViewModel", "=== FETCHING GAME AND SAVING TO DATABASE ===")
+            android.util.Log.d("HomeViewModel", "Club ID: $clubId")
+
+            when (val result = fetchAndSaveGameUseCase(clubId)) {
+                is NetworkResult.Success -> {
+                    android.util.Log.d("HomeViewModel", "✅ SUCCESS: Game fetched from API and saved to database")
+                    android.util.Log.d("HomeViewModel", "  Competition ID: ${result.data.mainCompetitionId}")
+                    android.util.Log.d("HomeViewModel", "  Starting Hole: ${result.data.startingHoleNumber}")
+                    android.util.Log.d("HomeViewModel", "  Playing Partners: ${result.data.playingPartners.size}")
+                    android.util.Log.d("HomeViewModel", "  Competitions: ${result.data.competitions.size}")
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingGame = false,
+                        gameData = result.data,
+                        gameSuccessMessage = "✅ Game fetched from API and saved to database! Competition ID: ${result.data.mainCompetitionId}"
+                    )
+                }
+                is NetworkResult.Error -> {
+                    android.util.Log.e("HomeViewModel", "❌ ERROR: Failed to fetch and save game: ${result.error}")
                     _uiState.value = _uiState.value.copy(
                         isLoadingGame = false,
                         gameErrorMessage = result.error.toUserMessage()
@@ -163,10 +216,62 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    // NEW: ✅ TEST METHOD: Get game from LOCAL DATABASE ONLY
+    fun getGameFromLocalDatabase() {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("HomeViewModel", "=== TESTING LOCAL DATABASE GAME ===")
+
+                // Get game from local database
+                val gameFromDb = getLocalGameUseCase().first()
+
+                if (gameFromDb != null) {
+                    android.util.Log.d("HomeViewModel", "✅ SUCCESS: Retrieved game from LOCAL DATABASE:")
+                    android.util.Log.d("HomeViewModel", "  Competition ID: ${gameFromDb.mainCompetitionId}")
+                    android.util.Log.d("HomeViewModel", "  Starting Hole: ${gameFromDb.startingHoleNumber}")
+                    android.util.Log.d("HomeViewModel", "  Golfer Link No: ${gameFromDb.golflinkNumber}")
+                    android.util.Log.d("HomeViewModel", "  Tee Name: ${gameFromDb.teeName}")
+                    android.util.Log.d("HomeViewModel", "  Tee Colour: ${gameFromDb.teeColour}")
+                    android.util.Log.d("HomeViewModel", "  Daily Handicap: ${gameFromDb.dailyHandicap}")
+                    android.util.Log.d("HomeViewModel", "  GA Handicap: ${gameFromDb.gaHandicap}")
+                    android.util.Log.d("HomeViewModel", "  Number of Holes: ${gameFromDb.numberOfHoles}")
+                    android.util.Log.d("HomeViewModel", "  Playing Partners: ${gameFromDb.playingPartners.size}")
+                    android.util.Log.d("HomeViewModel", "  Competitions: ${gameFromDb.competitions.size}")
+
+                    gameFromDb.playingPartners.forEach { partner ->
+                        android.util.Log.d("HomeViewModel", "    Partner: ${partner.firstName} ${partner.lastName} (${partner.golfLinkNumber})")
+                    }
+
+                    gameFromDb.competitions.forEach { competition ->
+                        android.util.Log.d("HomeViewModel", "    Competition: ${competition.name} (${competition.type})")
+                    }
+
+                    _uiState.value = _uiState.value.copy(
+                        gameData = gameFromDb,
+                        gameSuccessMessage = "✅ Game retrieved from LOCAL DATABASE: Competition ${gameFromDb.mainCompetitionId} (Check logs for details)"
+                    )
+                } else {
+                    android.util.Log.w("HomeViewModel", "❌ No game found in local database!")
+                    _uiState.value = _uiState.value.copy(
+                        gameErrorMessage = "No game found in local database. Please fetch game data first."
+                    )
+                }
+
+            } catch (e: Exception) {
+                android.util.Log.e("HomeViewModel", "❌ ERROR retrieving game from local database", e)
+                _uiState.value = _uiState.value.copy(
+                    gameErrorMessage = "Error retrieving game from local database: ${e.message}"
+                )
+            }
+        }
+    }
+
     fun clearMessages() {
         _uiState.value = _uiState.value.copy(
             gameErrorMessage = null,
-            gameSuccessMessage = null
+            gameSuccessMessage = null,
+            competitionErrorMessage = null,
+            competitionSuccessMessage = null
         )
     }
 
@@ -190,6 +295,91 @@ class HomeViewModel @Inject constructor(
                 val competitionName = competition.players.firstOrNull()?.competitionName ?: "Unknown"
                 val competitionType = competition.players.firstOrNull()?.competitionType ?: "Unknown"
                 "Competition: $competitionName ($competitionType) with $playerCount players"
+            }
+        }
+    }
+
+    // NEW: Example method showing how to use game data
+    fun getGameSummary(): String {
+        val game = _uiState.value.gameData ?: localGame.value
+        return when {
+            game == null -> "No game data available"
+            else -> {
+                val partnersCount = game.playingPartners.size
+                val competitionsCount = game.competitions.size
+                "Game: Competition ${game.mainCompetitionId}, Hole ${game.startingHoleNumber}, $partnersCount partners, $competitionsCount competitions"
+            }
+        }
+    }
+
+    fun testClubStorage() {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("HomeViewModel", "=== TESTING CLUB STORAGE ===")
+
+                // Test 1: Check current stored club
+                android.util.Log.d("HomeViewModel", "1. Checking current stored club...")
+                val currentClub = getMslClubAndTenantIdsUseCase()
+                android.util.Log.d("HomeViewModel", "Current stored club: $currentClub")
+
+                // Test 2: Check if we have a club
+                val hasClub = getMslClubAndTenantIdsUseCase.hasSelectedClub()
+                android.util.Log.d("HomeViewModel", "Has selected club: $hasClub")
+
+                // Test 3: Get individual values
+                val clubId = getMslClubAndTenantIdsUseCase.getClubId()
+                val tenantId = getMslClubAndTenantIdsUseCase.getTenantId()
+                android.util.Log.d("HomeViewModel", "Individual - Club ID: $clubId, Tenant ID: $tenantId")
+
+                // Test 4: Try to store a test club
+                android.util.Log.d("HomeViewModel", "2. Storing a test club...")
+                val testClub = com.sogo.golf.msl.domain.model.msl.MslClub(
+                    clubId = 670229,
+                    name = "Test Golf Club",
+                    logoUrl = null,
+                    tenantId = "testgolfclub",
+                    latitude = 0,
+                    longitude = 0,
+                    isGuestRegistrationEnabled = false,
+                    isChappGuestRegistrationEnabled = false,
+                    posLocationId = "",
+                    posTerminalId = "",
+                    resourceId = ""
+                )
+
+                val storeResult = setSelectedClubUseCase(testClub)
+                android.util.Log.d("HomeViewModel", "Store result: ${storeResult.isSuccess}")
+                if (storeResult.isFailure) {
+                    android.util.Log.e("HomeViewModel", "Store failed", storeResult.exceptionOrNull())
+                }
+
+                // Test 5: Check if the store worked
+                android.util.Log.d("HomeViewModel", "3. Checking after store...")
+                val afterStoreClub = getMslClubAndTenantIdsUseCase()
+                android.util.Log.d("HomeViewModel", "After store club: $afterStoreClub")
+
+                val afterStoreHasClub = getMslClubAndTenantIdsUseCase.hasSelectedClub()
+                android.util.Log.d("HomeViewModel", "After store has club: $afterStoreHasClub")
+
+                // Test 6: Check individual values again
+                val afterStoreClubId = getMslClubAndTenantIdsUseCase.getClubId()
+                val afterStoreTenantId = getMslClubAndTenantIdsUseCase.getTenantId()
+                android.util.Log.d("HomeViewModel", "After store - Club ID: $afterStoreClubId, Tenant ID: $afterStoreTenantId")
+
+                // Update UI with test results
+                _uiState.value = _uiState.value.copy(
+                    gameSuccessMessage = if (afterStoreClub != null) {
+                        "✅ Club storage test PASSED: ${afterStoreClub.clubId} - ${afterStoreClub.tenantId}"
+                    } else {
+                        "❌ Club storage test FAILED: Still returning null"
+                    }
+                )
+
+            } catch (e: Exception) {
+                android.util.Log.e("HomeViewModel", "❌ Exception during club storage test", e)
+                _uiState.value = _uiState.value.copy(
+                    gameErrorMessage = "Club storage test failed: ${e.message}"
+                )
             }
         }
     }

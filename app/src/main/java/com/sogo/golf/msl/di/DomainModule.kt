@@ -2,6 +2,7 @@
 package com.sogo.golf.msl.di
 
 import com.sogo.golf.msl.data.local.preferences.ClubPreferences
+import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
@@ -13,7 +14,9 @@ import com.sogo.golf.msl.domain.usecase.auth.SetFinishedRoundUseCase
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.club.SetSelectedClubUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
+import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import dagger.Module
 import dagger.Provides
@@ -66,7 +69,7 @@ object DomainModule {
         mslRepository: MslRepository
     ): GetCompetitionUseCase = GetCompetitionUseCase(mslRepository)
 
-    // NEW: Club UseCases
+    // Club UseCases
     @Provides
     fun provideGetMslClubAndTenantIdsUseCase(
         clubPreferences: ClubPreferences
@@ -76,4 +79,15 @@ object DomainModule {
     fun provideSetSelectedClubUseCase(
         clubPreferences: ClubPreferences
     ): SetSelectedClubUseCase = SetSelectedClubUseCase(clubPreferences)
+
+    // NEW: Game UseCases
+    @Provides
+    fun provideGetLocalGameUseCase(
+        gameRepository: MslGameLocalDbRepository
+    ): GetLocalGameUseCase = GetLocalGameUseCase(gameRepository)
+
+    @Provides
+    fun provideFetchAndSaveGameUseCase(
+        gameRepository: MslGameLocalDbRepository
+    ): FetchAndSaveGameUseCase = FetchAndSaveGameUseCase(gameRepository)
 }

@@ -1,4 +1,4 @@
-// Update to app/src/main/java/com/sogo/golf/msl/di/DataModule.kt
+// app/src/main/java/com/sogo/golf/msl/di/DataModule.kt
 package com.sogo.golf.msl.di
 
 import com.sogo.golf.msl.data.local.preferences.AuthPreferences
@@ -7,9 +7,11 @@ import com.sogo.golf.msl.data.local.preferences.ClubPreferences
 import com.sogo.golf.msl.data.local.preferences.ClubPreferencesImpl
 import com.sogo.golf.msl.data.repository.AuthRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslCompetitionLocalDbRepositoryImpl
+import com.sogo.golf.msl.data.repository.local.MslGameLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslGolferLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.remote.MslRepositoryImpl
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
+import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
@@ -41,6 +43,11 @@ abstract class DataModule {
     abstract fun bindMslCompetitionLocalDbRepository(
         mslCompetitionLocalDbRepositoryImpl: MslCompetitionLocalDbRepositoryImpl
     ): MslCompetitionLocalDbRepository
+
+    @Binds
+    abstract fun bindMslGameLocalDbRepository( // NEW: Bind game repository
+        mslGameLocalDbRepositoryImpl: MslGameLocalDbRepositoryImpl
+    ): MslGameLocalDbRepository
 
     @Binds
     abstract fun bindMslRepository(

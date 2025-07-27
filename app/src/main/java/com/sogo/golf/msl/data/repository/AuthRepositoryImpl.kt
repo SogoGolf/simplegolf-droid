@@ -5,6 +5,7 @@ import com.sogo.golf.msl.data.local.preferences.AuthPreferences
 import com.sogo.golf.msl.data.local.preferences.ClubPreferences
 import com.sogo.golf.msl.domain.model.AuthState
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
+import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import kotlinx.coroutines.CoroutineScope
@@ -25,7 +26,8 @@ class AuthRepositoryImpl @Inject constructor(
     private val authPreferences: AuthPreferences,
     private val clubPreferences: ClubPreferences, // NEW: Inject club preferences
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
-    private val mslCompetitionLocalDbRepository: MslCompetitionLocalDbRepository
+    private val mslCompetitionLocalDbRepository: MslCompetitionLocalDbRepository,
+    private val mslGameLocalDbRepository: MslGameLocalDbRepository
 ) : AuthRepository {
 
     // Repository scope for initialization
@@ -80,6 +82,7 @@ class AuthRepositoryImpl @Inject constructor(
             // ✅ CLEAR GOLFER DATA ON LOGOUT
             mslGolferLocalDbRepository.clearGolfer()
             mslCompetitionLocalDbRepository.clearAllCompetitions()
+            mslGameLocalDbRepository.clearAllGames()
 
             // NEW: ✅ CLEAR CLUB SELECTION ON LOGOUT
             clubPreferences.clearSelectedClub()
