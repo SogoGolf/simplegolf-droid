@@ -2,6 +2,7 @@ package com.sogo.golf.msl.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+
 object MSLColors {
     // Primary Brand Colors
     val Primary = Color(0xFF054868)        // MSL Blue (from your colors.xml)
@@ -12,6 +13,16 @@ object MSLColors {
     val Secondary = Color(0xFF34A853)      // Golf Green
     val SecondaryLight = Color(0xFF81C784) // Light green for success states
     val SecondaryDark = Color(0xFF1B5E20)  // Dark green for emphasis
+
+    val mslBlue = Color(0xFF054868)
+    val mslGrey = Color(0xFF808284)
+    val mslGunMetal = Color(0xFF221F1F)
+    val mslYellow = Color(0xFFF2C31A)
+    val mslBlack = Color(0xFF000000)
+    val mslWhite = Color(0xFFFFFFFF)
+    val mslGreen = Color(0xFF25b862)
+    val mslRed = Color(0xFFe34836)
+
 
     // Golf-Specific Colors
     val Fairway = Color(0xFF4CAF50)        // Fairway green
