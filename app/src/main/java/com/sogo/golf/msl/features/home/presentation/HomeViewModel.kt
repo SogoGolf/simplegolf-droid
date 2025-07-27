@@ -7,7 +7,9 @@ import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.club.SetSelectedClubUseCase
+import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
@@ -32,7 +34,9 @@ class HomeViewModel @Inject constructor(
     private val getLocalGameUseCase: GetLocalGameUseCase,
     private val fetchAndSaveGameUseCase: FetchAndSaveGameUseCase,
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
-    private val setSelectedClubUseCase: SetSelectedClubUseCase
+    private val setSelectedClubUseCase: SetSelectedClubUseCase,
+    private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
+    private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -48,6 +52,14 @@ class HomeViewModel @Inject constructor(
 
     // NEW: ✅ GLOBAL GAME ACCESS FROM LOCAL DATABASE
     val localGame = getLocalGameUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    // StateFlow for local competition data - EXACT same pattern as game
+    val localCompetition = getLocalCompetitionUseCase()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -123,7 +135,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun getCompetition(clubId: String = "670229") { // Default club ID for testing (same as game)
+    fun getCompetitionAndSaveToDatabase(clubId: String = "670229") {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoadingCompetition = true,
@@ -131,25 +143,22 @@ class HomeViewModel @Inject constructor(
                 competitionSuccessMessage = null
             )
 
-            android.util.Log.d("HomeViewModel", "=== GETTING COMPETITION FROM API ===")
+            android.util.Log.d("HomeViewModel", "=== FETCHING COMPETITION AND SAVING TO DATABASE ===")
             android.util.Log.d("HomeViewModel", "Club ID: $clubId")
 
-            when (val result = getCompetitionUseCase(clubId)) {
+            when (val result = fetchAndSaveCompetitionUseCase(clubId)) {
                 is NetworkResult.Success -> {
-                    android.util.Log.d("HomeViewModel", "✅ SUCCESS: Retrieved competition from API:")
+                    android.util.Log.d("HomeViewModel", "✅ SUCCESS: Competition fetched from API and saved to database")
                     android.util.Log.d("HomeViewModel", "  Players count: ${result.data.players.size}")
-                    result.data.players.forEach { player ->
-                        android.util.Log.d("HomeViewModel", "  Player: ${player.firstName} ${player.lastName} - ${player.competitionName}")
-                    }
 
                     _uiState.value = _uiState.value.copy(
                         isLoadingCompetition = false,
                         competitionData = result.data,
-                        competitionSuccessMessage = "✅ Competition loaded from API! Found ${result.data.players.size} players"
+                        competitionSuccessMessage = "✅ Competition fetched from API and saved to database! Found ${result.data.players.size} players"
                     )
                 }
                 is NetworkResult.Error -> {
-                    android.util.Log.e("HomeViewModel", "❌ ERROR: Failed to get competition from API: ${result.error}")
+                    android.util.Log.e("HomeViewModel", "❌ ERROR: Failed to fetch and save competition: ${result.error}")
                     _uiState.value = _uiState.value.copy(
                         isLoadingCompetition = false,
                         competitionErrorMessage = result.error.toUserMessage()
@@ -158,6 +167,39 @@ class HomeViewModel @Inject constructor(
                 is NetworkResult.Loading -> {
                     // Already handled above
                 }
+            }
+        }
+    }
+
+    // Method: Database only - EXACT same pattern as game
+    fun getCompetitionFromLocalDatabase() {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("HomeViewModel", "=== TESTING LOCAL DATABASE COMPETITION ===")
+
+                // Get competition from local database - EXACT same pattern as game
+                val competitionFromDb = getLocalCompetitionUseCase().first()
+
+                if (competitionFromDb != null) {
+                    android.util.Log.d("HomeViewModel", "✅ SUCCESS: Retrieved competition from LOCAL DATABASE:")
+                    android.util.Log.d("HomeViewModel", "  Players count: ${competitionFromDb.players.size}")
+
+                    _uiState.value = _uiState.value.copy(
+                        competitionData = competitionFromDb,
+                        competitionSuccessMessage = "✅ Competition retrieved from LOCAL DATABASE: ${competitionFromDb.players.size} players (Check logs for details)"
+                    )
+                } else {
+                    android.util.Log.w("HomeViewModel", "❌ No competition found in local database!")
+                    _uiState.value = _uiState.value.copy(
+                        competitionErrorMessage = "No competition found in local database. Please fetch competition data first."
+                    )
+                }
+
+            } catch (e: Exception) {
+                android.util.Log.e("HomeViewModel", "❌ ERROR retrieving competition from local database", e)
+                _uiState.value = _uiState.value.copy(
+                    competitionErrorMessage = "Error retrieving competition from local database: ${e.message}"
+                )
             }
         }
     }
@@ -383,4 +425,6 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+
 }

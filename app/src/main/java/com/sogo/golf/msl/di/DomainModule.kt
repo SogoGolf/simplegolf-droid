@@ -2,6 +2,7 @@
 package com.sogo.golf.msl.di
 
 import com.sogo.golf.msl.data.local.preferences.ClubPreferences
+import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
@@ -13,7 +14,9 @@ import com.sogo.golf.msl.domain.usecase.auth.ProcessMslAuthCodeUseCase
 import com.sogo.golf.msl.domain.usecase.auth.SetFinishedRoundUseCase
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.club.SetSelectedClubUseCase
+import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
@@ -90,4 +93,14 @@ object DomainModule {
     fun provideFetchAndSaveGameUseCase(
         gameRepository: MslGameLocalDbRepository
     ): FetchAndSaveGameUseCase = FetchAndSaveGameUseCase(gameRepository)
+
+    @Provides
+    fun provideGetLocalCompetitionUseCase(
+        competitionRepository: MslCompetitionLocalDbRepository
+    ): GetLocalCompetitionUseCase = GetLocalCompetitionUseCase(competitionRepository)
+
+    @Provides
+    fun provideFetchAndSaveCompetitionUseCase(
+        competitionRepository: MslCompetitionLocalDbRepository
+    ): FetchAndSaveCompetitionUseCase = FetchAndSaveCompetitionUseCase(competitionRepository)
 }

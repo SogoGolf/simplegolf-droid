@@ -36,17 +36,17 @@ class MslGameLocalDbRepositoryImpl @Inject constructor(
             }
     }
 
-    // Get all games
+    // Get all games (should only ever return 1 or 0)
     override fun getAllGames(): Flow<List<MslGame>> {
         Log.d(TAG, "getAllGames called")
         return gameDao.getAllGames()
             .map { entities ->
-                Log.d(TAG, "getAllGames mapped: ${entities.size} entities")
+                Log.d(TAG, "getAllGames mapped: ${entities.size} entities (should be 0 or 1)")
                 entities.map { it.toDomainModel() }
             }
     }
 
-    // Fetch from network and save locally
+    // UPDATED: Fetch from network and REPLACE in database
     override suspend fun fetchAndSaveGame(gameId: String): NetworkResult<MslGame> {
         Log.d(TAG, "fetchAndSaveGame called with ID: $gameId")
 
@@ -57,10 +57,10 @@ class MslGameLocalDbRepositoryImpl @Inject constructor(
                     val game = result.data
                     Log.d(TAG, "API returned game with competition ID: ${game.mainCompetitionId}")
 
-                    // Save to local database
-                    saveGameLocally(game, gameId)
+                    // REPLACE the single game in database
+                    replaceGameInDatabase(game, gameId)
 
-                    Log.d(TAG, "Game saved successfully")
+                    Log.d(TAG, "Game replaced successfully in database")
                     game
                 }
                 is NetworkResult.Error -> {
@@ -74,51 +74,55 @@ class MslGameLocalDbRepositoryImpl @Inject constructor(
         }
     }
 
-    // Save game locally
-    private suspend fun saveGameLocally(game: MslGame, gameId: String) {
-        Log.d(TAG, "saveGameLocally called with ID: $gameId")
+    // UPDATED: Replace the single game record
+    private suspend fun replaceGameInDatabase(game: MslGame, gameId: String) {
+        Log.d(TAG, "replaceGameInDatabase called")
 
-        val entity = MslGameEntity.fromDomainModel(game, gameId)
-        Log.d(TAG, "Created entity: $entity")
+        // Check current count before replace
+        val countBefore = gameDao.getGameCount()
+        Log.d(TAG, "Games in database before replace: $countBefore")
 
-        gameDao.insertGame(entity)
-        Log.d(TAG, "Entity inserted into database")
+        val entity = MslGameEntity.fromDomainModel(game, MslGameDao.SINGLE_GAME_ID)
+        Log.d(TAG, "Created entity with fixed ID: ${entity.id}")
 
-        // Verify it was saved
-        val savedEntity = gameDao.getGameById(gameId)
+        // Use the new replace method
+        gameDao.replaceGame(entity)
+        Log.d(TAG, "Game replaced in database")
+
+        // Verify the replace worked
+        val countAfter = gameDao.getGameCount()
+        Log.d(TAG, "Games in database after replace: $countAfter (should be 1)")
+
+        val savedEntity = gameDao.getGameById(MslGameDao.SINGLE_GAME_ID)
         Log.d(TAG, "Verification - saved entity: $savedEntity")
-
-        // Get all games to see what's in the database
-        val allGames = gameDao.getUnsyncedGames()
-        Log.d(TAG, "All games in database: ${allGames.size}")
     }
 
     // Sync game to server
     override suspend fun syncGameToServer(gameId: String): NetworkResult<Unit> {
         return safeNetworkCall {
-            val game = gameDao.getGameById(gameId)
+            val game = gameDao.getGameById(MslGameDao.SINGLE_GAME_ID)
             Log.d(TAG, "syncGameToServer - found game: $game")
 
             // TODO: Replace with actual API call if needed
             // mslApi.submitGame(game)
 
             // Mark as synced
-            gameDao.markAsSynced(gameId)
+            gameDao.markAsSynced(MslGameDao.SINGLE_GAME_ID)
             Log.d(TAG, "Game marked as synced")
         }
     }
 
-    // Get unsynced games for background sync
+    // Get unsynced games (should only ever be 0 or 1)
     override suspend fun getUnsyncedGames(): List<MslGame> {
         val entities = gameDao.getUnsyncedGames()
-        Log.d(TAG, "getUnsyncedGames: ${entities.size} entities")
+        Log.d(TAG, "getUnsyncedGames: ${entities.size} entities (should be 0 or 1)")
         return entities.map { it.toDomainModel() }
     }
 
-    // Clear all games (useful for logout)
+    // Clear the single game
     override suspend fun clearAllGames() {
         Log.d(TAG, "clearAllGames called")
         gameDao.clearAllGames()
-        Log.d(TAG, "All games cleared from database")
+        Log.d(TAG, "Single game cleared from database")
     }
 }

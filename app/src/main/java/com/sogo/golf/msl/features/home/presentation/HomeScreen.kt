@@ -58,7 +58,7 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Competition Status (API)",
+                        text = "Competition Data (Single Record)",
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -69,9 +69,32 @@ fun HomeScreen(
                         text = when {
                             homeUiState.competitionData == null -> "❌ No competition data from API"
                             homeUiState.competitionData!!.players.isEmpty() -> "⚠️ Competition exists but players is EMPTY"
-                            else -> "✅ Competition loaded with ${homeUiState.competitionData!!.players.size} players"
+                            else -> "✅ API: Competition loaded with ${homeUiState.competitionData!!.players.size} players"
                         },
                         style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Show local competition data using the StateFlow
+                    val localCompetition by homeViewModel.localCompetition.collectAsState()
+                    Text(
+                        text = when {
+                            localCompetition != null -> "✅ DB: Single competition record with ${localCompetition!!.players.size} players"
+                            else -> "❌ No competition in database"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Status indicator
+                    Text(
+                        text = "🔄 Each API fetch replaces the database record",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
                         textAlign = TextAlign.Center
                     )
 
@@ -84,7 +107,7 @@ fun HomeScreen(
                     )
 
                     // Show player names if available
-                    homeUiState.competitionData?.let { competition ->
+                    (homeUiState.competitionData ?: localCompetition)?.let { competition ->
                         if (competition.players.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -109,7 +132,7 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Game Data (Local + API)",
+                        text = "Game Data (Single Record)",
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -130,10 +153,20 @@ fun HomeScreen(
                     // Show local game data using the StateFlow
                     Text(
                         text = when {
-                            localGame != null -> "✅ DB: Game in database - Competition ${localGame!!.mainCompetitionId}"
-                            else -> "❌ No game data in local database"
+                            localGame != null -> "✅ DB: Single game record - Competition ${localGame!!.mainCompetitionId}"
+                            else -> "❌ No game in database"
                         },
                         style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Status indicator
+                    Text(
+                        text = "🔄 Each API fetch replaces the database record",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
                         textAlign = TextAlign.Center
                     )
 
@@ -157,6 +190,7 @@ fun HomeScreen(
                 }
             }
 
+
             // Competition API Buttons Section
             Text(
                 text = "Competition Actions",
@@ -167,10 +201,13 @@ fun HomeScreen(
             // Get Competition Data button - NOW USING API
             Button(
                 onClick = {
-                    homeViewModel.getCompetition() // Uses the API instead of local mock
+                    homeViewModel.getCompetitionAndSaveToDatabase()  // ← EXACT same pattern as game
                 },
                 enabled = !homeUiState.isLoadingCompetition,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
                 if (homeUiState.isLoadingCompetition) {
                     Row(
@@ -182,11 +219,23 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Loading...")
+                        Text("Saving...")
                     }
                 } else {
-                    Text("📊 Get Competition Data (API)")
-                }
+                    Text("📥 Get Competition (API) & Replace in Database")                }
+            }
+
+            // Get Competition from Local Database button - EXACT same as game
+            Button(
+                onClick = {
+                    homeViewModel.getCompetitionFromLocalDatabase()  // ← EXACT same pattern as game
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Text("🏆 Get Competition from LOCAL DATABASE")  // ← EXACT same text pattern as game
             }
 
             // Game API Buttons Section
@@ -245,7 +294,7 @@ fun HomeScreen(
                         Text("Saving...")
                     }
                 } else {
-                    Text("📥 Get Game (API) & Save to Database")
+                    Text("📥 Get Game (API) & Replace in Database")
                 }
             }
 
