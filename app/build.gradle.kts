@@ -1,3 +1,14 @@
+import java.util.Properties
+
+fun loadProperties(fileName: String): Properties {
+    val props = Properties()
+    val propFile = rootProject.file(fileName)
+    if (propFile.exists()) {
+        propFile.inputStream().use { props.load(it) }
+    }
+    return props
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,7 +17,6 @@ plugins {
     id("org.jetbrains.kotlin.kapt")
     id("kotlin-parcelize")
 }
-
 
 android {
     namespace = "com.sogo.golf.msl"
@@ -20,6 +30,36 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Load properties and add to BuildConfig
+        val prodProps = loadProperties("prod.properties")
+
+        buildConfigField("String", "MSL_BASE_URL", "\"${prodProps["MSL_BASE_URL"] ?: "default-msl-base.com"}\"")
+        buildConfigField("String", "MSL_BASE_URL_AUTH", "\"${prodProps["MSL_BASE_URL_AUTH"] ?: "default-auth.com"}\"")
+        buildConfigField("String", "MSL_GOLF_URL", "\"${prodProps["MSL_GOLF_URL"] ?: "default-golf-api.com"}\"")
+        buildConfigField("String", "MSL_GOLF_URL_V2", "\"${prodProps["MSL_GOLF_URL_V2"] ?: "default-golf-api-v2.com"}\"")
+        buildConfigField("String", "MSL_AUTH_URL", "\"${prodProps["MSL_AUTH_URL"] ?: "default-id.com"}\"")
+        buildConfigField("String", "MSL_URL", "\"${prodProps["MSL_URL"] ?: "default-msl.com"}\"")
+        buildConfigField("String", "MSL_COMPANY_CODE", "\"${prodProps["MSL_COMPANY_CODE"] ?: "0"}\"")
+
+        buildConfigField("String", "MIXPANEL_API_SECRET", "\"${prodProps["MIXPANEL_API_SECRET"] ?: "default-mixpanel"}\"")
+        buildConfigField("String", "AMPLITUDE_ANALYTICS", "\"${prodProps["AMPLITUDE_ANALYTICS"] ?: "default-amplitude"}\"")
+
+        buildConfigField("String", "REALM_APP_ID", "\"${prodProps["REALM_APP_ID"] ?: "default-realm"}\"")
+        buildConfigField("String", "MONGO_API_KEY", "\"${prodProps["MONGO_API_KEY"] ?: "default-mongo"}\"")
+
+        buildConfigField("String", "SOGO_MSL_AUTH_URL", "\"${prodProps["SOGO_MSL_AUTH_URL"] ?: "default-sogo-auth.com"}\"")
+        buildConfigField("String", "SOGO_OCP_SUBSCRIPTION_KEY", "\"${prodProps["SOGO_OCP_SUBSCRIPTION_KEY"] ?: "default-key"}\"")
+        buildConfigField("String", "SOGO_AUTHORIZATION", "\"${prodProps["SOGO_AUTHORIZATION"] ?: "default-auth"}\"")
+        buildConfigField("String", "SOGO_GCP_API", "\"${prodProps["SOGO_GCP_API"] ?: "default-gcp.com"}\"")
+
+        buildConfigField("String", "REVENUECAT", "\"${prodProps["REVENUECAT"] ?: "default-rc"}\"")
+        buildConfigField("String", "REVENUECAT_5_TOKEN", "\"${prodProps["REVENUECAT_5_TOKEN"] ?: "default-5"}\"")
+        buildConfigField("String", "REVENUECAT_10_TOKEN", "\"${prodProps["REVENUECAT_10_TOKEN"] ?: "default-10"}\"")
+        buildConfigField("String", "REVENUECAT_20_TOKEN", "\"${prodProps["REVENUECAT_20_TOKEN"] ?: "default-20"}\"")
+
+        buildConfigField("String", "SENTRY_DSN", "\"${prodProps["SENTRY_DSN"] ?: "default-sentry"}\"")
+
 
         // Add Room schema export directory
         kapt {
@@ -47,11 +87,12 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true  // Enable BuildConfig generation
     }
 }
 
 dependencies {
-
+    // ... your existing dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -89,16 +130,10 @@ dependencies {
     implementation(libs.purchases)
     implementation(libs.purchases.ui)
 
-    //OneSignal
-//    implementation(libs.onesignal)
-
     //Retrofit
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
-
-    //Sentry
-//    implementation(libs.sentry.android)
 
     //Mixpanel
     implementation(libs.mixpanel.android)
@@ -119,8 +154,6 @@ dependencies {
     implementation(libs.coil.compose)
 
     //Firebase (excluding Analytics)
-    // Import the Firebase BoM (using older version compatible with Kotlin 1.9)
-    // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.storage)
@@ -130,8 +163,6 @@ dependencies {
     //Amplitude analytics
     implementation(libs.analytics.android)
 
-
-
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -139,6 +170,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
-
 }

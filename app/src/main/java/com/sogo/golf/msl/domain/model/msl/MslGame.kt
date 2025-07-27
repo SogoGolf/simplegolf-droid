@@ -3,7 +3,7 @@ package com.sogo.golf.msl.domain.model.msl
 import org.threeten.bp.LocalDateTime
 
 
-data class Game(
+data class MslGame(
     val errorMessage: String? = null,
     val scorecardMessageOfTheDay: String? = null,
 
@@ -18,8 +18,8 @@ data class Game(
     val dailyHandicap: Int? = null,
     val gaHandicap: Double? = null,
     val numberOfHoles: Int? = null,
-    val playingPartners: List<PlayingPartner>,
-    val competitions: List<GameCompetition>
+    val playingPartners: List<MslPlayingPartner>,
+    val competitions: List<MslGameCompetition>
 )
 
 

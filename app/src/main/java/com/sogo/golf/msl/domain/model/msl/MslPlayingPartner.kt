@@ -1,6 +1,6 @@
 package com.sogo.golf.msl.domain.model.msl
 
-data class PlayingPartner(
+data class MslPlayingPartner(
     val firstName: String? = null,
     val lastName: String? = null,
     val dailyHandicap: Int,

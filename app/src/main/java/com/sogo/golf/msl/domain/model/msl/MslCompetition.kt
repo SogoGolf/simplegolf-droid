@@ -1,11 +1,11 @@
 package com.sogo.golf.msl.domain.model.msl
 
 //MSL data model
-data class Competition(
-    val players: List<Player>
+data class MslCompetition(
+    val players: List<MslPlayer>
 )
 
-data class Player(
+data class MslPlayer(
     val firstName: String?,
     val lastName: String?,
     val dailyHandicap: Int,
@@ -18,10 +18,10 @@ data class Player(
     val scoreType: String?,
     val slopeRating: Int,
     val scratchRating: Double,
-    val holes: List<Hole>
+    val holes: List<MslHole>
 )
 
-data class Hole(
+data class MslHole(
     val par: Int,
     val strokes: Int,
     val strokeIndexes: List<Int>,
