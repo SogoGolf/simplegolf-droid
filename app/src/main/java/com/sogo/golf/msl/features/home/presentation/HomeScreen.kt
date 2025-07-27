@@ -19,16 +19,18 @@ fun HomeScreen(
     navController: NavController,
     title: String,
     nextRoute: String,
-    competitionViewModel: CompetitionViewModel = hiltViewModel()
+    competitionViewModel: CompetitionViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel = hiltViewModel()
 ) {
     // Prevent going back from home screen
     BackHandler {
         // Do nothing - home is the root screen
     }
 
-    val uiState by competitionViewModel.uiState.collectAsState()
+    val competitionUiState by competitionViewModel.uiState.collectAsState()
     val currentCompetition by competitionViewModel.currentCompetition.collectAsState()
-1
+    val homeUiState by homeViewModel.uiState.collectAsState()
+
     // DEBUG: Log what we're actually getting
     LaunchedEffect(currentCompetition) {
         android.util.Log.d("HomeScreen", "=== UI DEBUG ===")
@@ -106,6 +108,52 @@ fun HomeScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Game Data Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Game Data",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    homeUiState.gameData?.let { game ->
+                        Text(
+                            text = "✅ Game loaded: Competition ${game.mainCompetitionId}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Starting Hole: ${game.startingHoleNumber}",
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Partners: ${game.playingPartners.size}",
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center
+                        )
+                    } ?: run {
+                        Text(
+                            text = "No game data loaded",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Get Competition Data button
@@ -113,10 +161,10 @@ fun HomeScreen(
                 onClick = {
                     competitionViewModel.fetchCompetitionData()
                 },
-                enabled = !uiState.isLoading,
+                enabled = !competitionUiState.isLoading,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                if (uiState.isLoading) {
+                if (competitionUiState.isLoading) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
@@ -133,6 +181,33 @@ fun HomeScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Get Game button
+            Button(
+                onClick = {
+                    homeViewModel.getGame()
+                },
+                enabled = !homeUiState.isLoadingGame,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (homeUiState.isLoadingGame) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Loading...")
+                    }
+                } else {
+                    Text("Get Game")
+                }
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
 
             // Navigation button
@@ -143,17 +218,30 @@ fun HomeScreen(
             }
         }
 
-        // Network messages
+        // Network messages for competition
         NetworkMessageSnackbar(
-            message = uiState.errorMessage,
+            message = competitionUiState.errorMessage,
             isError = true,
             onDismiss = { competitionViewModel.clearMessages() }
         )
 
         NetworkMessageSnackbar(
-            message = uiState.successMessage,
+            message = competitionUiState.successMessage,
             isError = false,
             onDismiss = { competitionViewModel.clearMessages() }
+        )
+
+        // Network messages for game
+        NetworkMessageSnackbar(
+            message = homeUiState.gameErrorMessage,
+            isError = true,
+            onDismiss = { homeViewModel.clearMessages() }
+        )
+
+        NetworkMessageSnackbar(
+            message = homeUiState.gameSuccessMessage,
+            isError = false,
+            onDismiss = { homeViewModel.clearMessages() }
         )
     }
 }

@@ -2,7 +2,6 @@ package com.sogo.golf.msl.data.repository
 
 import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.data.network.NetworkChecker
-import com.sogo.golf.msl.data.network.api.MslApiService
 import com.sogo.golf.msl.data.network.dto.*
 import com.sogo.golf.msl.data.network.mappers.*
 import com.sogo.golf.msl.domain.model.NetworkResult
@@ -13,9 +12,6 @@ import com.sogo.golf.msl.MslTokenManager
 import com.sogo.golf.msl.data.network.api.GolfApiService
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.api.SogoApiService
-import com.sogo.golf.msl.di.GolfApi
-import com.sogo.golf.msl.di.MpsAuthApi
-import com.sogo.golf.msl.di.SogoApi
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -171,6 +167,27 @@ class MslRepositoryImpl @Inject constructor(
                 Log.e(TAG, "Failed to refresh tokens: ${response.code()} - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to refresh tokens: ${response.message()}")
+            }
+        }
+    }
+
+    override suspend fun getGame(clubId: String): NetworkResult<MslGame> {
+        return safeNetworkCall {
+            Log.d(TAG, "Getting game data for game: $clubId")
+
+            // Headers automatically added by GolfApiAuthInterceptor
+            val response = golfApiService.getGame(clubId = clubId)
+
+            if (response.isSuccessful) {
+                val game = response.body()?.toDomainModel()
+                    ?: throw Exception("Empty game response")
+
+                Log.d(TAG, "Successfully retrieved game: ${game.mainCompetitionId}")
+                game
+            } else {
+                Log.e(TAG, "Failed to get game: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to get game: ${response.message()}")
             }
         }
     }

@@ -7,3 +7,4 @@ data class MslPlayingPartner(
     val golfLinkNumber: String? = null,
     val markedByGolfLinkNumber: String? = null
 )
+

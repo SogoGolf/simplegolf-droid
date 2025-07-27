@@ -7,6 +7,7 @@ import com.sogo.golf.msl.domain.usecase.auth.LoginUseCase
 import com.sogo.golf.msl.domain.usecase.auth.LogoutUseCase
 import com.sogo.golf.msl.domain.usecase.auth.ProcessMslAuthCodeUseCase
 import com.sogo.golf.msl.domain.usecase.auth.SetFinishedRoundUseCase
+import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -41,4 +42,9 @@ object DomainModule {
         mslRepository: MslRepository,
         authRepository: AuthRepository
     ): ProcessMslAuthCodeUseCase = ProcessMslAuthCodeUseCase(mslRepository, authRepository)
+
+    @Provides
+    fun provideGetGameUseCase(
+        mslRepository: MslRepository
+    ): GetGameUseCase = GetGameUseCase(mslRepository)
 }

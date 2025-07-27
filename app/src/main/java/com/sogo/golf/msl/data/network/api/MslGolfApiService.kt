@@ -26,9 +26,9 @@ interface GolfApiService {
     ): Response<MslGolferDto>
 
     // Get game data
-    @GET("v2/{gameId}/game")
+    @GET("v2/{clubId}/game")
     suspend fun getGame(
-        @Path("gameId") gameId: String
+        @Path("clubId") clubId: String
     ): Response<MslGameDto>
 
     // Get competition data

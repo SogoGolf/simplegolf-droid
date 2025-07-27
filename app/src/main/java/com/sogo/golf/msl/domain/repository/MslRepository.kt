@@ -9,4 +9,5 @@ interface MslRepository {
     suspend fun exchangeAuthCodeForTokens(authCode: String, preliminaryToken: String): NetworkResult<MslTokens>
     suspend fun getGolfer(clubId: String): NetworkResult<MslGolfer>
     suspend fun refreshTokens(): NetworkResult<MslTokens>
+    suspend fun getGame(clubId: String): NetworkResult<MslGame>
 }
