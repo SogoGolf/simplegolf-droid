@@ -314,7 +314,7 @@ fun CompetitionsListSection(
                     val competition = game.competitions[index]
                     CompetitionCard(
                         title = competition.name,
-                        subtitle = competition.scoreType,
+                        subtitle = game.teeName ?: ""
                     )
                 }
             }
@@ -340,12 +340,12 @@ fun CompetitionCard(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
         }
