@@ -19,7 +19,8 @@ fun SearchableClubDropdown(
     selectedClub: MslClub?,
     onClubSelected: (MslClub) -> Unit,
     modifier: Modifier = Modifier,
-    isLoading: Boolean = false
+    isLoading: Boolean = false,
+    onDoneAction: () -> Unit = {} // NEW: Handle "Done" keyboard action
 ) {
     var expanded by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf("") }
@@ -28,6 +29,9 @@ fun SearchableClubDropdown(
     LaunchedEffect(selectedClub) {
         if (selectedClub != null && searchText != selectedClub.name) {
             searchText = selectedClub.name
+        } else if (selectedClub == null) {
+            // Clear search text when no club is selected
+            searchText = ""
         }
     }
 
@@ -59,13 +63,13 @@ fun SearchableClubDropdown(
             },
             label = {
                 Text(
-                    "Search or select a club",
+                    if (selectedClub == null) "Search or select a club" else "Selected club",
                     color = Color.White.copy(alpha = 0.7f)
                 )
             },
             placeholder = {
                 Text(
-                    "Type to search clubs...",
+                    if (selectedClub == null) "Type to search clubs..." else selectedClub.name,
                     color = Color.White.copy(alpha = 0.5f)
                 )
             },
@@ -101,6 +105,13 @@ fun SearchableClubDropdown(
             ),
             singleLine = true,
             enabled = !isLoading,
+            // NEW: Add keyboard options and IME action handling
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                onDone = { onDoneAction() }
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor()

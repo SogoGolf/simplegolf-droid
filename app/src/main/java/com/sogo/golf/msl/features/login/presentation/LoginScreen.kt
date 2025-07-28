@@ -1,3 +1,4 @@
+// app/src/main/java/com/sogo/golf/msl/features/login/presentation/LoginScreen.kt
 package com.sogo.golf.msl.features.login.presentation
 
 import androidx.compose.foundation.background
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -45,6 +47,14 @@ fun LoginScreen(
     val view = LocalView.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Get screen dimensions for responsive sizing
+    val configuration = LocalConfiguration.current
+    val screenWidthDp = configuration.screenWidthDp.dp
+    val screenHeightDp = configuration.screenHeightDp.dp
+
+    // Calculate responsive image size (15% of screen width, min 80dp, max 200dp)
+    val imageSize = (screenWidthDp * 0.37f).coerceIn(80.dp, 200.dp)
 
     // Handle auth success
     LaunchedEffect(Unit) {
@@ -117,7 +127,7 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        // Move image to top and make it smaller
+        // Move image to top with responsive sizing
         Spacer(modifier = Modifier.height(32.dp))
 
         AsyncImage(
@@ -127,7 +137,7 @@ fun LoginScreen(
                 .build(),
             contentDescription = "SimpleGolf Logo",
             contentScale = ContentScale.Fit,
-            modifier = Modifier.size(125.dp) // 50% smaller than original size
+            modifier = Modifier.size(imageSize) // Responsive size based on screen width
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -135,23 +145,19 @@ fun LoginScreen(
         Text(
             "Welcome",
             fontSize = MaterialTheme.typography.headlineLarge.fontSize,
-            //fontSize = MaterialTheme.typography.headlineLarge.fontSize.clampFontScale(minScale = 1f, maxScale = 1.1f),
             fontWeight = FontWeight.Bold,
             color = Color.White,
             modifier = Modifier
-                .fillMaxWidth() // Make text fill the width of its container
+                .fillMaxWidth()
                 .padding(start = 16.dp)
-                .align(Alignment.Start) // Align the text to the start (left) of the screen
-            //.padding(start = 0.dp)
+                .align(Alignment.Start)
         )
         Text(
             "Get started by finding your home club",
             modifier = Modifier
-                .fillMaxWidth() // Make text fill the width of its container
+                .fillMaxWidth()
                 .padding(start = 16.dp, top = 5.dp, bottom = 10.dp)
-                .align(Alignment.Start), // Align the text to the start (left) of the screen
-
-            //fontSize = MaterialTheme.typography.headlineSmall.fontSize.clampFontScale(minScale = 1f, maxScale = 1.1f),
+                .align(Alignment.Start),
             color = Color.White
         )
 
@@ -213,7 +219,17 @@ fun LoginScreen(
                             onClubSelected = { club ->
                                 loginViewModel.selectClub(club)
                             },
-                            isLoading = uiState.isLoadingClubs
+                            isLoading = uiState.isLoadingClubs,
+                            onDoneAction = {
+                                // Handle "Done" keyboard action
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
+
+                                // If club is selected, trigger continue action
+                                if (uiState.selectedClub != null && !uiState.isLoadingClubs) {
+                                    loginViewModel.startWebAuth()
+                                }
+                            }
                         )
                     }
                 }
@@ -262,32 +278,7 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-//                OutlinedButton(
-//                    onClick = {
-//                        navViewModel.login()
-//                        navController.navigate("homescreen") {
-//                            popUpTo("login") { inclusive = true }
-//                        }
-//                    },
-//                    modifier = Modifier.fillMaxWidth(),
-//                    colors = ButtonDefaults.outlinedButtonColors(
-//                        contentColor = Color.White
-//                    ),
-//                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White)
-//                ) {
-//                    Text("Quick Login (Skip Auth)")
-//                }
-
                 Spacer(modifier = Modifier.height(24.dp))
-
-//                val selectedClub = uiState.selectedClub
-//                if (selectedClub != null) {
-//                    Text(
-//                        text = "Selected: ${selectedClub.name}",
-//                        style = MaterialTheme.typography.bodySmall,
-//                        color = Color.White.copy(alpha = 0.8f)
-//                    )
-//                }
             }
         }
     }
@@ -305,20 +296,19 @@ fun CenteredYellowButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
-            .fillMaxWidth(), // Ensures the button takes up full width
+            .fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(containerColor = mslYellow),
         shape = RoundedCornerShape(12.dp),
-        contentPadding = PaddingValues(vertical = 12.dp) // Adjust padding to center text vertically
+        contentPadding = PaddingValues(vertical = 12.dp)
     ) {
         Text(
             text = text,
             style = textStyle,
             color = mslBlack,
             fontWeight = FontWeight.Normal,
-            fontSize = MaterialTheme.typography.bodyLarge.fontSize, //.clampFontScale(minScale = 1f, maxScale = 1.1f),
-            modifier = Modifier.fillMaxWidth().alpha(if (enabled) 1.0f else 0.5f), // Makes the Text span the button's full width
-            textAlign = TextAlign.Center // Centers text horizontally within the button
-
+            fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+            modifier = Modifier.fillMaxWidth().alpha(if (enabled) 1.0f else 0.5f),
+            textAlign = TextAlign.Center
         )
     }
 }

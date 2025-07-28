@@ -1,3 +1,4 @@
+// app/src/main/java/com/sogo/golf/msl/data/manager/ClubSelectionManager.kt
 package com.sogo.golf.msl.data.manager
 
 import com.sogo.golf.msl.domain.model.msl.MslClub
@@ -22,10 +23,11 @@ class ClubSelectionManager @Inject constructor() {
 
     fun setAllClubs(clubs: List<MslClub>) {
         _allClubs.value = clubs
-        // Auto-select first club if none selected
-        if (_selectedClub.value == null && clubs.isNotEmpty()) {
-            _selectedClub.value = clubs.first()
-        }
+        // REMOVED: Auto-select first club - force user to choose
+        // Auto-selection commented out to force user choice
+        // if (_selectedClub.value == null && clubs.isNotEmpty()) {
+        //     _selectedClub.value = clubs.first()
+        // }
     }
 
     fun clearSelection() {

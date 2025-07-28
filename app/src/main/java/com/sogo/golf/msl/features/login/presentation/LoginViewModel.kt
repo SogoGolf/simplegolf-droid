@@ -1,4 +1,4 @@
-// Update to app/src/main/java/com/sogo/golf/msl/features/login/presentation/LoginViewModel.kt
+// app/src/main/java/com/sogo/golf/msl/features/login/presentation/LoginViewModel.kt
 package com.sogo.golf.msl.features.login.presentation
 
 import android.net.Uri
@@ -34,7 +34,7 @@ class LoginViewModel @Inject constructor(
     private val mslRepository: MslRepository,
     private val processMslAuthCodeUseCase: ProcessMslAuthCodeUseCase,
     private val clubSelectionManager: ClubSelectionManager,
-    private val setSelectedClubUseCase: SetSelectedClubUseCase // NEW: Inject the use case
+    private val setSelectedClubUseCase: SetSelectedClubUseCase
 ) : ViewModel() {
 
     companion object {
@@ -81,7 +81,9 @@ class LoginViewModel @Inject constructor(
                         Log.d(TAG, "Club $index: ${club.name} (ID: ${club.clubId})")
                     }
 
+                    // Set clubs but don't auto-select any - force user to choose
                     clubSelectionManager.setAllClubs(result.data.sortedBy { it.name })
+                    clubSelectionManager.clearSelection() // Ensure no club is pre-selected
 
                     _uiState.value = _uiState.value.copy(
                         isLoadingClubs = false
@@ -106,7 +108,7 @@ class LoginViewModel @Inject constructor(
         clubSelectionManager.setSelectedClub(club)
         _uiState.value = _uiState.value.copy(errorMessage = null)
 
-        // NEW: Store the club selection in SharedPreferences immediately
+        // Store the club selection in SharedPreferences immediately
         viewModelScope.launch {
             try {
                 setSelectedClubUseCase(club)
@@ -145,7 +147,6 @@ class LoginViewModel @Inject constructor(
     }
 
     private fun getAuthPathForClub(club: MslClub): String? {
-
         // Then try to derive from club name (convert to lowercase, remove spaces, etc.)
         val clubName = club.name
         if (clubName.isBlank()) {
