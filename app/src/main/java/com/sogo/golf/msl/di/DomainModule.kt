@@ -2,6 +2,7 @@
 package com.sogo.golf.msl.di
 
 import com.sogo.golf.msl.data.local.preferences.ClubPreferences
+import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
@@ -17,6 +18,9 @@ import com.sogo.golf.msl.domain.usecase.club.SetSelectedClubUseCase
 import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
+import com.sogo.golf.msl.domain.usecase.date.SaveGameDataDateUseCase
+import com.sogo.golf.msl.domain.usecase.date.ValidateGameDataFreshnessUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
@@ -92,19 +96,28 @@ object DomainModule {
     ): GetLocalGameUseCase = GetLocalGameUseCase(gameRepository)
 
     @Provides
-    fun provideFetchAndSaveGameUseCase(
-        gameRepository: MslGameLocalDbRepository
-    ): FetchAndSaveGameUseCase = FetchAndSaveGameUseCase(gameRepository)
-
-    @Provides
     fun provideGetLocalCompetitionUseCase(
         competitionRepository: MslCompetitionLocalDbRepository
     ): GetLocalCompetitionUseCase = GetLocalCompetitionUseCase(competitionRepository)
 
+    // ✅ Date UseCases (provide this first since others depend on it)
+    @Provides
+    fun provideSaveGameDataDateUseCase(
+        gameDataTimestampPreferences: GameDataTimestampPreferences
+    ): SaveGameDataDateUseCase = SaveGameDataDateUseCase(gameDataTimestampPreferences)
+
+    // ✅ Updated fetch use cases with date saving capability
+    @Provides
+    fun provideFetchAndSaveGameUseCase(
+        gameRepository: MslGameLocalDbRepository,
+        saveGameDataDateUseCase: SaveGameDataDateUseCase
+    ): FetchAndSaveGameUseCase = FetchAndSaveGameUseCase(gameRepository, saveGameDataDateUseCase)
+
     @Provides
     fun provideFetchAndSaveCompetitionUseCase(
-        competitionRepository: MslCompetitionLocalDbRepository
-    ): FetchAndSaveCompetitionUseCase = FetchAndSaveCompetitionUseCase(competitionRepository)
+        competitionRepository: MslCompetitionLocalDbRepository,
+        saveGameDataDateUseCase: SaveGameDataDateUseCase
+    ): FetchAndSaveCompetitionUseCase = FetchAndSaveCompetitionUseCase(competitionRepository, saveGameDataDateUseCase)
 
     // Marker UseCases
     @Provides
@@ -116,4 +129,31 @@ object DomainModule {
     fun provideRemoveMarkerUseCase(
         mslRepository: MslRepository
     ): RemoveMarkerUseCase = RemoveMarkerUseCase(mslRepository)
+
+    // ✅ Date validation use cases
+    @Provides
+    fun provideValidateGameDataFreshnessUseCase(
+        gameDataTimestampPreferences: GameDataTimestampPreferences
+    ): ValidateGameDataFreshnessUseCase = ValidateGameDataFreshnessUseCase(gameDataTimestampPreferences)
+
+    @Provides
+    fun provideResetStaleDataUseCase(
+        mslGameLocalDbRepository: MslGameLocalDbRepository,
+        mslCompetitionLocalDbRepository: MslCompetitionLocalDbRepository,
+        mslGolferLocalDbRepository: MslGolferLocalDbRepository,
+        fetchAndSaveGameUseCase: FetchAndSaveGameUseCase,
+        fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
+        getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
+        gameDataTimestampPreferences: GameDataTimestampPreferences,
+        authRepository: AuthRepository
+    ): ResetStaleDataUseCase = ResetStaleDataUseCase(
+        mslGameLocalDbRepository,
+        mslCompetitionLocalDbRepository,
+        mslGolferLocalDbRepository,
+        fetchAndSaveGameUseCase,
+        fetchAndSaveCompetitionUseCase,
+        getMslClubAndTenantIdsUseCase,
+        gameDataTimestampPreferences,
+        authRepository
+    )
 }

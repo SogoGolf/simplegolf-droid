@@ -15,9 +15,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.sogo.golf.msl.app.lifecycle.AppLifecycleManager
+import com.sogo.golf.msl.app.lifecycle.AppResumeAction
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.features.choose_playing_partner.presentation.ChoosePlayingPartnerScreen
 import com.sogo.golf.msl.features.competitions.presentation.CompetitionsScreen
@@ -31,6 +35,7 @@ import com.sogo.golf.msl.navigation.NavViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import com.sogo.golf.msl.ui.theme.MSLGolfTheme
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -41,12 +46,19 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var authRepository: AuthRepository
 
+    @Inject
+    lateinit var appLifecycleManager: AppLifecycleManager
+
+    private var navController: NavController? = null // ✅ Keep reference to NavController
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             MSLGolfTheme {
                 val navController = rememberNavController()
+                this@MainActivity.navController = navController
+
                 val viewModel: NavViewModel = hiltViewModel()
                 val authState by viewModel.authState.collectAsState()
 
@@ -125,8 +137,40 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // ✅ ADD APP LIFECYCLE DATE CHECKING
+        lifecycleScope.launch {
+            android.util.Log.d("MainActivity", "=== ON RESUME - CHECKING DATE ===")
+
+            when (appLifecycleManager.onAppResumed()) {
+                AppResumeAction.Continue -> {
+                    android.util.Log.d("MainActivity", "✅ Continuing normally - data is fresh")
+                    // Continue normally, no action needed
+                }
+
+                AppResumeAction.NavigateToHome -> {
+                    android.util.Log.d(
+                        "MainActivity",
+                        "🏠 Navigating to home - data was stale and refreshed"
+                    )
+
+                    // Navigate to home screen and clear back stack
+                    navController?.navigate("homescreen") {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            }
+        }
     }
 }
+
 
 @Composable
 fun SetUnspecifiedOrientation() {
