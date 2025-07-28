@@ -10,6 +10,7 @@
     import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
     import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
     import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
+    import com.sogo.golf.msl.domain.usecase.fees.FetchAndSaveFeesUseCase
     import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
     import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
     import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
@@ -31,7 +32,8 @@
         private val fetchAndSaveGameUseCase: FetchAndSaveGameUseCase,
         private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
         private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
-        private val appUpdateManager: com.sogo.golf.msl.app.update.AppUpdateManager
+        private val appUpdateManager: com.sogo.golf.msl.app.update.AppUpdateManager,
+        private val fetchAndSaveFeesUseCase: FetchAndSaveFeesUseCase, // ✅ ADD THIS
     ) : ViewModel() {
 
         companion object {
@@ -101,10 +103,13 @@
                     android.util.Log.d(TAG, "Fetching data for club: $clubIdStr")
 
                     // Fetch both game and competition data in parallel
+                    // Declare all success/error variables
                     var gameSuccess = false
                     var competitionSuccess = false
+                    var feesSuccess = false
                     var gameError: String? = null
                     var competitionError: String? = null
+                    var feesError: String? = null
 
                     // Fetch Game Data
                     android.util.Log.d(TAG, "🎮 Fetching game data...")
@@ -130,6 +135,20 @@
                         is NetworkResult.Error -> {
                             competitionError = competitionResult.error.toUserMessage()
                             android.util.Log.e(TAG, "❌ Failed to fetch competition data: $competitionError")
+                        }
+                        is NetworkResult.Loading -> { /* Already handled */ }
+                    }
+
+                    // ✅ NEW: Fetch Fees Data
+                    android.util.Log.d(TAG, "💰 Fetching fees data...")
+                    when (val feesResult = fetchAndSaveFeesUseCase()) {
+                        is NetworkResult.Success -> {
+                            android.util.Log.d(TAG, "✅ Fees data fetched successfully: ${feesResult.data.size} fees")
+                            feesSuccess = true
+                        }
+                        is NetworkResult.Error -> {
+                            feesError = feesResult.error.toUserMessage()
+                            android.util.Log.e(TAG, "❌ Failed to fetch fees data: $feesError")
                         }
                         is NetworkResult.Loading -> { /* Already handled */ }
                     }

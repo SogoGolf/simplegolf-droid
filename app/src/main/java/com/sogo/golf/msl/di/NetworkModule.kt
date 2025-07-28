@@ -6,6 +6,7 @@ import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.data.network.api.GolfApiService
 import com.sogo.golf.msl.data.network.api.SogoApiService
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
+import com.sogo.golf.msl.data.network.api.SogoMongoApiService
 import com.sogo.golf.msl.data.network.interceptors.GolfApiAuthInterceptor
 import com.sogo.golf.msl.data.network.interceptors.SogoApiAuthInterceptor
 import com.sogo.golf.msl.data.network.interceptors.MpsAuthInterceptor
@@ -21,6 +22,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Qualifier
 import javax.inject.Singleton
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class SogoMongoApi
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -68,13 +73,6 @@ object NetworkModule {
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
     }
-
-
-//    --> GET https://golf-api.micropower.com.au/api/v2/2240662/game
-//    2025-07-27 16:59:33.412 18438-20594 okhttp.OkHttpClient     com.sogo.golf.msl                    I  Authorization: Basic Sogo Sports Pty Ltd:lpx10H1j73wdBr6gCQlRafswohZFvnpghrajwt/MSSQGNREAQktNbWl/zucoKPPPKKXZpHV+FF2p23JGUAybtv+RPD16Zj6+bw+OrUU1BRrDir49vZsJzTw2mpiS7EeyZUFTrbnA+wx4m8Jek7gDAhlqpTUX7Z13A1MfjnpPDbQ=
-//    2025-07-27 16:59:33.412 18438-20594 okhttp.OkHttpClient     com.sogo.golf.msl                    I  X-Member-Token: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzeXN0ZW0iOiJzb2dvc3BvcnRzcHR5bHRkIiwibmFtZWlkIjoiMDAxMzQiLCJjbHViaWQiOiI2NzAyMjkiLCJtZW1iZXJpZCI6IjEzOTQ2MzUiLCJmZWF0dXJlbW9kdWxlIjpbImJ1eWluZ2NsdWIiLCJldmVudCIsImdtcyIsIm1lbWJlcnNoaXAiLCJuZ2FnZSIsInBvcyIsInByb3BsYW5uZXIiXSwiYXV0aG1ldGhvZCI6InJlc291cmNlb3duZXIiLCJqdGkiOiJmZDc2M2Y2ZC1mN2IyLTQ3ZjAtYjY2NC1mZDczYjcwYmFjNDUiLCJuYmYiOjE3NTM1OTYwNTgsImV4cCI6MTc1MzY2ODA1OCwiaWF0IjoxNzUzNTk2MDU4LCJpc3MiOiJNUCIsImF1ZCI6Imh0dHBzOi8vbXBzYXBpLm1pY3JvcG93ZXIuY29tLmF1In0.PfCdbvnkaDNHS493v7rljddJHNeAlVsWZZlQT--r24E
-//    2025-07-27 16:59:33.412 18438-20594 okhttp.OkHttpClient     com.sogo.golf.msl                    I  --> END GET
-//    2025-07-27 16:59:33.494 18438-20594 okhttp.OkHttpClient     com.sogo.golf.msl                    I  <-- 401 https://golf-api.micropower.com.au/api/v2/2240662/game (81ms)
 
     // Golf API - golf-api.micropower.com.au
     @Provides
@@ -154,5 +152,24 @@ object NetworkModule {
     @Singleton
     fun provideMpsAuthApiService(@MpsAuthApi retrofit: Retrofit): MpsAuthApiService {
         return retrofit.create(MpsAuthApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    @SogoMongoApi
+    fun provideSogoMongoApiRetrofit(
+        baseOkHttpClient: OkHttpClient
+    ): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://${BuildConfig.SOGO_MONGO_API}/")
+            .client(baseOkHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSogoMongoApiService(@SogoMongoApi retrofit: Retrofit): SogoMongoApiService {
+        return retrofit.create(SogoMongoApiService::class.java)
     }
 }

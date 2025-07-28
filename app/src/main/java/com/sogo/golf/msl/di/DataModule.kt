@@ -8,15 +8,19 @@ import com.sogo.golf.msl.data.local.preferences.ClubPreferencesImpl
 import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
 import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferencesImpl
 import com.sogo.golf.msl.data.repository.AuthRepositoryImpl
+import com.sogo.golf.msl.data.repository.local.FeeLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslCompetitionLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslGameLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslGolferLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.remote.MslRepositoryImpl
+import com.sogo.golf.msl.data.repository.remote.SogoMongoRepositoryImpl
+import com.sogo.golf.msl.domain.repository.FeeLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
+import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -66,5 +70,14 @@ abstract class DataModule {
         gameDataTimestampPreferencesImpl: GameDataTimestampPreferencesImpl
     ): GameDataTimestampPreferences
 
+    @Binds
+    abstract fun bindFeeLocalDbRepository(
+        feeLocalDbRepositoryImpl: FeeLocalDbRepositoryImpl
+    ): FeeLocalDbRepository
+
+    @Binds
+    abstract fun bindSogoMongoRepository(
+        sogoMongoRepositoryImpl: SogoMongoRepositoryImpl
+    ): SogoMongoRepository
 
 }
