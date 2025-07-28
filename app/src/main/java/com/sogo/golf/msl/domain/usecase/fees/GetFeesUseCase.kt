@@ -20,7 +20,7 @@ class GetFeesUseCase @Inject constructor(
         return feeRepository.getFeesByNumberHoles(numberHoles)
     }
 
-    fun getFeesByEntityId(entityId: String): Flow<List<Fee>> {
-        return feeRepository.getFeesByEntityId(entityId)
+    fun getFeesByEntityName(entityName: String): Flow<List<Fee>> {
+        return feeRepository.getFeesByEntityName(entityName)
     }
 }

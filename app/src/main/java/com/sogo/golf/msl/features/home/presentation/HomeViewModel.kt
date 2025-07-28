@@ -73,13 +73,6 @@
                 initialValue = null
             )
 
-        val localSogoGolfer = getLocalSogoGolferUseCase()
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000),
-                initialValue = null
-            )
-
         val updateState = appUpdateManager.updateState
 
         init {

@@ -34,11 +34,11 @@ class FeeLocalDbRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun getFeesByEntityId(entityId: String): Flow<List<Fee>> {
-        Log.d(TAG, "getFeesByEntityId called with: $entityId")
-        return feeDao.getFeesByEntityId(entityId)
+    override fun getFeesByEntityName(entityName: String): Flow<List<Fee>> {
+        Log.d(TAG, "getFeesByEntityName called with: $entityName")
+        return feeDao.getFeesByEntityName(entityName)
             .map { entities ->
-                Log.d(TAG, "getFeesByEntityId mapped: ${entities.size} entities")
+                Log.d(TAG, "getFeesByEntityName mapped: ${entities.size} entities")
                 entities.map { it.toDomainModel() }
             }
     }

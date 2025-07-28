@@ -1,4 +1,3 @@
-// app/src/main/java/com/sogo/golf/msl/di/DatabaseModule.kt
 package com.sogo.golf.msl.di
 
 import android.content.Context
@@ -6,6 +5,7 @@ import android.util.Log
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.sogo.golf.msl.data.local.database.AppDatabase
+import com.sogo.golf.msl.data.local.database.MIGRATION_7_8
 import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
 import com.sogo.golf.msl.data.local.database.dao.MslGameDao
 import com.sogo.golf.msl.data.local.database.dao.MslGolferDao
@@ -25,14 +25,15 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
-        Log.d("DatabaseModule", "Creating database...")
+        Log.d("DatabaseModule", "Creating database with migration...")
 
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .fallbackToDestructiveMigration(dropAllTables = true) // Updated API
+            .addMigrations(MIGRATION_7_8) // ✅ NEW: Add migration for tokenBalance
+            .fallbackToDestructiveMigration() // Keep this as fallback
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                     super.onCreate(db)
@@ -58,7 +59,7 @@ object DatabaseModule {
     }
 
     @Provides
-    fun provideGameDao(database: AppDatabase): MslGameDao { // NEW: Provide game DAO
+    fun provideGameDao(database: AppDatabase): MslGameDao {
         return database.mslGameDao()
     }
 
@@ -71,5 +72,4 @@ object DatabaseModule {
     fun provideSogoGolferDao(database: AppDatabase): SogoGolferDao {
         return database.sogoGolferDao()
     }
-
 }

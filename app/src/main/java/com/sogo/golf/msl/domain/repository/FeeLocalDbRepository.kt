@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface FeeLocalDbRepository {
     fun getAllFees(): Flow<List<Fee>>
-    fun getFeesByEntityId(entityId: String): Flow<List<Fee>>
+    fun getFeesByEntityName(entityName: String): Flow<List<Fee>>
     fun getFeesByNumberHoles(numberHoles: Int): Flow<List<Fee>>
     fun getActiveFees(): Flow<List<Fee>>
     fun getWaivedFees(): Flow<List<Fee>>

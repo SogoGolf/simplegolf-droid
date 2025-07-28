@@ -13,5 +13,6 @@ data class SogoGolfer(
     val membershipType: String?,
     val isActive: Boolean,
     val createdAt: String?, // ISO date string
-    val updatedAt: String? // ISO date string
+    val updatedAt: String?, // ISO date string
+    val tokenBalance: Int = 0
 )

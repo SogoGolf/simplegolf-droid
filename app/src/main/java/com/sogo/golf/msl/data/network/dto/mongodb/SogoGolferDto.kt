@@ -41,7 +41,10 @@ data class SogoGolferDto(
     val createdAt: String? = null,
 
     @SerializedName("updatedAt")
-    val updatedAt: String? = null
+    val updatedAt: String? = null,
+
+    @SerializedName("tokenBalance")
+    val tokenBalance: Int = 0
 )
 
 fun SogoGolferDto.toDomainModel(): SogoGolfer {
@@ -58,6 +61,7 @@ fun SogoGolferDto.toDomainModel(): SogoGolfer {
         membershipType = membershipType,
         isActive = isActive,
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        tokenBalance = tokenBalance
     )
 }

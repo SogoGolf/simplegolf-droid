@@ -1,4 +1,3 @@
-// app/src/main/java/com/sogo/golf/msl/data/local/database/entities/mongodb/SogoGolferEntity.kt
 package com.sogo.golf.msl.data.local.database.entities.mongodb
 
 import androidx.room.Entity
@@ -21,6 +20,7 @@ data class SogoGolferEntity(
     val isActive: Boolean,
     val createdAt: String?,
     val updatedAt: String?,
+    val tokenBalance: Int, // ✅ NEW: Token balance field
     val lastUpdated: Long = System.currentTimeMillis()
 ) {
     fun toDomainModel(): SogoGolfer {
@@ -37,7 +37,8 @@ data class SogoGolferEntity(
             membershipType = membershipType,
             isActive = isActive,
             createdAt = createdAt,
-            updatedAt = updatedAt
+            updatedAt = updatedAt,
+            tokenBalance = tokenBalance // ✅ NEW: Map token balance
         )
     }
 
@@ -56,7 +57,8 @@ data class SogoGolferEntity(
                 membershipType = sogoGolfer.membershipType,
                 isActive = sogoGolfer.isActive,
                 createdAt = sogoGolfer.createdAt,
-                updatedAt = sogoGolfer.updatedAt
+                updatedAt = sogoGolfer.updatedAt,
+                tokenBalance = sogoGolfer.tokenBalance
             )
         }
     }

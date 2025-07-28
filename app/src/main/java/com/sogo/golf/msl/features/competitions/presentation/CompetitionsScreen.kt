@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
+import com.sogo.golf.msl.domain.model.mongodb.Fee
+import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 import com.sogo.golf.msl.shared_components.ui.components.ColoredSquare
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
@@ -45,6 +48,10 @@ fun CompetitionsScreen(
     // Get the data from the view model
     val currentGolfer by competitionViewModel.currentGolfer.collectAsState()
     val localGame by competitionViewModel.localGame.collectAsState()
+    val sogoGolfer by competitionViewModel.sogoGolfer.collectAsState()
+    val mslFees by competitionViewModel.mslFees.collectAsState()
+    val tokenCost by competitionViewModel.tokenCost.collectAsState()
+    val canProceed by competitionViewModel.canProceed.collectAsState()
 
     // Set status bar to white with black text and icons
     SideEffect {
@@ -128,6 +135,9 @@ fun CompetitionsScreen(
                 FooterContent(
                     includeRound = includeRound,
                     golfer = currentGolfer,
+                    sogoGolfer = sogoGolfer,
+                    tokenCost = tokenCost, // Use computed value instead of mslFees
+                    canProceed = canProceed,
                     onIncludeRoundChanged = { newValue ->
                         includeRound = newValue
                         // TODO: Track toggle
@@ -351,6 +361,9 @@ fun CompetitionCard(
 fun FooterContent(
     includeRound: Boolean,
     golfer: com.sogo.golf.msl.domain.model.msl.MslGolfer?,
+    sogoGolfer: SogoGolfer?,
+    tokenCost: Double,
+    canProceed: Boolean,
     onIncludeRoundChanged: (Boolean) -> Unit,
     onNextClick: () -> Unit,
 ) {
@@ -384,26 +397,18 @@ fun FooterContent(
             )
         }
 
-        // Token cost display - TODO: Implement actual fee calculation
         Text(
-            text = "Token cost: -", // TODO: Calculate based on fees
+            text = "Token cost: $tokenCost",
             fontSize = MaterialTheme.typography.titleMedium.fontSize,
             modifier = Modifier.padding(bottom = 5.dp)
         )
 
         // Token balance display
-        if (golfer != null) {
-            Text(
-                text = "Your Token Balance: ${golfer.primary.toInt()}", // TODO: Use actual token balance when available
-                fontSize = MaterialTheme.typography.titleMedium.fontSize,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-        } else {
-            Text(
-                text = "Your Token Balance: 0",
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-        }
+        Text(
+            text = "Your Token Balance: ${sogoGolfer?.tokenBalance ?: 0}",
+            fontSize = MaterialTheme.typography.titleMedium.fontSize,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 

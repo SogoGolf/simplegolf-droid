@@ -15,8 +15,9 @@ interface FeeDao {
     @Query("SELECT * FROM fees ORDER BY numberHoles ASC, cost ASC")
     fun getAllFees(): Flow<List<FeeEntity>>
 
-    @Query("SELECT * FROM fees WHERE entityId = :entityId ORDER BY numberHoles ASC, cost ASC")
-    fun getFeesByEntityId(entityId: String): Flow<List<FeeEntity>>
+    @Query("SELECT * FROM fees WHERE entityName = :entityName ORDER BY numberHoles ASC, cost ASC")
+    fun getFeesByEntityName(entityName: String): Flow<List<FeeEntity>>
+
 
     @Query("SELECT * FROM fees WHERE numberHoles = :numberHoles ORDER BY cost ASC")
     fun getFeesByNumberHoles(numberHoles: Int): Flow<List<FeeEntity>>
