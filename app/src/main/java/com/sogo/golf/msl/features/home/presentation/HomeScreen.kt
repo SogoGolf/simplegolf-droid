@@ -51,6 +51,9 @@ fun HomeScreen(
     val localGame by homeViewModel.localGame.collectAsState()
     val localCompetition by homeViewModel.localCompetition.collectAsState()
 
+    // ✅ NEW: Collect SogoGolfer data to get token balance
+    val sogoGolfer by homeViewModel.localSogoGolfer.collectAsState()
+
     // Collect the updateState properly
     val updateState by homeViewModel.updateState.collectAsState()
 
@@ -140,7 +143,43 @@ fun HomeScreen(
                         .align(Alignment.CenterHorizontally)
                 )
 
-                Spacer(modifier = Modifier.height(36.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // ✅ NEW: Token Balance Display
+                sogoGolfer?.let { golfer ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = mslWhite.copy(alpha = 0.1f)
+                        ),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Token Balance",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = mslWhite,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "${sogoGolfer.tokenBalance}",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = mslYellow,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
 
                 // Let's Play title
                 Text(

@@ -10,6 +10,7 @@ import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
 import com.sogo.golf.msl.data.local.database.dao.MslGameDao
 import com.sogo.golf.msl.data.local.database.dao.MslGolferDao
 import com.sogo.golf.msl.data.local.database.dao.mongodb.FeeDao
+import com.sogo.golf.msl.data.local.database.dao.mongodb.SogoGolferDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -64,6 +65,11 @@ object DatabaseModule {
     @Provides
     fun provideFeeDao(database: AppDatabase): FeeDao {
         return database.feeDao()
+    }
+
+    @Provides
+    fun provideSogoGolferDao(database: AppDatabase): SogoGolferDao {
+        return database.sogoGolferDao()
     }
 
 }

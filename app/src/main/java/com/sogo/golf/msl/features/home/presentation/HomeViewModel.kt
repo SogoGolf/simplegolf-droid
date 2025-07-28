@@ -1,6 +1,7 @@
     // app/src/main/java/com/sogo/golf/msl/features/home/presentation/HomeViewModel.kt
     package com.sogo.golf.msl.features.home.presentation
 
+    import android.util.Log
     import androidx.activity.result.ActivityResult
     import androidx.activity.result.ActivityResultLauncher
     import androidx.activity.result.IntentSenderRequest
@@ -14,6 +15,8 @@
     import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
     import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
     import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
+    import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
+    import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
     import dagger.hilt.android.lifecycle.HiltViewModel
     import kotlinx.coroutines.flow.MutableStateFlow
     import kotlinx.coroutines.flow.SharingStarted
@@ -34,6 +37,8 @@
         private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
         private val appUpdateManager: com.sogo.golf.msl.app.update.AppUpdateManager,
         private val fetchAndSaveFeesUseCase: FetchAndSaveFeesUseCase, // ✅ ADD THIS
+        private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
+        private val getLocalSogoGolferUseCase: GetSogoGolferUseCase,
     ) : ViewModel() {
 
         companion object {
@@ -68,11 +73,18 @@
                 initialValue = null
             )
 
+        val localSogoGolfer = getLocalSogoGolferUseCase()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = null
+            )
+
         val updateState = appUpdateManager.updateState
 
         init {
             // ✅ NEW: Automatically fetch data when HomeViewModel is created
-            android.util.Log.d(TAG, "=== HOME SCREEN INIT - FETCHING TODAY'S DATA ===")
+            Log.d(TAG, "=== HOME SCREEN INIT - FETCHING TODAY'S DATA ===")
             fetchTodaysData()
         }
 
@@ -80,7 +92,7 @@
         private fun fetchTodaysData() {
             viewModelScope.launch {
                 try {
-                    android.util.Log.d(TAG, "Starting to fetch today's data...")
+                    Log.d(TAG, "Starting to fetch today's data...")
 
                     // Set loading state
                     _uiState.value = _uiState.value.copy(
@@ -91,7 +103,7 @@
                     // Get the selected club
                     val selectedClub = getMslClubAndTenantIdsUseCase()
                     if (selectedClub?.clubId == null) {
-                        android.util.Log.w(TAG, "⚠️ No club selected - cannot fetch data")
+                        Log.w(TAG, "⚠️ No club selected - cannot fetch data")
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             errorMessage = "No club selected. Please login again."
@@ -100,70 +112,97 @@
                     }
 
                     val clubIdStr = selectedClub.clubId.toString()
-                    android.util.Log.d(TAG, "Fetching data for club: $clubIdStr")
+                    Log.d(TAG, "Fetching data for club: $clubIdStr")
 
                     // Fetch both game and competition data in parallel
                     // Declare all success/error variables
                     var gameSuccess = false
                     var competitionSuccess = false
                     var feesSuccess = false
+                    var sogoGolfSuccess = false
                     var gameError: String? = null
                     var competitionError: String? = null
                     var feesError: String? = null
+                    var sogoGolferError: String? = null
 
                     // Fetch Game Data
-                    android.util.Log.d(TAG, "🎮 Fetching game data...")
+                    Log.d(TAG, "🎮 Fetching game data...")
                     when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
                         is NetworkResult.Success -> {
-                            android.util.Log.d(TAG, "✅ Game data fetched successfully: Competition ${gameResult.data.mainCompetitionId}")
+                            Log.d(TAG, "✅ Game data fetched successfully: Competition ${gameResult.data.mainCompetitionId}")
                             gameSuccess = true
                         }
                         is NetworkResult.Error -> {
                             gameError = gameResult.error.toUserMessage()
-                            android.util.Log.e(TAG, "❌ Failed to fetch game data: $gameError")
+                            Log.e(TAG, "❌ Failed to fetch game data: $gameError")
                         }
                         is NetworkResult.Loading -> { /* Already handled */ }
                     }
 
                     // Fetch Competition Data
-                    android.util.Log.d(TAG, "🏆 Fetching competition data...")
+                    Log.d(TAG, "🏆 Fetching competition data...")
                     when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
                         is NetworkResult.Success -> {
-                            android.util.Log.d(TAG, "✅ Competition data fetched successfully: ${competitionResult.data.players.size} players")
+                            Log.d(TAG, "✅ Competition data fetched successfully: ${competitionResult.data.players.size} players")
                             competitionSuccess = true
                         }
                         is NetworkResult.Error -> {
                             competitionError = competitionResult.error.toUserMessage()
-                            android.util.Log.e(TAG, "❌ Failed to fetch competition data: $competitionError")
+                            Log.e(TAG, "❌ Failed to fetch competition data: $competitionError")
                         }
                         is NetworkResult.Loading -> { /* Already handled */ }
                     }
 
                     // ✅ NEW: Fetch Fees Data
-                    android.util.Log.d(TAG, "💰 Fetching fees data...")
+                    Log.d(TAG, "💰 Fetching fees data...")
                     when (val feesResult = fetchAndSaveFeesUseCase()) {
                         is NetworkResult.Success -> {
-                            android.util.Log.d(TAG, "✅ Fees data fetched successfully: ${feesResult.data.size} fees")
+                            Log.d(TAG, "✅ Fees data fetched successfully: ${feesResult.data.size} fees")
                             feesSuccess = true
                         }
                         is NetworkResult.Error -> {
                             feesError = feesResult.error.toUserMessage()
-                            android.util.Log.e(TAG, "❌ Failed to fetch fees data: $feesError")
+                            Log.e(TAG, "❌ Failed to fetch fees data: $feesError")
                         }
                         is NetworkResult.Loading -> { /* Already handled */ }
                     }
 
+                    // ✅Fetch SogoGolfer Data
+                    Log.d(TAG, "👤 Fetching sogo golfer data...")
+                    val golfLinkNo = currentGolfer.value?.golfLinkNo
+                    if (golfLinkNo.isNullOrBlank()) {
+                        Log.w(TAG, "⚠️ No golfLinkNo available - skipping sogo golfer fetch")
+                        sogoGolferError = "No golf link number available for current golfer"
+                    } else {
+                        // Fetch the sogo golfer data
+                        when (val sogoGolferResult = fetchAndSaveSogoGolferUseCase(golfLinkNo)) {
+                            is NetworkResult.Success -> {
+                                Log.d(TAG, "✅ Sogo golfer data fetched successfully: ${sogoGolferResult.data.email}")
+                                sogoGolfSuccess = true
+                            }
+                            is NetworkResult.Error -> {
+                                sogoGolferError = sogoGolferResult.error.toUserMessage() // Fixed: was incorrectly setting feesError
+                                Log.e(TAG, "❌ Failed to fetch sogo golfer data: $sogoGolferError")
+                            }
+                            is NetworkResult.Loading -> {
+                                Log.d(TAG, "⏳ Sogo golfer data is loading...")
+                                // Handle loading state if needed
+                            }
+                        }
+                    }
+
+
                     // Update UI state based on results
                     when {
                         gameSuccess && competitionSuccess -> {
-                            android.util.Log.d(TAG, "✅ All data fetched successfully!")
+                            Log.d(TAG, "✅ All data fetched successfully!")
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 successMessage = "Today's golf data loaded successfully!"
                             )
                         }
                         gameSuccess && !competitionSuccess -> {
-                            android.util.Log.w(TAG, "⚠️ Game data fetched but competition failed")
+                            Log.w(TAG, "⚠️ Game data fetched but competition failed")
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 successMessage = "Game data loaded successfully",
@@ -171,7 +210,7 @@
                             )
                         }
                         !gameSuccess && competitionSuccess -> {
-                            android.util.Log.w(TAG, "⚠️ Competition data fetched but game failed")
+                            Log.w(TAG, "⚠️ Competition data fetched but game failed")
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 successMessage = "Competition data loaded successfully",
@@ -179,7 +218,7 @@
                             )
                         }
                         else -> {
-                            android.util.Log.e(TAG, "❌ Both data fetches failed")
+                            Log.e(TAG, "❌ Both data fetches failed")
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 errorMessage = "Failed to load today's data. Game: $gameError, Competition: $competitionError"
@@ -188,7 +227,7 @@
                     }
 
                 } catch (e: Exception) {
-                    android.util.Log.e(TAG, "❌ Exception while fetching today's data", e)
+                    Log.e(TAG, "❌ Exception while fetching today's data", e)
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         errorMessage = "Error loading today's data: ${e.message}"
@@ -199,7 +238,7 @@
 
         // NEW: Method to manually retry fetching data
         fun retryFetchData() {
-            android.util.Log.d(TAG, "🔄 Manual retry requested")
+            Log.d(TAG, "🔄 Manual retry requested")
             clearMessages()
             fetchTodaysData()
         }
@@ -255,7 +294,7 @@
             onUpdateCheckComplete: () -> Unit,
             onNoUpdateRequired: () -> Unit
         ) {
-            android.util.Log.d(TAG, "=== CHECKING FOR UPDATES BEFORE STARTING COMPETITION ===")
+            Log.d(TAG, "=== CHECKING FOR UPDATES BEFORE STARTING COMPETITION ===")
 
             // Simply trigger the update check
             // The UI will observe updateState and handle the flow
@@ -284,7 +323,7 @@
             val hasGame = localGame.value != null
             val hasCompetition = localCompetition.value != null
 
-            android.util.Log.d(TAG, "Data status - Golfer: $hasGolfer, Game: $hasGame, Competition: $hasCompetition")
+            Log.d(TAG, "Data status - Golfer: $hasGolfer, Game: $hasGame, Competition: $hasCompetition")
             return hasGolfer && hasGame && hasCompetition
         }
 

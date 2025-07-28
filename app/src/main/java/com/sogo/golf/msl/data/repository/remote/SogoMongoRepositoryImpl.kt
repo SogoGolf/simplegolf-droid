@@ -7,6 +7,7 @@ import com.sogo.golf.msl.data.network.dto.mongodb.toDomainModel
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.mongodb.Fee
+import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,6 +42,31 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 Log.e(TAG, "Failed to get fees: ${response.code()} - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to get fees: ${response.message()}")
+            }
+        }
+    }
+
+    override suspend fun getSogoGolferByGolfLinkNo(golfLinkNo: String): NetworkResult<SogoGolfer> {
+        return safeNetworkCall {
+            Log.d(TAG, "Getting SogoGolfer from SOGO Mongo API for golfLinkNo: $golfLinkNo")
+
+            val response = sogoMongoApiService.getSogoGolferByGolfLinkNo(golfLinkNo)
+
+            if (response.isSuccessful) {
+                val rawSogoGolfer = response.body()
+                Log.d(TAG, "Raw response body: $rawSogoGolfer")
+
+                val sogoGolfer = rawSogoGolfer?.toDomainModel()
+                    ?: throw Exception("Empty SogoGolfer response")
+
+                Log.d(TAG, "Successfully retrieved SogoGolfer: ${sogoGolfer.firstName} ${sogoGolfer.lastName}")
+                Log.d(TAG, "SogoGolfer details - Email: ${sogoGolfer.email}, Club: ${sogoGolfer.club}, Handicap: ${sogoGolfer.handicap}")
+
+                sogoGolfer
+            } else {
+                Log.e(TAG, "Failed to get SogoGolfer: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to get SogoGolfer: ${response.message()}")
             }
         }
     }

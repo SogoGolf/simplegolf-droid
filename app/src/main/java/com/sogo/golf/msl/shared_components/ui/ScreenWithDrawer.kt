@@ -56,7 +56,7 @@ fun ScreenWithDrawer(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopStart)
-                    .padding(top = 24.dp),
+                    .padding(top = 35.dp),
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
             ) {
                 // Hamburger menu button

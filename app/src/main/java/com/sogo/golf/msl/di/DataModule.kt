@@ -12,12 +12,14 @@ import com.sogo.golf.msl.data.repository.local.FeeLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslCompetitionLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslGameLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslGolferLocalDbRepositoryImpl
+import com.sogo.golf.msl.data.repository.local.SogoGolferLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.remote.MslRepositoryImpl
 import com.sogo.golf.msl.data.repository.remote.SogoMongoRepositoryImpl
 import com.sogo.golf.msl.domain.repository.FeeLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.SogoGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
@@ -79,5 +81,10 @@ abstract class DataModule {
     abstract fun bindSogoMongoRepository(
         sogoMongoRepositoryImpl: SogoMongoRepositoryImpl
     ): SogoMongoRepository
+
+    @Binds
+    abstract fun bindSogoGolferLocalDbRepository(
+        sogoGolferLocalDbRepositoryImpl: SogoGolferLocalDbRepositoryImpl
+    ): SogoGolferLocalDbRepository
 
 }

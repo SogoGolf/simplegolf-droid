@@ -24,6 +24,7 @@ import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
+import com.sogo.golf.msl.shared_components.ui.components.ColoredSquare
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -241,9 +242,8 @@ fun UserInfoSection(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // TODO: Add ColoredSquare component when available
-            // if (game?.teeColour != null) ColoredSquare(hexColor = "#${game.teeColour}")
-            // Spacer(modifier = Modifier.width(8.dp))
+             if (game?.teeColour != null) ColoredSquare(hexColor = "#${game.teeColour}")
+             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = game?.teeName ?: "",
                 fontSize = MaterialTheme.typography.titleLarge.fontSize,
@@ -342,11 +342,6 @@ fun CompetitionCard(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
         }
     }

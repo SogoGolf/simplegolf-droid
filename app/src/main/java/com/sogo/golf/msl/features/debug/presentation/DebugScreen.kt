@@ -344,6 +344,41 @@ fun DebugScreen(
                     Text("🏆 Get Competition from LOCAL DATABASE")
                 }
 
+                // Fees API Section
+                Text(
+                    text = "Fees Actions",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+
+                // Get Fees button
+                Button(
+                    onClick = {
+                        debugViewModel.getFees()
+                    },
+                    enabled = !debugUiState.isLoadingFees,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    if (debugUiState.isLoadingFees) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Loading...")
+                        }
+                    } else {
+                        Text("💰 Get Fees (API) & Save to Database")
+                    }
+                }
+
                 // Local Database Test Section
                 Text(
                     text = "Local Database Tests",
@@ -451,15 +486,12 @@ fun DebugScreen(
                     }
                 }
 
-                // Rest of your existing UI elements...
-                // Info Card, Quick Actions Card, etc.
-
                 // Add some bottom padding so the last button isn't cut off
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
-        // Network messages remain the same...
+        // Network messages
         NetworkMessageSnackbar(
             message = debugUiState.gameErrorMessage,
             isError = true,
@@ -480,6 +512,18 @@ fun DebugScreen(
 
         NetworkMessageSnackbar(
             message = debugUiState.competitionSuccessMessage,
+            isError = false,
+            onDismiss = { debugViewModel.clearMessages() }
+        )
+
+        NetworkMessageSnackbar(
+            message = debugUiState.feesErrorMessage,
+            isError = true,
+            onDismiss = { debugViewModel.clearMessages() }
+        )
+
+        NetworkMessageSnackbar(
+            message = debugUiState.feesSuccessMessage,
             isError = false,
             onDismiss = { debugViewModel.clearMessages() }
         )

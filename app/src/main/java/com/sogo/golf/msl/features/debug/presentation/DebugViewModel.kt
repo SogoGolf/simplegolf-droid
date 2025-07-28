@@ -12,6 +12,7 @@ import com.sogo.golf.msl.domain.usecase.competition.GetCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
 import com.sogo.golf.msl.domain.usecase.date.ValidateGameDataFreshnessUseCase
+import com.sogo.golf.msl.domain.usecase.fees.FetchAndSaveFeesUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
@@ -42,7 +43,8 @@ class DebugViewModel @Inject constructor(
     private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
     private val gameDataTimestampPreferences: GameDataTimestampPreferences,
     private val validateGameDataFreshnessUseCase: ValidateGameDataFreshnessUseCase,
-    private val resetStaleDataUseCase: ResetStaleDataUseCase
+    private val resetStaleDataUseCase: ResetStaleDataUseCase,
+    private val fetchAndSaveFeesUseCase: FetchAndSaveFeesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DebugUiState())
@@ -208,6 +210,45 @@ class DebugViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isLoadingCompetition = false,
                         competitionErrorMessage = result.error.toUserMessage()
+                    )
+                }
+                is NetworkResult.Loading -> {
+                    // Already handled above
+                }
+            }
+        }
+    }
+
+    fun getFees() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoadingFees = true,
+                feesErrorMessage = null,
+                feesSuccessMessage = null
+            )
+
+            android.util.Log.d("DebugViewModel", "=== FETCHING FEES AND SAVING TO DATABASE ===")
+
+            when (val result = fetchAndSaveFeesUseCase()) {
+                is NetworkResult.Success -> {
+                    android.util.Log.d("DebugViewModel", "✅ SUCCESS: Fees fetched from API and saved to database")
+                    android.util.Log.d("DebugViewModel", "  Fees count: ${result.data.size}")
+
+                    result.data.forEach { fee ->
+                        android.util.Log.d("DebugViewModel", "  Fee: ${fee.description} - ${fee.numberHoles} holes - $${fee.cost}")
+                    }
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingFees = false,
+                        feesData = result.data,
+                        feesSuccessMessage = "✅ Fees fetched from API and saved to database! Found ${result.data.size} fees"
+                    )
+                }
+                is NetworkResult.Error -> {
+                    android.util.Log.e("DebugViewModel", "❌ ERROR: Failed to fetch and save fees: ${result.error}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingFees = false,
+                        feesErrorMessage = result.error.toUserMessage()
                     )
                 }
                 is NetworkResult.Loading -> {
@@ -396,7 +437,9 @@ class DebugViewModel @Inject constructor(
             gameErrorMessage = null,
             gameSuccessMessage = null,
             competitionErrorMessage = null,
-            competitionSuccessMessage = null
+            competitionSuccessMessage = null,
+            feesErrorMessage = null,
+            feesSuccessMessage = null
         )
     }
 
