@@ -72,20 +72,44 @@ class DebugViewModel @Inject constructor(
             initialValue = null
         )
 
-    fun getGame(clubId: String = "670229") { // Default game ID for testing
+    private suspend fun getUserClubId(): String? {
+        return try {
+            val selectedClub = getMslClubAndTenantIdsUseCase()
+            val clubId = selectedClub?.clubId?.toString()
+            android.util.Log.d("DebugViewModel", "=== USER'S CLUB ID ===")
+            android.util.Log.d("DebugViewModel", "Club ID: $clubId")
+            android.util.Log.d("DebugViewModel", "Tenant ID: ${selectedClub?.tenantId}")
+            clubId
+        } catch (e: Exception) {
+            android.util.Log.e("DebugViewModel", "Error getting user's club ID", e)
+            null
+        }
+    }
+
+    fun getGame() {
         viewModelScope.launch {
+            val clubId = getUserClubId()
+            if (clubId == null) {
+                _uiState.value = _uiState.value.copy(
+                    gameErrorMessage = "No club selected. Please login and select a club first."
+                )
+                return@launch
+            }
+
             _uiState.value = _uiState.value.copy(
                 isLoadingGame = true,
                 gameErrorMessage = null,
                 gameSuccessMessage = null
             )
 
+            android.util.Log.d("DebugViewModel", "Getting game data for user's club: $clubId")
+
             when (val result = getGameUseCase(clubId)) {
                 is NetworkResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoadingGame = false,
                         gameData = result.data,
-                        gameSuccessMessage = "Game data loaded from API successfully!"
+                        gameSuccessMessage = "Game data loaded from API successfully for club $clubId!"
                     )
                 }
                 is NetworkResult.Error -> {
@@ -102,8 +126,16 @@ class DebugViewModel @Inject constructor(
     }
 
     // NEW: ✅ GET GAME AND SAVE TO LOCAL DATABASE
-    fun getGameAndSaveToDatabase(clubId: String = "670229") {
+    fun getGameAndSaveToDatabase() {
         viewModelScope.launch {
+            val clubId = getUserClubId()
+            if (clubId == null) {
+                _uiState.value = _uiState.value.copy(
+                    gameErrorMessage = "No club selected. Please login and select a club first."
+                )
+                return@launch
+            }
+
             _uiState.value = _uiState.value.copy(
                 isLoadingGame = true,
                 gameErrorMessage = null,
@@ -111,7 +143,7 @@ class DebugViewModel @Inject constructor(
             )
 
             android.util.Log.d("DebugViewModel", "=== FETCHING GAME AND SAVING TO DATABASE ===")
-            android.util.Log.d("DebugViewModel", "Club ID: $clubId")
+            android.util.Log.d("DebugViewModel", "User's Club ID: $clubId")
 
             when (val result = fetchAndSaveGameUseCase(clubId)) {
                 is NetworkResult.Success -> {
@@ -141,8 +173,16 @@ class DebugViewModel @Inject constructor(
         }
     }
 
-    fun getCompetitionAndSaveToDatabase(clubId: String = "670229") {
+    fun getCompetitionAndSaveToDatabase() {
         viewModelScope.launch {
+            val clubId = getUserClubId()
+            if (clubId == null) {
+                _uiState.value = _uiState.value.copy(
+                    competitionErrorMessage = "No club selected. Please login and select a club first."
+                )
+                return@launch
+            }
+
             _uiState.value = _uiState.value.copy(
                 isLoadingCompetition = true,
                 competitionErrorMessage = null,
@@ -150,7 +190,7 @@ class DebugViewModel @Inject constructor(
             )
 
             android.util.Log.d("DebugViewModel", "=== FETCHING COMPETITION AND SAVING TO DATABASE ===")
-            android.util.Log.d("DebugViewModel", "Club ID: $clubId")
+            android.util.Log.d("DebugViewModel", "User's Club ID: $clubId")
 
             when (val result = fetchAndSaveCompetitionUseCase(clubId)) {
                 is NetworkResult.Success -> {
@@ -177,13 +217,50 @@ class DebugViewModel @Inject constructor(
         }
     }
 
+    // NEW: Debug method to show current club info
+    fun debugClubInfo() {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("DebugViewModel", "=== CURRENT CLUB INFO ===")
+
+                val selectedClub = getMslClubAndTenantIdsUseCase()
+                if (selectedClub != null) {
+                    android.util.Log.d("DebugViewModel", "Club ID: ${selectedClub.clubId}")
+                    android.util.Log.d("DebugViewModel", "Tenant ID: ${selectedClub.tenantId}")
+
+                    _uiState.value = _uiState.value.copy(
+                        gameSuccessMessage = "✅ Current club: ID=${selectedClub.clubId}, TenantID=${selectedClub.tenantId}"
+                    )
+                } else {
+                    android.util.Log.d("DebugViewModel", "No club selected")
+                    _uiState.value = _uiState.value.copy(
+                        gameErrorMessage = "❌ No club selected. Please login first."
+                    )
+                }
+
+                // Also check if we have a golfer
+                val golfer = currentGolfer.value
+                if (golfer != null) {
+                    android.util.Log.d("DebugViewModel", "Current golfer: ${golfer.firstName} ${golfer.surname} (${golfer.golfLinkNo})")
+                } else {
+                    android.util.Log.d("DebugViewModel", "No golfer data available")
+                }
+
+            } catch (e: Exception) {
+                android.util.Log.e("DebugViewModel", "Error getting club info", e)
+                _uiState.value = _uiState.value.copy(
+                    gameErrorMessage = "Error getting club info: ${e.message}"
+                )
+            }
+        }
+    }
+
     // Method: Database only - EXACT same pattern as game
     fun getCompetitionFromLocalDatabase() {
         viewModelScope.launch {
             try {
                 android.util.Log.d("DebugViewModel", "=== TESTING LOCAL DATABASE COMPETITION ===")
 
-                // Get competition from local database - EXACT same pattern as game
                 val competitionFromDb = getLocalCompetitionUseCase().first()
 
                 if (competitionFromDb != null) {
@@ -192,7 +269,7 @@ class DebugViewModel @Inject constructor(
 
                     _uiState.value = _uiState.value.copy(
                         competitionData = competitionFromDb,
-                        competitionSuccessMessage = "✅ Competition retrieved from LOCAL DATABASE: ${competitionFromDb.players.size} players (Check logs for details)"
+                        competitionSuccessMessage = "✅ Competition retrieved from LOCAL DATABASE: ${competitionFromDb.players.size} players"
                     )
                 } else {
                     android.util.Log.w("DebugViewModel", "❌ No competition found in local database!")

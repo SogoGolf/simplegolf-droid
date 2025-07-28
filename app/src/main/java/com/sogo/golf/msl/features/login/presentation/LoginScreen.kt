@@ -54,7 +54,7 @@ fun LoginScreen(
     val screenHeightDp = configuration.screenHeightDp.dp
 
     // Calculate responsive image size (15% of screen width, min 80dp, max 200dp)
-    val imageSize = (screenWidthDp * 0.15f).coerceIn(80.dp, 200.dp)
+    val imageSize = (screenWidthDp * 0.38f).coerceIn(80.dp, 200.dp)
 
     // Handle auth success
     LaunchedEffect(Unit) {

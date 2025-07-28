@@ -130,7 +130,6 @@ private fun Screen4Portrait(
         )
     }
 
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -159,6 +158,113 @@ private fun Screen4Portrait(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.verticalScroll(rememberScrollState()) // Add scroll
             ) {
+                // Delete Marker Toggle Section
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            "Delete Marker on Back",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Remove marker when going back",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            Switch(
+                                checked = deleteMarkerEnabled,
+                                onCheckedChange = { playRoundViewModel.setDeleteMarkerEnabled(it) },
+                                enabled = !isRemovingMarker
+                            )
+                        }
+
+                        if (deleteMarkerEnabled) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "When enabled, tapping back will remove the current marker assignment",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Back navigation is ${if (backNavDisabled) "disabled" else "enabled"}")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Switch(
+                    checked = backNavDisabled,
+                    onCheckedChange = { viewModel.setBackNavDisabled(it) },
+                    enabled = !isRemovingMarker
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Toggle to block or allow back navigation")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Simulated error is ${if (simulateError) "enabled" else "disabled"}")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Switch(
+                    checked = simulateError,
+                    onCheckedChange = { viewModel.setSimulateError(it) },
+                    enabled = !isRemovingMarker
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Toggle to simulate API error or success")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Finished Round toggle
+                Text("Finished Round is ${if (finishedRound) "ON" else "OFF"}")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Switch(
+                    checked = finishedRound,
+                    onCheckedChange = { viewModel.setFinishedRound(it) },
+                    enabled = !isRemovingMarker
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("When ON: App restarts at PlayRound")
+                Text("When OFF: App restarts at Screen 1", style = MaterialTheme.typography.bodySmall)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    "💡 Rotate to landscape to see Scorecard",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // 🔧 NEW: Daily Reset Testing Section
                 Card(
@@ -243,9 +349,46 @@ private fun Screen4Portrait(
                     }
                 }
 
-                // ... rest of your existing UI (Delete Marker Toggle, etc.) ...
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = { navController.navigate("reviewscreen") },
+                    enabled = !isRemovingMarker
+                ) {
+                    Text("Go to ReviewScores")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    "Try the back button - it should go to Screen 3!",
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                // Add some bottom padding for better scrolling experience
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Show loading spinner when removing marker
+            if (isLoading || isRemovingMarker) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            if (isRemovingMarker) "Removing marker..." else "Loading...",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
         }
     }
-
 }
