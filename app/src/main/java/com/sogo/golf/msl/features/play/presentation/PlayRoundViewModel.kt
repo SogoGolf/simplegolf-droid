@@ -3,6 +3,9 @@ package com.sogo.golf.msl.features.play.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.sogo.golf.msl.app.lifecycle.AppLifecycleManager
+import com.sogo.golf.msl.app.lifecycle.AppResumeAction
+import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
@@ -12,6 +15,7 @@ import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.marker.RemoveMarkerUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
+import com.sogo.golf.msl.shared.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,7 +34,9 @@ class PlayRoundViewModel @Inject constructor(
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
     private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
     private val mslRepository: MslRepository,
-    private val mslGolferLocalDbRepository: MslGolferLocalDbRepository
+    private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
+    private val appLifecycleManager: AppLifecycleManager,
+    private val gameDataTimestampPreferences: GameDataTimestampPreferences,
 ) : ViewModel() {
 
     private val _deleteMarkerEnabled = MutableStateFlow(false)
@@ -41,6 +47,10 @@ class PlayRoundViewModel @Inject constructor(
 
     private val _markerError = MutableStateFlow<String?>(null)
     val markerError: StateFlow<String?> = _markerError.asStateFlow()
+
+    // 🔧 NEW: Debug message state
+    private val _debugMessage = MutableStateFlow("")
+    val debugMessage: StateFlow<String> = _debugMessage.asStateFlow()
 
     // Get the local game data
     val localGame = getLocalGameUseCase()
@@ -236,5 +246,76 @@ class PlayRoundViewModel @Inject constructor(
         } catch (e: Exception) {
             android.util.Log.w("PlayRoundVM", "⚠️ Exception while refreshing game data", e)
         }
+    }
+
+    // 🔧 NEW: Debug methods for testing daily reset
+    fun simulateYesterdayData() {
+        viewModelScope.launch {
+            try {
+                val yesterday = "2025-07-27" // Yesterday's date
+                gameDataTimestampPreferences.saveGameDataDate(yesterday)
+                DateUtils.clearDebugDate() // Keep today as real today
+
+                _debugMessage.value = "🔧 Set stored date to YESTERDAY ($yesterday). Real today is ${DateUtils.getTodayDateString()}"
+
+                android.util.Log.d("PlayRoundVM", "🔧 DEBUG: Simulated yesterday's data - stored: $yesterday")
+            } catch (e: Exception) {
+                _debugMessage.value = "Error setting yesterday's data: ${e.message}"
+                android.util.Log.e("PlayRoundVM", "Error simulating yesterday's data", e)
+            }
+        }
+    }
+
+    fun simulateTodayData() {
+        viewModelScope.launch {
+            try {
+                val today = DateUtils.getTodayDateString()
+                gameDataTimestampPreferences.saveGameDataDate(today)
+                DateUtils.clearDebugDate()
+
+                _debugMessage.value = "🔧 Set stored date to TODAY ($today). Should be fresh!"
+
+                android.util.Log.d("PlayRoundVM", "🔧 DEBUG: Simulated today's data - stored: $today")
+            } catch (e: Exception) {
+                _debugMessage.value = "Error setting today's data: ${e.message}"
+                android.util.Log.e("PlayRoundVM", "Error simulating today's data", e)
+            }
+        }
+    }
+
+    fun triggerAppResume(navController: NavController) {
+        viewModelScope.launch {
+            try {
+                _debugMessage.value = "🔄 Triggering app resume check..."
+
+                android.util.Log.d("PlayRoundVM", "🔧 DEBUG: Manually triggering app resume check")
+
+                when (val action = appLifecycleManager.onAppResumed()) {
+                    AppResumeAction.Continue -> {
+                        _debugMessage.value = "✅ Data is FRESH - staying on Play Round screen"
+                        android.util.Log.d("PlayRoundVM", "✅ Data is fresh, continuing normally")
+                    }
+
+                    AppResumeAction.NavigateToHome -> {
+                        _debugMessage.value = "📅 Data is STALE - navigating to Home screen..."
+                        android.util.Log.d("PlayRoundVM", "📅 Data is stale, navigating to home")
+
+                        // Navigate to home and clear back stack (same as MainActivity does)
+                        navController.navigate("homescreen") {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                _debugMessage.value = "❌ Error during app resume check: ${e.message}"
+                android.util.Log.e("PlayRoundVM", "Error during app resume check", e)
+            }
+        }
+    }
+
+    fun clearDebugMessage() {
+        _debugMessage.value = ""
     }
 }

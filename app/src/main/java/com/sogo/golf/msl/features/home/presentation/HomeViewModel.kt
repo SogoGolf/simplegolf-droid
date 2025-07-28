@@ -3,6 +3,7 @@ package com.sogo.golf.msl.features.home.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
@@ -10,10 +11,13 @@ import com.sogo.golf.msl.domain.usecase.club.SetSelectedClubUseCase
 import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
+import com.sogo.golf.msl.domain.usecase.date.ValidateGameDataFreshnessUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
+import com.sogo.golf.msl.shared.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,7 +40,10 @@ class HomeViewModel @Inject constructor(
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
     private val setSelectedClubUseCase: SetSelectedClubUseCase,
     private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
-    private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase
+    private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
+    private val gameDataTimestampPreferences: GameDataTimestampPreferences,
+    private val validateGameDataFreshnessUseCase: ValidateGameDataFreshnessUseCase,
+    private val resetStaleDataUseCase: ResetStaleDataUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -426,5 +433,62 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    // In HomeViewModel.kt - add this test method
+    fun testDateValidation() {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("HomeViewModel", "=== TESTING DATE VALIDATION ===")
 
+                // Get current stored date
+                val storedDate = gameDataTimestampPreferences.getGameDataDate()
+                val todayDate = DateUtils.getTodayDateString()
+
+                android.util.Log.d("HomeViewModel", "Stored date: $storedDate")
+                android.util.Log.d("HomeViewModel", "Today's date: $todayDate")
+
+                // Test validation
+                val isDataFresh = validateGameDataFreshnessUseCase()
+                android.util.Log.d("HomeViewModel", "Is data fresh: $isDataFresh")
+
+                if (isDataFresh) {
+                    _uiState.value = _uiState.value.copy(
+                        gameSuccessMessage = "✅ Data is FRESH for today ($todayDate)"
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        gameErrorMessage = "📅 Data is STALE - stored: $storedDate, today: $todayDate"
+                    )
+
+                    // Trigger reset
+                    android.util.Log.d("HomeViewModel", "Triggering stale data reset...")
+                    when (val result = resetStaleDataUseCase()) {
+                        is Result -> {
+                            if (result.isSuccess) {
+                                _uiState.value = _uiState.value.copy(
+                                    gameSuccessMessage = "✅ Stale data reset completed successfully!"
+                                )
+                            } else {
+                                _uiState.value = _uiState.value.copy(
+                                    gameErrorMessage = "❌ Stale data reset failed: ${result.exceptionOrNull()?.message}"
+                                )
+                            }
+                        }
+                    }
+                }
+
+            } catch (e: Exception) {
+                android.util.Log.e("HomeViewModel", "Error testing date validation", e)
+                _uiState.value = _uiState.value.copy(
+                    gameErrorMessage = "Error testing date validation: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun setDebugStoredDate(date: String) {
+        viewModelScope.launch {
+            gameDataTimestampPreferences.saveGameDataDate(date)
+            android.util.Log.d("HomeViewModel", "🔧 DEBUG: Set stored game data date to: $date")
+        }
+    }
 }

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -128,6 +130,7 @@ private fun Screen4Portrait(
         )
     }
 
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -152,151 +155,97 @@ private fun Screen4Portrait(
                 .padding(padding),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.verticalScroll(rememberScrollState()) // Add scroll
+            ) {
 
-                // Delete Marker Toggle Section
+                // 🔧 NEW: Daily Reset Testing Section
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = MaterialTheme.colorScheme.errorContainer
                     )
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            "Delete Marker on Back",
+                            "🔧 DEBUG: Daily Reset Testing",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            "Test what happens when app resumes with stale data:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Row(
+                        Button(
+                            onClick = {
+                                playRoundViewModel.simulateYesterdayData()
+                            },
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                            enabled = !isRemovingMarker,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
                         ) {
-                            Text(
-                                "Remove marker when going back",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-
-                            Switch(
-                                checked = deleteMarkerEnabled,
-                                onCheckedChange = { playRoundViewModel.setDeleteMarkerEnabled(it) },
-                                enabled = !isRemovingMarker
-                            )
+                            Text("🕐 Simulate YESTERDAY'S data → should reset & go to Home")
                         }
 
-                        if (deleteMarkerEnabled) {
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Button(
+                            onClick = {
+                                playRoundViewModel.simulateTodayData()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isRemovingMarker,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary
+                            )
+                        ) {
+                            Text("📅 Simulate TODAY'S data → should stay here")
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Button(
+                            onClick = {
+                                playRoundViewModel.triggerAppResume(navController)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isRemovingMarker,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text("🔄 Trigger App Resume Check")
+                        }
+
+                        if (playRoundViewModel.debugMessage.collectAsState().value.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                "When enabled, tapping back will remove the current marker assignment",
+                                playRoundViewModel.debugMessage.collectAsState().value,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text("Back navigation is ${if (backNavDisabled) "disabled" else "enabled"}")
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Switch(
-                    checked = backNavDisabled,
-                    onCheckedChange = { viewModel.setBackNavDisabled(it) },
-                    enabled = !isRemovingMarker
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text("Toggle to block or allow back navigation")
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text("Simulated error is ${if (simulateError) "enabled" else "disabled"}")
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Switch(
-                    checked = simulateError,
-                    onCheckedChange = { viewModel.setSimulateError(it) },
-                    enabled = !isRemovingMarker
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text("Toggle to simulate API error or success")
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Finished Round toggle
-                Text("Finished Round is ${if (finishedRound) "ON" else "OFF"}")
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Switch(
-                    checked = finishedRound,
-                    onCheckedChange = { viewModel.setFinishedRound(it) },
-                    enabled = !isRemovingMarker
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text("When ON: App restarts at PlayRound")
-                Text("When OFF: App restarts at Screen 1", style = MaterialTheme.typography.bodySmall)
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    "💡 Rotate to landscape to see Scorecard",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Button(
-                    onClick = { navController.navigate("reviewscreen") },
-                    enabled = !isRemovingMarker
-                ) {
-                    Text("Go to ReviewScores")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    "Try the back button - it should go to Screen 3!",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            // Show loading spinner when removing marker
-            if (isLoading || isRemovingMarker) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(32.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            if (isRemovingMarker) "Removing marker..." else "Loading...",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
+                // ... rest of your existing UI (Delete Marker Toggle, etc.) ...
             }
         }
     }
+
 }

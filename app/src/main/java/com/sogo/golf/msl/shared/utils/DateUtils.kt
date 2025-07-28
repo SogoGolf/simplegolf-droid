@@ -77,4 +77,17 @@ object DateUtils {
             null
         }
     }
+
+    // 🔧 DEBUG: Override today's date for testing
+    private var debugDate: String? = null
+
+    fun setDebugDate(date: String?) {
+        debugDate = date
+        android.util.Log.d("DateUtils", "🔧 DEBUG: Set debug date to: $date")
+    }
+
+    fun clearDebugDate() {
+        debugDate = null
+        android.util.Log.d("DateUtils", "🔧 DEBUG: Cleared debug date, using real date")
+    }
 }

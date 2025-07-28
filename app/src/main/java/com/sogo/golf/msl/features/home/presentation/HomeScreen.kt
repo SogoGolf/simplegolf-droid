@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sogo.golf.msl.shared.utils.DateUtils
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
 
@@ -186,6 +187,61 @@ fun HomeScreen(
                             style = MaterialTheme.typography.bodySmall,
                             textAlign = TextAlign.Center
                         )
+                    }
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "🔧 DEBUG: Date Testing",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            // Simulate having yesterday's data stored
+                            homeViewModel.setDebugStoredDate("2025-07-27") // Set stored date to yesterday
+                            DateUtils.clearDebugDate() // Keep today as real today
+                            homeViewModel.clearMessages()
+                            homeViewModel.testDateValidation()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("🕐 Simulate YESTERDAY'S data (should trigger reset)")
+                    }
+
+                    Button(
+                        onClick = {
+                            // Simulate having today's data stored
+                            homeViewModel.setDebugStoredDate("2025-07-28") // Set stored date to today
+                            DateUtils.clearDebugDate() // Keep today as real today
+                            homeViewModel.clearMessages()
+                            homeViewModel.testDateValidation()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("📅 Simulate TODAY'S data (should be fresh)")
+                    }
+
+                    Button(
+                        onClick = {
+                            DateUtils.clearDebugDate()
+                            homeViewModel.clearMessages()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("🔄 Reset to Real Date")
                     }
                 }
             }
