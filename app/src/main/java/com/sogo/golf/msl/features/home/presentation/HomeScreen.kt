@@ -58,7 +58,6 @@ fun HomeScreen(
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = "Welcome back!",
@@ -71,12 +70,6 @@ fun HomeScreen(
                         Text(
                             text = "${golfer.firstName} ${golfer.surname}",
                             style = MaterialTheme.typography.headlineSmall
-                        )
-
-                        Text(
-                            text = "Handicap: ${golfer.primary}",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         Text(

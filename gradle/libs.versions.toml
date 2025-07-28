@@ -4,6 +4,7 @@ analyticsAndroid = "1.21.3"
 appUpdate = "2.1.0"
 coilCompose = "2.7.0"
 converterGson = "2.11.0"
+coreSplashscreenVersion = "1.0.1"
 firebaseBom = "34.0.0"
 firebaseMessagingKtx = "24.1.2"
 gson = "2.10.1"
@@ -40,6 +41,7 @@ app-update = { module = "com.google.android.play:app-update", version.ref = "app
 app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "appUpdate" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
+core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreenVersion" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }

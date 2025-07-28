@@ -92,7 +92,6 @@ android {
 }
 
 dependencies {
-    // ... your existing dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -106,6 +105,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.material3)
+    implementation(libs.core.splashscreen)
 
     implementation(libs.hilt.android)
     implementation(libs.androidx.work.runtime.ktx)

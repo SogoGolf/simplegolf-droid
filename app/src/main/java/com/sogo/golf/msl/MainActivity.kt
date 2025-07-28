@@ -2,6 +2,7 @@ package com.sogo.golf.msl
 
 import android.app.Activity
 import android.content.pm.ActivityInfo
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
@@ -52,6 +54,17 @@ class MainActivity : ComponentActivity() {
     private var navController: NavController? = null // ✅ Keep reference to NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        // ✅ CONDITIONAL SPLASH SCREEN HANDLING based on API level
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Android 12+ - use splash screen API to disable it
+            installSplashScreen().apply {
+                setKeepOnScreenCondition { false }
+                setOnExitAnimationListener { it.remove() }
+            }
+        }
+        // For Android 11 and below, no splash screen API exists, so nothing to disable
+
         super.onCreate(savedInstanceState)
 
         setContent {

@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.Navtesting" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Base theme for API < 31 (Android 11 and below) -->
+    <style name="Theme.Navtesting" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Basic setup for older Android versions -->
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    </style>
 </resources>

@@ -102,10 +102,6 @@ fun ChoosePlayingPartnerScreen(
                             text = "Golf Link: ${golfer.golfLinkNo}",
                             style = MaterialTheme.typography.bodySmall
                         )
-                        Text(
-                            text = "Handicap: ${golfer.primary}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
                     }
                 }
             }
