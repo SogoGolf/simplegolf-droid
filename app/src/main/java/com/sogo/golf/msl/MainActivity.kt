@@ -1,6 +1,7 @@
 package com.sogo.golf.msl
 
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
@@ -124,7 +125,13 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("homescreen") {
                             SetPortraitOrientation()
-                            HomeScreen(navController, "Home", "competitionscreen")
+                            HomeScreen(navController, "Home", "competitionscreen",
+                                onNavigateToCompetition = {
+                                    // Navigate to your competition screen
+                                    // For example:
+                                    navController.navigate("competitionscreen")
+                                }
+                            )
                         }
                         composable("competitionscreen") {
                             SetPortraitOrientation()

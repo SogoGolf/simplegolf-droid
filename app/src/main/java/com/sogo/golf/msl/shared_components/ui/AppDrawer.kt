@@ -197,12 +197,26 @@ fun AppDrawer(
                 }
             )
 
+            Spacer(modifier = Modifier.height(30.dp))
+
+            Text(
+                text = "About",
+                textDecoration = TextDecoration.Underline,
+                fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                modifier = Modifier.clickable {
+                    // Add your privacy policy URL here
+                    // uriHandler.openUri(Constants.PRIVACY_POLICY_URL)
+                }
+            )
+
             Spacer(modifier = Modifier.height(60.dp))
 
             Text(
                 text = "Version: ${versionName} #${versionCode}",
                 fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                color = Color.Gray
             )
+            Spacer(modifier = Modifier.height(60.dp))
         }
     }
 }
