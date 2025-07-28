@@ -160,10 +160,23 @@ class MainActivity : ComponentActivity() {
                         "🏠 Navigating to home - data was stale and refreshed"
                     )
 
-                    // Navigate to home screen and clear back stack
-                    navController?.navigate("homescreen") {
-                        popUpTo(0) { inclusive = true }
-                        launchSingleTop = true
+                    // ✅ SAFE NAVIGATION - Check if NavController is ready
+                    navController?.let { navCtrl ->
+                        try {
+                            // Check if the current destination exists (means NavHost is set up)
+                            if (navCtrl.currentDestination != null) {
+                                navCtrl.navigate("homescreen") {
+                                    popUpTo(0) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            } else {
+                                android.util.Log.d("MainActivity", "NavController not ready yet, skipping navigation")
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.e("MainActivity", "Navigation failed", e)
+                        }
+                    } ?: run {
+                        android.util.Log.d("MainActivity", "NavController is null, skipping navigation")
                     }
                 }
             }
