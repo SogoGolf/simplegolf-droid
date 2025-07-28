@@ -54,7 +54,7 @@ fun LoginScreen(
     val screenHeightDp = configuration.screenHeightDp.dp
 
     // Calculate responsive image size (15% of screen width, min 80dp, max 200dp)
-    val imageSize = (screenWidthDp * 0.37f).coerceIn(80.dp, 200.dp)
+    val imageSize = (screenWidthDp * 0.15f).coerceIn(80.dp, 200.dp)
 
     // Handle auth success
     LaunchedEffect(Unit) {
@@ -219,17 +219,7 @@ fun LoginScreen(
                             onClubSelected = { club ->
                                 loginViewModel.selectClub(club)
                             },
-                            isLoading = uiState.isLoadingClubs,
-                            onDoneAction = {
-                                // Handle "Done" keyboard action
-                                focusManager.clearFocus()
-                                keyboardController?.hide()
-
-                                // If club is selected, trigger continue action
-                                if (uiState.selectedClub != null && !uiState.isLoadingClubs) {
-                                    loginViewModel.startWebAuth()
-                                }
-                            }
+                            isLoading = uiState.isLoadingClubs
                         )
                     }
                 }

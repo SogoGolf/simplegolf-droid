@@ -10,6 +10,7 @@ import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.msl.MslClub
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.auth.ProcessMslAuthCodeUseCase
+import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.club.SetSelectedClubUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -34,7 +35,8 @@ class LoginViewModel @Inject constructor(
     private val mslRepository: MslRepository,
     private val processMslAuthCodeUseCase: ProcessMslAuthCodeUseCase,
     private val clubSelectionManager: ClubSelectionManager,
-    private val setSelectedClubUseCase: SetSelectedClubUseCase
+    private val setSelectedClubUseCase: SetSelectedClubUseCase,
+    private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase
 ) : ViewModel() {
 
     companion object {
@@ -53,17 +55,53 @@ class LoginViewModel @Inject constructor(
     init {
         loadClubs()
 
+        // CRITICAL: Load previously selected club from SharedPreferences
+        loadSavedClubSelection()
+
         // Observe club selection changes
         viewModelScope.launch {
             combine(
                 clubSelectionManager.allClubs,
                 clubSelectionManager.selectedClub
             ) { clubs, selectedClub ->
+                Log.d(TAG, "Club selection changed - Clubs: ${clubs.size}, Selected: ${selectedClub?.name}")
                 _uiState.value = _uiState.value.copy(
                     clubs = clubs,
                     selectedClub = selectedClub
                 )
             }.collect { }
+        }
+    }
+
+    private fun loadSavedClubSelection() {
+        viewModelScope.launch {
+            try {
+                Log.d(TAG, "=== LOADING SAVED CLUB SELECTION ===")
+
+                val savedClub = getMslClubAndTenantIdsUseCase()
+                if (savedClub != null) {
+                    Log.d(TAG, "Found saved club selection: ID=${savedClub.clubId}, TenantID=${savedClub.tenantId}")
+
+                    // Wait for clubs to load, then find and select the saved club
+                    clubSelectionManager.allClubs.collect { clubs ->
+                        if (clubs.isNotEmpty()) {
+                            val matchingClub = clubs.find { it.clubId == savedClub.clubId }
+                            if (matchingClub != null) {
+                                Log.d(TAG, "✅ Restored saved club selection: ${matchingClub.name}")
+                                clubSelectionManager.setSelectedClub(matchingClub)
+                                _uiState.value = _uiState.value.copy(selectedClub = matchingClub)
+                            } else {
+                                Log.w(TAG, "⚠️ Saved club ID ${savedClub.clubId} not found in available clubs")
+                            }
+                            return@collect // Exit the collect loop
+                        }
+                    }
+                } else {
+                    Log.d(TAG, "No saved club selection found")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading saved club selection", e)
+            }
         }
     }
 
@@ -77,13 +115,8 @@ class LoginViewModel @Inject constructor(
             when (val result = mslRepository.getClubs()) {
                 is NetworkResult.Success -> {
                     Log.d(TAG, "Loaded ${result.data.size} clubs")
-                    result.data.forEachIndexed { index, club ->
-                        Log.d(TAG, "Club $index: ${club.name} (ID: ${club.clubId})")
-                    }
 
-                    // Set clubs but don't auto-select any - force user to choose
                     clubSelectionManager.setAllClubs(result.data.sortedBy { it.name })
-                    clubSelectionManager.clearSelection() // Ensure no club is pre-selected
 
                     _uiState.value = _uiState.value.copy(
                         isLoadingClubs = false
@@ -104,47 +137,62 @@ class LoginViewModel @Inject constructor(
     }
 
     fun selectClub(club: MslClub) {
-        Log.d(TAG, "Selected club: ${club.name} (ID: ${club.clubId})")
-        clubSelectionManager.setSelectedClub(club)
-        _uiState.value = _uiState.value.copy(errorMessage = null)
+        Log.d(TAG, "=== SELECTING CLUB ===")
+        Log.d(TAG, "Club: ${club.name} (ID: ${club.clubId}, TenantID: ${club.tenantId})")
 
-        // Store the club selection in SharedPreferences immediately
+        // Update both manager and UI state immediately
+        clubSelectionManager.setSelectedClub(club)
+        _uiState.value = _uiState.value.copy(
+            selectedClub = club,
+            errorMessage = null
+        )
+
+        // Store in SharedPreferences for persistence
         viewModelScope.launch {
             try {
-                setSelectedClubUseCase(club)
-                Log.d(TAG, "✅ Club stored in SharedPreferences: ${club.name} (ID: ${club.clubId}, TenantID: ${club.tenantId})")
+                val result = setSelectedClubUseCase(club)
+                if (result.isSuccess) {
+                    Log.d(TAG, "✅ Club stored in SharedPreferences successfully")
+                } else {
+                    Log.e(TAG, "❌ Failed to store club: ${result.exceptionOrNull()}")
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Failed to store club in SharedPreferences", e)
+                Log.e(TAG, "❌ Exception storing club", e)
             }
         }
     }
 
     fun startWebAuth() {
-        val selectedClub = clubSelectionManager.getSelectedClub()
+        val selectedClub = _uiState.value.selectedClub
+
+        Log.d(TAG, "=== STARTING WEB AUTH ===")
+        Log.d(TAG, "Selected club from UI state: ${selectedClub?.name}")
+        Log.d(TAG, "Selected club from manager: ${clubSelectionManager.getSelectedClub()?.name}")
+
         if (selectedClub == null) {
+            Log.e(TAG, "❌ No club selected!")
             _uiState.value = _uiState.value.copy(
                 errorMessage = "Please select a club first"
             )
             return
         }
 
-        // Get the auth path for this club
-        val authPath = getAuthPathForClub(selectedClub)
-        if (authPath == null) {
+        if (selectedClub.tenantId.isBlank()) {
+            Log.e(TAG, "❌ Club has no tenantId: ${selectedClub.name}")
             _uiState.value = _uiState.value.copy(
-                errorMessage = "Club ${selectedClub.name} is not supported for web authentication"
+                errorMessage = "Club ${selectedClub.name} does not have a valid tenant ID"
             )
             return
         }
 
-        val authUrl = "https://id.micropower.com.au/$authPath?returnUrl=msl://success"
-        Log.d(TAG, "Starting web auth with URL: $authUrl")
-        Log.d(TAG, "Selected club: ${selectedClub.name} (ID: ${selectedClub.clubId})")
+        val authUrl = "https://id.micropower.com.au/${selectedClub.tenantId}?returnUrl=msl://success"
+        Log.d(TAG, "Generated auth URL: $authUrl")
 
         viewModelScope.launch {
             _navigateToWebAuth.emit(authUrl)
         }
     }
+
 
     private fun getAuthPathForClub(club: MslClub): String? {
         // Then try to derive from club name (convert to lowercase, remove spaces, etc.)
@@ -261,6 +309,12 @@ class LoginViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    fun getSelectedClubForWebAuth(): MslClub? {
+        val club = _uiState.value.selectedClub
+        Log.d(TAG, "Getting selected club for WebAuth: ${club?.name}")
+        return club
     }
 
     fun clearError() {
