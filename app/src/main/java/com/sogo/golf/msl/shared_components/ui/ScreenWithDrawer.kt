@@ -73,7 +73,8 @@ fun ScreenWithDrawer(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Menu,
-                        contentDescription = "Menu"
+                        contentDescription = "Menu",
+                        tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 

@@ -69,7 +69,6 @@ class MainActivity : ComponentActivity() {
         enforceNormalFontScale()
 
 
-
         super.onCreate(savedInstanceState)
 
         setContent {
