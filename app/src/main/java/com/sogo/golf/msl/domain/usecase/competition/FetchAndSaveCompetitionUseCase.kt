@@ -16,7 +16,7 @@ class FetchAndSaveCompetitionUseCase @Inject constructor(
         // ✅ If successful, save today's date
         if (result is NetworkResult.Success) {
             saveGameDataDateUseCase()
-            android.util.Log.d("FetchAndSaveCompetitionUseCase", "✅ Competition data fetched and date saved")
+            android.util.Log.d("FetchAndSaveCompetitionUseCase", "✅ MSL Competition data fetched and date saved")
         }
 
         return result

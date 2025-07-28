@@ -27,10 +27,18 @@ class CompetitionViewModel @Inject constructor(
     private val gameRepository: MslGameLocalDbRepository,
     private val getSogoGolferUseCase: GetSogoGolferUseCase,
     private val getFeesUseCase: GetFeesUseCase,
+    private val fetchAndSaveGameUseCase: com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase,
+    private val fetchAndSaveCompetitionUseCase: com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase,
+    private val fetchAndSaveSogoGolferUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase,
+    private val getMslClubAndTenantIdsUseCase: com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompetitionUiState())
     val uiState: StateFlow<CompetitionUiState> = _uiState.asStateFlow()
+
+    // ✅ ADD: Store the selected round cost
+    private val _selectedRoundCost = MutableStateFlow(0.0)
+    val selectedRoundCost: StateFlow<Double> = _selectedRoundCost.asStateFlow()
 
     // Always observe local competition data (works offline)
     val currentCompetition = competitionRepository.getCompetition()
@@ -115,7 +123,6 @@ class CompetitionViewModel @Inject constructor(
         }
     }
 
-
     // Example method: Fetch competition data from server
     fun fetchCompetitionData(competitionId: String = "default-comp-2024") {
         viewModelScope.launch {
@@ -129,7 +136,7 @@ class CompetitionViewModel @Inject constructor(
                 is NetworkResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        successMessage = "Competition data updated! Found ${result.data.players.size} players."
+                        successMessage = "MSL Competition data updated! Found ${result.data.players.size} players."
                     )
                 }
                 is NetworkResult.Error -> {
@@ -142,6 +149,143 @@ class CompetitionViewModel @Inject constructor(
                     // Already handled above
                 }
             }
+        }
+    }
+
+    private suspend fun fetchMslGameData(clubIdStr: String): Result<Unit> {
+        return try {
+            android.util.Log.d("CompetitionViewModel", "🎮 Fetching MSL game data...")
+            when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
+                is NetworkResult.Success -> {
+                    android.util.Log.d("CompetitionViewModel", "✅ MSL game data fetched successfully: Competition ${gameResult.data.mainCompetitionId}")
+                    Result.success(Unit)
+                }
+                is NetworkResult.Error -> {
+                    val error = gameResult.error.toUserMessage()
+                    android.util.Log.e("CompetitionViewModel", "❌ Failed to fetch MSL game data: $error")
+                    Result.failure(Exception(error))
+                }
+                is NetworkResult.Loading -> {
+                    Result.success(Unit) // Should not happen in suspend function
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("CompetitionViewModel", "Error fetching MSL game data", e)
+            Result.failure(e)
+        }
+    }
+
+    // ✅ NEW: Fetch MSL competition data using the use case
+    private suspend fun fetchMslCompetitionData(clubIdStr: String): Result<Unit> {
+        return try {
+            android.util.Log.d("CompetitionViewModel", "🏆 Fetching MSL competition data...")
+            when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
+                is NetworkResult.Success -> {
+                    android.util.Log.d("CompetitionViewModel", "✅ MSL competition data fetched successfully: ${competitionResult.data.players.size} players")
+                    Result.success(Unit)
+                }
+                is NetworkResult.Error -> {
+                    val error = competitionResult.error.toUserMessage()
+                    android.util.Log.e("CompetitionViewModel", "❌ Failed to fetch MSL competition data: $error")
+                    Result.failure(Exception(error))
+                }
+                is NetworkResult.Loading -> {
+                    Result.success(Unit) // Should not happen in suspend function
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("CompetitionViewModel", "Error fetching MSL competition data", e)
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun refreshSogoGolferData(): Result<Unit> {
+        return try {
+            val currentMslGolfer = currentGolfer.value
+            if (currentMslGolfer?.golfLinkNo == null) {
+                android.util.Log.w("CompetitionViewModel", "⚠️ No golf link number available - cannot refresh Sogo Golfer data")
+                return Result.failure(Exception("No golf link number available"))
+            }
+
+            android.util.Log.d("CompetitionViewModel", "🏌️ Refreshing Sogo Golfer data for: ${currentMslGolfer.golfLinkNo}")
+
+            when (val result = fetchAndSaveSogoGolferUseCase(currentMslGolfer.golfLinkNo)) {
+                is NetworkResult.Success -> {
+                    android.util.Log.d("CompetitionViewModel", "✅ Sogo Golfer data refreshed. Token balance: ${result.data.tokenBalance}")
+                    Result.success(Unit)
+                }
+                is NetworkResult.Error -> {
+                    val error = result.error.toUserMessage()
+                    android.util.Log.e("CompetitionViewModel", "❌ Failed to refresh Sogo Golfer data: $error")
+                    Result.failure(Exception(error))
+                }
+                is NetworkResult.Loading -> {
+                    Result.success(Unit) // Should not happen in suspend function
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("CompetitionViewModel", "Error refreshing Sogo Golfer data", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun refreshMslData(): Result<Unit> {
+        return try {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+            // Get the selected club (same pattern as HomeViewModel)
+            val selectedClub = getMslClubAndTenantIdsUseCase()
+            if (selectedClub?.clubId == null) {
+                android.util.Log.w("CompetitionViewModel", "⚠️ No club selected - cannot fetch MSL data")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "No club selected. Please login again."
+                )
+                return Result.failure(Exception("No club selected"))
+            }
+
+            val clubIdStr = selectedClub.clubId.toString()
+            android.util.Log.d("CompetitionViewModel", "Refreshing MSL data for club: $clubIdStr")
+
+            // Refresh MSL game data first
+            val gameResult = fetchMslGameData(clubIdStr)
+            if (gameResult.isFailure) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Failed to refresh MSL game data: ${gameResult.exceptionOrNull()?.message}"
+                )
+                return gameResult
+            }
+
+            // Then refresh MSL competition data
+            val competitionResult = fetchMslCompetitionData(clubIdStr)
+            if (competitionResult.isFailure) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Failed to refresh MSL competition data: ${competitionResult.exceptionOrNull()?.message}"
+                )
+                return competitionResult
+            }
+
+            // ✅ NEW: Refresh Sogo Golfer data to ensure token balance is up-to-date
+            val sogoGolferResult = refreshSogoGolferData()
+            if (sogoGolferResult.isFailure) {
+                android.util.Log.w("CompetitionViewModel", "⚠️ Failed to refresh Sogo Golfer data: ${sogoGolferResult.exceptionOrNull()?.message}")
+                // Don't fail the entire refresh for Sogo Golfer issues, just log the warning
+            }
+
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                successMessage = "MSL data refreshed successfully"
+            )
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                errorMessage = "MSL refresh failed: ${e.message}"
+            )
+            Result.failure(e)
         }
     }
 

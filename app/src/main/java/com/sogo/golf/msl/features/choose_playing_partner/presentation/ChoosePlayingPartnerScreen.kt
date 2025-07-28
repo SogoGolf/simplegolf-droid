@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.sogo.golf.msl.features.competitions.presentation.CompetitionViewModel
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
 
@@ -42,13 +43,12 @@ fun ChoosePlayingPartnerScreen(
     navController: NavController,
     title: String,
     nextRoute: String,
-    viewModel: ChoosePlayingPartnerViewModel = hiltViewModel()
+    viewModel: ChoosePlayingPartnerViewModel = hiltViewModel(),
 ) {
     val localGame by viewModel.localGame.collectAsState()
     val currentGolfer by viewModel.currentGolfer.collectAsState()
     val selectedPartner by viewModel.selectedPartner.collectAsState()
     val markerUiState by viewModel.markerUiState.collectAsState()
-
 
     // 🔧 NEW: Clear selection when returning to screen
     LaunchedEffect(Unit) {

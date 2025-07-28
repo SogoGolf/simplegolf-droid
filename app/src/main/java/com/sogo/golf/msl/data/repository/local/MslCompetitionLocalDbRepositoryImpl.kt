@@ -60,7 +60,7 @@ class MslCompetitionLocalDbRepositoryImpl @Inject constructor(
                     // REPLACE the single competition in database
                     replaceCompetitionInDatabase(competition, competitionId)
 
-                    Log.d(TAG, "Competition replaced successfully in database")
+                    Log.d(TAG, "MSL Competition replaced successfully in database")
                     competition
                 }
                 is NetworkResult.Error -> {
@@ -80,7 +80,7 @@ class MslCompetitionLocalDbRepositoryImpl @Inject constructor(
 
         // Check current count before replace
         val countBefore = competitionDao.getCompetitionCount()
-        Log.d(TAG, "Competitions in database before replace: $countBefore")
+        Log.d(TAG, "MSL Competitions in database before replace: $countBefore")
 
         val entity = CompetitionEntity.fromDomainModel(
             competition,
@@ -91,11 +91,11 @@ class MslCompetitionLocalDbRepositoryImpl @Inject constructor(
 
         // Use the new replace method
         competitionDao.replaceCompetition(entity)
-        Log.d(TAG, "Competition replaced in database")
+        Log.d(TAG, "MSL Competition replaced in database")
 
         // Verify the replace worked
         val countAfter = competitionDao.getCompetitionCount()
-        Log.d(TAG, "Competitions in database after replace: $countAfter (should be 1)")
+        Log.d(TAG, "MSL Competitions in database after replace: $countAfter (should be 1)")
 
         val savedEntity = competitionDao.getCompetitionById(CompetitionDao.SINGLE_COMPETITION_ID)
         Log.d(TAG, "Verification - saved entity: $savedEntity")

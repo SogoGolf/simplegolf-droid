@@ -44,6 +44,8 @@ fun CompetitionsScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     var includeRound by remember { mutableStateOf(true) }
     val refreshState = rememberPullToRefreshState()
+    val coroutineScope = rememberCoroutineScope()
+
 
     // Get the data from the view model
     val currentGolfer by competitionViewModel.currentGolfer.collectAsState()
@@ -109,12 +111,19 @@ fun CompetitionsScreen(
                     state = refreshState,
                     isRefreshing = isRefreshing,
                     onRefresh = {
-                        // TODO: Implement refresh logic using competitionViewModel
-                        isRefreshing = true
-                        // Simulate refresh for now
-                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-                            delay(1500)
-                            isRefreshing = false
+                        coroutineScope.launch {
+                            isRefreshing = true
+                            try {
+                                val result = competitionViewModel.refreshMslData()
+                                if (result.isFailure) {
+                                    // Handle error - you might want to show a snackbar here
+                                    android.util.Log.e("CompetitionsScreen", "MSL refresh failed: ${result.exceptionOrNull()?.message}")
+                                }
+                            } catch (e: Exception) {
+                                android.util.Log.e("CompetitionsScreen", "MSL refresh error", e)
+                            } finally {
+                                isRefreshing = false
+                            }
                         }
                     },
                     indicator = {
@@ -140,10 +149,9 @@ fun CompetitionsScreen(
                     canProceed = canProceed,
                     onIncludeRoundChanged = { newValue ->
                         includeRound = newValue
-                        // TODO: Track toggle
+                        competitionViewModel.setIncludeRound(newValue)
                     },
                     onNextClick = {
-                        // TODO: Validate and navigate
                         navController.navigate(nextRoute)
                     },
                 )
@@ -307,7 +315,7 @@ fun CompetitionsListSection(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = "No competitions available",
-                                fontSize = MaterialTheme.typography.headlineSmall.fontSize,
+                                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
                             )
                             Text(
                                 text = "(Pull down to refresh)",
@@ -413,7 +421,7 @@ fun FooterContent(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Next button - enable only if competitions are available
-        val hasCompetitions = false // localGame?.competitions?.isNotEmpty() == true
+        val hasCompetitions = true //localGame?.competitions?.isNotEmpty() == true
         Box(
             modifier = Modifier
                 .fillMaxWidth()

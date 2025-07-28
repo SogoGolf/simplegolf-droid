@@ -105,7 +105,7 @@
                     }
 
                     val clubIdStr = selectedClub.clubId.toString()
-                    Log.d(TAG, "Fetching data for club: $clubIdStr")
+                    Log.d(TAG, "Fetching data for MSL club: $clubIdStr")
 
                     // Fetch both game and competition data in parallel
                     // Declare all success/error variables
@@ -122,12 +122,12 @@
                     Log.d(TAG, "🎮 Fetching game data...")
                     when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
                         is NetworkResult.Success -> {
-                            Log.d(TAG, "✅ Game data fetched successfully: Competition ${gameResult.data.mainCompetitionId}")
+                            Log.d(TAG, "✅ MSL Game data fetched successfully: Competition ${gameResult.data.mainCompetitionId}")
                             gameSuccess = true
                         }
                         is NetworkResult.Error -> {
                             gameError = gameResult.error.toUserMessage()
-                            Log.e(TAG, "❌ Failed to fetch game data: $gameError")
+                            Log.e(TAG, "❌ Failed to fetch MSL game data: $gameError")
                         }
                         is NetworkResult.Loading -> { /* Already handled */ }
                     }
@@ -136,26 +136,26 @@
                     Log.d(TAG, "🏆 Fetching competition data...")
                     when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
                         is NetworkResult.Success -> {
-                            Log.d(TAG, "✅ Competition data fetched successfully: ${competitionResult.data.players.size} players")
+                            Log.d(TAG, "✅ MSL Competition data fetched successfully: ${competitionResult.data.players.size} players")
                             competitionSuccess = true
                         }
                         is NetworkResult.Error -> {
                             competitionError = competitionResult.error.toUserMessage()
-                            Log.e(TAG, "❌ Failed to fetch competition data: $competitionError")
+                            Log.e(TAG, "❌ Failed to fetch MSL competition data: $competitionError")
                         }
                         is NetworkResult.Loading -> { /* Already handled */ }
                     }
 
                     // ✅ NEW: Fetch Fees Data
-                    Log.d(TAG, "💰 Fetching fees data...")
+                    Log.d(TAG, "💰 Fetching SOGO fees data...")
                     when (val feesResult = fetchAndSaveFeesUseCase()) {
                         is NetworkResult.Success -> {
-                            Log.d(TAG, "✅ Fees data fetched successfully: ${feesResult.data.size} fees")
+                            Log.d(TAG, "✅ SOGO Fees data fetched successfully: ${feesResult.data.size} fees")
                             feesSuccess = true
                         }
                         is NetworkResult.Error -> {
                             feesError = feesResult.error.toUserMessage()
-                            Log.e(TAG, "❌ Failed to fetch fees data: $feesError")
+                            Log.e(TAG, "❌ Failed to fetch SOGO fees data: $feesError")
                         }
                         is NetworkResult.Loading -> { /* Already handled */ }
                     }
@@ -195,19 +195,19 @@
                             )
                         }
                         gameSuccess && !competitionSuccess -> {
-                            Log.w(TAG, "⚠️ Game data fetched but competition failed")
+                            Log.w(TAG, "⚠️MSL Game data fetched but competition failed")
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
-                                successMessage = "Game data loaded successfully",
-                                errorMessage = "Competition data failed: $competitionError"
+                                successMessage = "MSL Game data loaded successfully",
+                                errorMessage = "MSL Competition data failed: $competitionError"
                             )
                         }
                         !gameSuccess && competitionSuccess -> {
-                            Log.w(TAG, "⚠️ Competition data fetched but game failed")
+                            Log.w(TAG, "⚠️ MSL Competition data fetched but game failed")
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
-                                successMessage = "Competition data loaded successfully",
-                                errorMessage = "Game data failed: $gameError"
+                                successMessage = "MSL Competition data loaded successfully",
+                                errorMessage = "MSL Game data failed: $gameError"
                             )
                         }
                         else -> {
@@ -263,7 +263,7 @@
                     val playerCount = competition.players.size
                     val competitionName = competition.players.firstOrNull()?.competitionName ?: "Unknown"
                     val competitionType = competition.players.firstOrNull()?.competitionType ?: "Unknown"
-                    "Competition: $competitionName ($competitionType) with $playerCount players"
+                    "MSL Competition: $competitionName ($competitionType) with $playerCount players"
                 }
             }
         }
@@ -276,7 +276,7 @@
                 else -> {
                     val partnersCount = game.playingPartners.size
                     val competitionsCount = game.competitions.size
-                    "Game: Competition ${game.mainCompetitionId}, Hole ${game.startingHoleNumber}, $partnersCount partners, $competitionsCount competitions"
+                    "MSL Game: MSL Competition ${game.mainCompetitionId}, Hole ${game.startingHoleNumber}, $partnersCount partners, $competitionsCount competitions"
                 }
             }
         }
@@ -328,9 +328,9 @@
 
             return buildString {
                 appendLine("📊 Data Status:")
-                appendLine("👤 Golfer: ${if (golfer != null) "✅ ${golfer.firstName} ${golfer.surname}" else "❌ Not loaded"}")
-                appendLine("🎮 Game: ${if (game != null) "✅ Competition ${game.mainCompetitionId}" else "❌ Not loaded"}")
-                appendLine("🏆 Competition: ${if (competition != null) "✅ ${competition.players.size} players" else "❌ Not loaded"}")
+                appendLine("👤 MSL Golfer: ${if (golfer != null) "✅ ${golfer.firstName} ${golfer.surname}" else "❌ Not loaded"}")
+                appendLine("🎮 MSL Game: ${if (game != null) "✅ Competition ${game.mainCompetitionId}" else "❌ Not loaded"}")
+                appendLine("🏆 MSL Competition: ${if (competition != null) "✅ ${competition.players.size} players" else "❌ Not loaded"}")
             }
         }
     }
