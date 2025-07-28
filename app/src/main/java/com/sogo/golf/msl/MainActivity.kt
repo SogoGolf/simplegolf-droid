@@ -65,6 +65,11 @@ class MainActivity : ComponentActivity() {
         }
         // For Android 11 and below, no splash screen API exists, so nothing to disable
 
+        // ✅ FORCE FONT SCALE TO 1.0 (normal size) - ignores device font scaling
+        enforceNormalFontScale()
+
+
+
         super.onCreate(savedInstanceState)
 
         setContent {
@@ -150,8 +155,18 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
 
+    private fun enforceNormalFontScale() {
+        val configuration = resources.configuration
+        if (configuration.fontScale != 1.0f) {
+            configuration.fontScale = 1.0f
+            val metrics = resources.displayMetrics
+            metrics.scaledDensity = metrics.density * configuration.fontScale
 
+            @Suppress("DEPRECATION")
+            resources.updateConfiguration(configuration, metrics)
+        }
     }
 
     override fun onResume() {
