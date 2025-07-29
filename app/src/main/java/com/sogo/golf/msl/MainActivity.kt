@@ -26,7 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import com.sogo.golf.msl.app.lifecycle.AppLifecycleManager
 import com.sogo.golf.msl.app.lifecycle.AppResumeAction
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
-import com.sogo.golf.msl.features.choose_playing_partner.presentation.ChoosePlayingPartnerScreen
+import com.sogo.golf.msl.features.playing_partner.presentation.PlayingPartnerScreen
 import com.sogo.golf.msl.features.competitions.presentation.CompetitionsScreen
 import com.sogo.golf.msl.features.home.presentation.HomeScreen
 import com.sogo.golf.msl.features.login.presentation.LoginScreen
@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
                                 popUpTo(0) { inclusive = true }
                             }
                             navController.navigate("competitionscreen")
-                            navController.navigate("choosepartnerscreen")
+                            navController.navigate("playingpartnerscreen")
                             navController.navigate("playroundscreen")
                             hasBuiltBackStack = true
                         }
@@ -135,13 +135,13 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("competitionscreen") {
                             SetPortraitOrientation()
-                            CompetitionsScreen(navController, "Competitions", "choosepartnerscreen")
+                            CompetitionsScreen(navController, "Competitions", "playingpartnerscreen")
                         }
-                        composable("choosepartnerscreen") {
+                        composable("playingpartnerscreen") {
                             SetPortraitOrientation()
-                            ChoosePlayingPartnerScreen(
+                            PlayingPartnerScreen(
                                 navController,
-                                "Choose Partner",
+                                "Playing Partner",
                                 "playroundscreen"
                             )
                         }
