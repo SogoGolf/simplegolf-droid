@@ -73,22 +73,6 @@ fun PlayingPartnerScreen(
                 title = "Playing Partner",
                 backgroundColor = Color.White
             )
-        },
-        bottomBar = {
-            FooterContent(
-                includeRound = includeRound,
-                golfer = currentGolfer,
-                sogoGolfer = sogoGolfer,
-                tokenCost = tokenCost,
-                canProceed = canProceed,
-                onIncludeRoundChanged = { newValue ->
-                    includeRound = newValue
-                    playingPartnerViewModel.setIncludeRound(newValue)
-                },
-                onNextClick = {
-                    navController.navigate(nextRoute)
-                },
-            )
         }
     ) {
 
@@ -98,7 +82,6 @@ fun PlayingPartnerScreen(
                 .background(Color.White)
                 .statusBarsPadding()
                 .padding(top = 56.dp) // Account for header height
-                .padding(bottom = 120.dp) // Account for footer height
         ) {
             // User information section
             UserInfoSection(
@@ -136,6 +119,22 @@ fun PlayingPartnerScreen(
                     game = localGame
                 )
             }
+
+            // Footer content at bottom
+            FooterContent(
+                includeRound = includeRound,
+                golfer = currentGolfer,
+                sogoGolfer = sogoGolfer,
+                tokenCost = tokenCost,
+                canProceed = canProceed,
+                onIncludeRoundChanged = { newValue ->
+                    includeRound = newValue
+                    playingPartnerViewModel.setIncludeRound(newValue)
+                },
+                onNextClick = {
+                    navController.navigate(nextRoute)
+                },
+            )
         }
     }
 }
