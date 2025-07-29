@@ -74,22 +74,22 @@ fun PlayingPartnerScreen(
                 backgroundColor = Color.White
             )
         },
-        bottomBar = {
-            FooterContent(
-                includeRound = includeRound,
-                golfer = currentGolfer,
-                sogoGolfer = sogoGolfer,
-                tokenCost = tokenCost,
-                canProceed = canProceed,
-                onIncludeRoundChanged = { newValue ->
-                    includeRound = newValue
-                    playingPartnerViewModel.setIncludeRound(newValue)
-                },
-                onNextClick = {
-                    navController.navigate(nextRoute)
-                },
-            )
-        }
+//        bottomBar = {
+//            FooterContent(
+//                includeRound = includeRound,
+//                golfer = currentGolfer,
+//                sogoGolfer = sogoGolfer,
+//                tokenCost = tokenCost,
+//                canProceed = canProceed,
+//                onIncludeRoundChanged = { newValue ->
+//                    includeRound = newValue
+//                    playingPartnerViewModel.setIncludeRound(newValue)
+//                },
+//                onNextClick = {
+//                    navController.navigate(nextRoute)
+//                },
+//            )
+//        }
     ) {
 
         Column(
