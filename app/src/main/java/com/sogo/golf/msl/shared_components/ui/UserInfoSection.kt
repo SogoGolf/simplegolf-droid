@@ -131,7 +131,7 @@ fun UserInfoSection(
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(5.dp))
 
         // Competition section header
         Text(
