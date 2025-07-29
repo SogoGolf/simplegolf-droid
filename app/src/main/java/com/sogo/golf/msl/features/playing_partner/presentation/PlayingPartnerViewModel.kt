@@ -418,6 +418,8 @@ class PlayingPartnerViewModel @Inject constructor(
                 roundRepository.saveRound(round)
                 android.util.Log.d("PlayingPartnerVM", "✅ Round saved to database")
 
+                
+
                 _uiState.value = _uiState.value.copy(
                     isLetsPlayLoading = false,
                     successMessage = "Ready to play!"
@@ -440,9 +442,9 @@ class PlayingPartnerViewModel @Inject constructor(
     private fun createRoundFromRoomData(
         selectedPartner: MslPlayingPartner,
         currentGolferData: com.sogo.golf.msl.domain.model.msl.MslGolfer,
-        gameData: com.sogo.golf.msl.domain.model.msl.MslGame,
-        sogoGolferData: com.sogo.golf.msl.domain.model.mongodb.SogoGolfer,
-        competitionData: com.sogo.golf.msl.domain.model.msl.MslCompetition?
+        gameData: MslGame,
+        sogoGolferData: SogoGolfer,
+        competitionData: MslCompetition?
     ): Round {
         val includeRoundValue = _includeRound.value
 
@@ -480,8 +482,8 @@ class PlayingPartnerViewModel @Inject constructor(
             submittedTime = null,
             compScoreTotal = 0,
             roundType = "competition",
-            clubId = null,
-            clubName = null,
+            clubId = null,  //////////////////////////////////////
+            clubName = null,    /////////////////////////////////
             golferId = sogoGolferData.id,
             golferFirstName = sogoGolferData.firstName,
             golferLastName = sogoGolferData.lastName,
