@@ -60,6 +60,7 @@ fun PlayingPartnerScreen(
     val localGame by playingPartnerViewModel.localGame.collectAsState()
     val mslGameState by playingPartnerViewModel.mslGameState.collectAsState()
     val selectedPartner by playingPartnerViewModel.selectedPartner.collectAsState()
+    val uiState by playingPartnerViewModel.uiState.collectAsState()
 
     // Set status bar to white with black text and icons
     SideEffect {
@@ -70,7 +71,23 @@ fun PlayingPartnerScreen(
         windowInsetsController.isAppearanceLightStatusBars = true
     }
 
-
+    // Show error dialog for Let's Play flow
+    uiState.errorMessage?.let { error ->
+        AlertDialog(
+            onDismissRequest = { 
+                playingPartnerViewModel.clearError()
+            },
+            confirmButton = {
+                Button(onClick = { 
+                    playingPartnerViewModel.clearError()
+                }) {
+                    Text("OK")
+                }
+            },
+            title = { Text("Error") },
+            text = { Text(error) }
+        )
+    }
 
     ScreenWithDrawer(
         navController = navController,
@@ -130,8 +147,8 @@ fun PlayingPartnerScreen(
                 )
             }
 
-            // Simple "Let's Play" button at bottom - disabled until partner selected
-            val isButtonEnabled = selectedPartner != null
+            // "Let's Play" button with spinner - disabled until partner selected
+            val isButtonEnabled = selectedPartner != null && !uiState.isLetsPlayLoading
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -150,17 +167,38 @@ fun PlayingPartnerScreen(
                         .background(if (isButtonEnabled) mslYellow else Color.LightGray)
                         .clickable(enabled = isButtonEnabled) {
                             if (isButtonEnabled) {
-                                navController.navigate(nextRoute)
+                                playingPartnerViewModel.onLetsPlayClicked {
+                                    navController.navigate(nextRoute)
+                                }
                             }
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Let's Play",
-                        color = if (isButtonEnabled) Color.White else Color.DarkGray,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp
-                    )
+                    if (uiState.isLetsPlayLoading) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Let's Play",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 28.sp
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "Let's Play",
+                            color = if (isButtonEnabled) Color.White else Color.DarkGray,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 28.sp
+                        )
+                    }
                 }
             }
         }
@@ -336,4 +374,3 @@ fun PlayingPartnerCard(
         }
     }
 }
-

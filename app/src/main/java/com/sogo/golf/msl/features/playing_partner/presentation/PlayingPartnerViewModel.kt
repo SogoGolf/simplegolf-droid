@@ -6,6 +6,16 @@ import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.fees.GetFeesUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
+import com.sogo.golf.msl.domain.usecase.marker.SelectMarkerUseCase
+import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
+import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
+import com.sogo.golf.msl.domain.model.Round
+import com.sogo.golf.msl.domain.model.MslMetaData
+import com.sogo.golf.msl.domain.model.NetworkResult
+import org.threeten.bp.LocalDateTime
+import java.util.UUID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,12 +27,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import com.sogo.golf.msl.domain.model.msl.MslPlayingPartner
-import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
-import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
-import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
-import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import kotlinx.coroutines.launch
 
@@ -32,12 +38,14 @@ class PlayingPartnerViewModel @Inject constructor(
     private val gameRepository: MslGameLocalDbRepository,
     private val getSogoGolferUseCase: GetSogoGolferUseCase,
     private val getFeesUseCase: GetFeesUseCase,
+    private val selectMarkerUseCase: SelectMarkerUseCase,
     private val fetchAndSaveGameUseCase: FetchAndSaveGameUseCase,
     private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
     private val mslRepository: MslRepository,
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
-    private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase
+    private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
+    private val roundRepository: RoundLocalDbRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -265,10 +273,159 @@ class PlayingPartnerViewModel @Inject constructor(
             false
         }
     }
+
+    // Method to handle "Let's Play" button flow
+    fun onLetsPlayClicked(onNavigateToPlayRound: () -> Unit) {
+        val selectedPartner = _selectedPartner.value
+        if (selectedPartner?.golfLinkNumber == null) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "No playing partner selected or partner has no Golf Link Number"
+            )
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(
+                    isLetsPlayLoading = true,
+                    errorMessage = null
+                )
+
+                // Step 1: Call PUT marker API
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 1: Calling PUT marker API...")
+                when (val markerResult = selectMarkerUseCase(selectedPartner.golfLinkNumber)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("PlayingPartnerVM", "✅ Marker selected successfully")
+                    }
+                    is NetworkResult.Error -> {
+                        android.util.Log.e("PlayingPartnerVM", "❌ Failed to select marker: ${markerResult.error}")
+                        _uiState.value = _uiState.value.copy(
+                            isLetsPlayLoading = false,
+                            errorMessage = "Failed to select marker: ${markerResult.error.toUserMessage()}"
+                        )
+                        return@launch
+                    }
+                    is NetworkResult.Loading -> { /* Ignore */ }
+                }
+
+                // Step 2: Get club ID for data refresh
+                val selectedClub = getMslClubAndTenantIdsUseCase()
+                if (selectedClub?.clubId == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLetsPlayLoading = false,
+                        errorMessage = "No club selected"
+                    )
+                    return@launch
+                }
+                val clubIdStr = selectedClub.clubId.toString()
+
+                // Step 3: Refresh game data
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 3: Refreshing game data...")
+                when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("PlayingPartnerVM", "✅ Game data refreshed successfully")
+                    }
+                    is NetworkResult.Error -> {
+                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
+                        _uiState.value = _uiState.value.copy(
+                            isLetsPlayLoading = false,
+                            errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
+                        )
+                        return@launch
+                    }
+                    is NetworkResult.Loading -> { /* Ignore */ }
+                }
+
+                // Step 4: Refresh competition data
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 4: Refreshing competition data...")
+                when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("PlayingPartnerVM", "✅ Competition data refreshed successfully")
+                    }
+                    is NetworkResult.Error -> {
+                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
+                        // Don't fail the entire flow for competition data
+                    }
+                    is NetworkResult.Loading -> { /* Ignore */ }
+                }
+
+                // Step 5: Create Round object
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 5: Creating Round object...")
+                val round = createRoundFromCurrentData(selectedPartner)
+
+                // Step 6: Save Round to Room
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 6: Saving Round to database...")
+                roundRepository.saveRound(round)
+                android.util.Log.d("PlayingPartnerVM", "✅ Round saved to database")
+
+                _uiState.value = _uiState.value.copy(
+                    isLetsPlayLoading = false,
+                    successMessage = "Ready to play!"
+                )
+
+                // Step 7: Navigate to PlayRound screen
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 7: Navigating to PlayRound screen...")
+                onNavigateToPlayRound()
+
+            } catch (e: Exception) {
+                android.util.Log.e("PlayingPartnerVM", "❌ Exception in Let's Play flow", e)
+                _uiState.value = _uiState.value.copy(
+                    isLetsPlayLoading = false,
+                    errorMessage = "Let's Play failed: ${e.message}"
+                )
+            }
+        }
+    }
+
+    private suspend fun createRoundFromCurrentData(selectedPartner: MslPlayingPartner): Round {
+        val currentGolferData = currentGolfer.value
+        val gameData = localGame.value
+        val sogoGolferData = sogoGolfer.value
+        val includeRoundValue = _includeRound.value
+
+        return Round(
+            id = UUID.randomUUID().toString(),
+            uuid = UUID.randomUUID().toString(),
+            entityId = null,
+            roundPlayedOff = gameData?.gaHandicap,
+            dailyHandicap = gameData?.dailyHandicap?.toDouble(),
+            golfLinkHandicap = gameData?.gaHandicap,
+            golflinkNo = currentGolferData?.golfLinkNo,
+            roundDate = gameData?.bookingTime?.toLocalDate()?.atStartOfDay(),
+            startTime = gameData?.bookingTime,
+            finishTime = null,
+            scratchRating = null,
+            slopeRating = null,
+            submittedTime = null,
+            compScoreTotal = null,
+            roundType = "MSL",
+            clubId = null,
+            clubName = null,
+            golferId = null,
+            golferFirstName = currentGolferData?.firstName,
+            golferLastName = currentGolferData?.surname,
+            golferGLNumber = currentGolferData?.golfLinkNo,
+            markerFirstName = selectedPartner.firstName,
+            markerLastName = selectedPartner.lastName,
+            markerGLNumber = selectedPartner.golfLinkNumber,
+            compType = gameData?.competitions?.firstOrNull()?.name,
+            teeColor = gameData?.teeColour,
+            isClubComp = true,
+            isSubmitted = false,
+            isApproved = false,
+            mslMetaData = MslMetaData(isIncludeRoundOnSogo = includeRoundValue),
+            createdDate = LocalDateTime.now()
+        )
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
 }
 
 data class PlayingPartnerUiState(
     val isLoading: Boolean = false,
+    val isLetsPlayLoading: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null
 )

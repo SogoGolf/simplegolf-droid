@@ -6,7 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.sogo.golf.msl.data.local.database.entities.RoundEntity
 import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
+import com.sogo.golf.msl.data.local.database.dao.RoundDao
 import com.sogo.golf.msl.data.local.database.dao.MslGameDao
 import com.sogo.golf.msl.data.local.database.dao.MslGolferDao
 import com.sogo.golf.msl.data.local.database.dao.mongodb.FeeDao
@@ -33,15 +35,91 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
     }
 }
 
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Create rounds table with comprehensive structure
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS rounds (
+                id TEXT NOT NULL PRIMARY KEY,
+                uuid TEXT,
+                entityId TEXT,
+                roundPlayedOff REAL,
+                dailyHandicap REAL,
+                golfLinkHandicap REAL,
+                golflinkNo TEXT,
+                scorecardUrl TEXT,
+                roundRefCode TEXT,
+                roundDate TEXT,
+                roundType TEXT NOT NULL DEFAULT '',
+                startTime TEXT,
+                finishTime TEXT,
+                scratchRating REAL,
+                slopeRating REAL,
+                submittedTime TEXT,
+                compScoreTotal INTEGER,
+                whsFrontScoreStableford INTEGER,
+                whsBackScoreStableford INTEGER,
+                whsFrontScorePar INTEGER,
+                whsBackScorePar INTEGER,
+                whsFrontScoreStroke INTEGER,
+                whsBackScoreStroke INTEGER,
+                whsFrontScoreMaximumScore INTEGER,
+                whsBackScoreMaximumScore INTEGER,
+                roundApprovedBy TEXT,
+                comment TEXT,
+                createdDate TEXT,
+                updateDate TEXT,
+                updateUserId TEXT,
+                courseId TEXT,
+                courseUuid TEXT,
+                isClubSubmitted INTEGER,
+                isSubmitted INTEGER,
+                isMarkedForReview INTEGER,
+                isApproved INTEGER,
+                teeColor TEXT,
+                isClubComp INTEGER,
+                isDeleted INTEGER,
+                isAbandoned INTEGER,
+                clubId TEXT,
+                clubUuid TEXT,
+                golferId TEXT,
+                golferGender TEXT,
+                golferEmail TEXT,
+                golferFirstName TEXT,
+                golferLastName TEXT,
+                golferGLNumber TEXT,
+                golferImageUrl TEXT,
+                clubState TEXT,
+                clubName TEXT,
+                markerFirstName TEXT,
+                markerLastName TEXT,
+                markerEmail TEXT,
+                markerGLNumber TEXT,
+                compType TEXT,
+                holeScores TEXT,
+                sogoAppVersion TEXT,
+                transactionId TEXT,
+                playingPartnerRound TEXT,
+                roundApprovalSignatureUrl TEXT,
+                thirdPartyScorecardId TEXT,
+                mslMetaData TEXT,
+                lastUpdated INTEGER NOT NULL DEFAULT 0,
+                isSynced INTEGER NOT NULL DEFAULT 0
+            )
+        """.trimIndent())
+    }
+}
+
 @Database(
     entities = [
         CompetitionEntity::class,
         MslGolferEntity::class,
         MslGameEntity::class,
         FeeEntity::class,
-        SogoGolferEntity::class
+        SogoGolferEntity::class,
+        RoundEntity::class,
     ],
-    version = 9, // ✅ NEW: Increment version to 9 for bookingTime field
+    version = 10,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -50,6 +128,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun mslGameDao(): MslGameDao
     abstract fun feeDao(): FeeDao
     abstract fun sogoGolferDao(): SogoGolferDao
+    abstract fun roundDao(): RoundDao
 
     companion object {
         const val DATABASE_NAME = "msl_golf_database"
