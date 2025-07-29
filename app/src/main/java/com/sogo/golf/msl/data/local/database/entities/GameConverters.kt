@@ -6,6 +6,8 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.sogo.golf.msl.domain.model.msl.MslGameCompetition
 import com.sogo.golf.msl.domain.model.msl.MslPlayingPartner
+import org.threeten.bp.LocalDateTime
+import org.threeten.bp.format.DateTimeFormatter
 
 class GameConverters {
 
@@ -29,5 +31,24 @@ class GameConverters {
     fun toGameCompetitionList(competitionsJson: String): List<MslGameCompetition> {
         val listType = object : TypeToken<List<MslGameCompetition>>() {}.type
         return Gson().fromJson(competitionsJson, listType)
+    }
+
+    @TypeConverter
+    fun fromLocalDateTime(dateTime: LocalDateTime?): String? {
+        return dateTime?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+    }
+
+    @TypeConverter
+    fun toLocalDateTime(dateTimeString: String?): LocalDateTime? {
+        return try {
+            if (dateTimeString.isNullOrBlank()) {
+                null
+            } else {
+                LocalDateTime.parse(dateTimeString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("GameConverters", "Failed to parse LocalDateTime: $dateTimeString", e)
+            null
+        }
     }
 }

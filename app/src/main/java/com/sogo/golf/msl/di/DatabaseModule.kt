@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.sogo.golf.msl.data.local.database.AppDatabase
 import com.sogo.golf.msl.data.local.database.MIGRATION_7_8
+import com.sogo.golf.msl.data.local.database.MIGRATION_8_9
 import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
 import com.sogo.golf.msl.data.local.database.dao.MslGameDao
 import com.sogo.golf.msl.data.local.database.dao.MslGolferDao
@@ -32,7 +33,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_7_8) // ✅ NEW: Add migration for tokenBalance
+            .addMigrations(MIGRATION_7_8, MIGRATION_8_9) // ✅ NEW: Add migrations for tokenBalance and bookingTime
             .fallbackToDestructiveMigration() // Keep this as fallback
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {

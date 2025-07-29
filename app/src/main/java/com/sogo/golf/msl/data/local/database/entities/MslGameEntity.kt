@@ -7,6 +7,7 @@ import androidx.room.TypeConverters
 import com.sogo.golf.msl.domain.model.msl.MslGame
 import com.sogo.golf.msl.domain.model.msl.MslGameCompetition
 import com.sogo.golf.msl.domain.model.msl.MslPlayingPartner
+import org.threeten.bp.LocalDateTime
 
 @Entity(tableName = "games")
 @TypeConverters(GameConverters::class)
@@ -15,6 +16,7 @@ data class MslGameEntity(
     val id: String, // We'll use clubId as the primary key since games are club-specific
     val errorMessage: String?,
     val scorecardMessageOfTheDay: String?,
+    val bookingTime: LocalDateTime?, // Added booking time field
     val startingHoleNumber: Int,
     val mainCompetitionId: Int,
     val golflinkNumber: String?,
@@ -33,6 +35,7 @@ data class MslGameEntity(
         return MslGame(
             errorMessage = errorMessage,
             scorecardMessageOfTheDay = scorecardMessageOfTheDay,
+            bookingTime = bookingTime,
             startingHoleNumber = startingHoleNumber,
             mainCompetitionId = mainCompetitionId,
             golflinkNumber = golflinkNumber,
@@ -53,6 +56,7 @@ data class MslGameEntity(
                 id = gameId,
                 errorMessage = game.errorMessage,
                 scorecardMessageOfTheDay = game.scorecardMessageOfTheDay,
+                bookingTime = game.bookingTime,
                 startingHoleNumber = game.startingHoleNumber,
                 mainCompetitionId = game.mainCompetitionId,
                 golflinkNumber = game.golflinkNumber,

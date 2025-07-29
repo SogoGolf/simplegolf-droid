@@ -25,6 +25,14 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
     }
 }
 
+// ✅ NEW: Migration from version 8 to version 9 to add bookingTime column
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Add bookingTime column to games table
+        database.execSQL("ALTER TABLE games ADD COLUMN bookingTime TEXT")
+    }
+}
+
 @Database(
     entities = [
         CompetitionEntity::class,
@@ -33,7 +41,7 @@ val MIGRATION_7_8 = object : Migration(7, 8) {
         FeeEntity::class,
         SogoGolferEntity::class
     ],
-    version = 8, // ✅ NEW: Increment version to 8 for tokenBalance field
+    version = 9, // ✅ NEW: Increment version to 9 for bookingTime field
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

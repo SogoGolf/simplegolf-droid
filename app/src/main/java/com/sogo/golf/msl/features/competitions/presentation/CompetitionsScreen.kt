@@ -29,6 +29,8 @@ import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 import com.sogo.golf.msl.shared_components.ui.UnifiedScreenHeader
 import com.sogo.golf.msl.shared_components.ui.components.ColoredSquare
+import com.sogo.golf.msl.shared.utils.TimeFormatUtils
+import com.sogo.golf.msl.shared_components.ui.UserInfoSection
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -142,127 +144,6 @@ fun CompetitionsScreen(
                     .align(Alignment.BottomCenter)
             )
         }
-    }
-}
-
-@Composable
-fun UserInfoSection(
-    golfer: com.sogo.golf.msl.domain.model.msl.MslGolfer?,
-    game: com.sogo.golf.msl.domain.model.msl.MslGame?
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .padding(horizontal = 16.dp)
-    ) {
-        // Start time and hole
-        val startTime = if (game?.startingHoleNumber != 0 && game?.startingHoleNumber != null) {
-            // TODO: Format booking time when available
-            "10:30 AM" // Placeholder for now
-        } else {
-            "-"
-        }
-
-        val startHole = if (game?.startingHoleNumber != 0 && game?.startingHoleNumber != null) {
-            "${game.startingHoleNumber}"
-        } else {
-            "-"
-        }
-
-        Text(
-            text = "$startTime Starting Hole $startHole",
-            fontSize = MaterialTheme.typography.bodyLarge.fontSize,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(bottom = 8.dp)
-        )
-
-        // Player name
-        Text(
-            text = "${golfer?.firstName ?: "-"} ${golfer?.surname ?: "-"}",
-            fontSize = MaterialTheme.typography.headlineLarge.fontSize,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            style = TextStyle(
-                fontWeight = FontWeight.Bold,
-            ),
-        )
-
-        // Golf link number
-        Text(
-            text = golfer?.golfLinkNo ?: "-",
-            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Handicaps row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "${game?.gaHandicap ?: "-"}",
-                    fontSize = MaterialTheme.typography.headlineLarge.fontSize,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "GA Handicap",
-                    fontSize = MaterialTheme.typography.titleMedium.fontSize,
-                )
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val dailyHcap = if (game?.startingHoleNumber != 0 && game?.startingHoleNumber != null) {
-                    "${game.dailyHandicap}"
-                } else {
-                    "-"
-                }
-                Text(
-                    text = dailyHcap,
-                    fontSize = MaterialTheme.typography.headlineLarge.fontSize,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Daily Handicap",
-                    fontSize = MaterialTheme.typography.titleMedium.fontSize,
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Tee color and name
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-             if (game?.teeColour != null) ColoredSquare(hexColor = "#${game.teeColour}")
-             Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = game?.teeName ?: "",
-                fontSize = MaterialTheme.typography.titleLarge.fontSize,
-            )
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Competition section header
-        Text(
-            text = "Your competition(s):",
-            fontSize = MaterialTheme.typography.titleMedium.fontSize,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
