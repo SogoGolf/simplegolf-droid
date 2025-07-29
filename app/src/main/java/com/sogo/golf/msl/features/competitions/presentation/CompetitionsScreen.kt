@@ -27,6 +27,7 @@ import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
 import com.sogo.golf.msl.domain.model.mongodb.Fee
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
+import com.sogo.golf.msl.shared_components.ui.UnifiedScreenHeader
 import com.sogo.golf.msl.shared_components.ui.components.ColoredSquare
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 import kotlinx.coroutines.delay
@@ -64,99 +65,199 @@ fun CompetitionsScreen(
         windowInsetsController.isAppearanceLightStatusBars = true
     }
 
-    ScreenWithDrawer(navController = navController) {
-        Box(
+
+
+    ScreenWithDrawer(
+        navController = navController,
+        topBar = {
+            UnifiedScreenHeader(
+                title = "Competitions",
+                backgroundColor = Color.White
+            )
+        }
+    ) {
+
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.systemBars)
+                .background(Color.White)
+                .statusBarsPadding()
+                .padding(top = 56.dp) // Account for header height
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White)
-            ) {
-                // Header with menu button and title
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Menu button space (handled by ScreenWithDrawer)
-                    Spacer(modifier = Modifier.weight(1f))
+            // User information section
+            UserInfoSection(
+                golfer = currentGolfer,
+                game = localGame
+            )
 
-                    Text(
-                        text = "Competitions",
-                        style = TextStyle(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = MaterialTheme.typography.headlineMedium.fontSize,
-                            color = Color.Black
-                        ),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(6f)
+            // Competitions list with pull-to-refresh
+            PullToRefreshBox(
+                state = refreshState,
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    coroutineScope.launch {
+                        isRefreshing = true
+                        try {
+                            val result = competitionViewModel.refreshMslData()
+                            if (result.isFailure) {
+                                // Handle error - you might want to show a snackbar here
+                                android.util.Log.e("CompetitionsScreen", "MSL refresh failed: ${result.exceptionOrNull()?.message}")
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.e("CompetitionsScreen", "MSL refresh error", e)
+                        } finally {
+                            isRefreshing = false
+                        }
+                    }
+                },
+                indicator = {
+                    Indicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        isRefreshing = isRefreshing,
+                        state = refreshState
                     )
-
-                    Spacer(modifier = Modifier.weight(1f))
-                }
-
-                // User information section
-                UserInfoSection(
-                    golfer = currentGolfer,
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                CompetitionsListSection(
                     game = localGame
                 )
-
-                // Competitions list with pull-to-refresh
-                PullToRefreshBox(
-                    state = refreshState,
-                    isRefreshing = isRefreshing,
-                    onRefresh = {
-                        coroutineScope.launch {
-                            isRefreshing = true
-                            try {
-                                val result = competitionViewModel.refreshMslData()
-                                if (result.isFailure) {
-                                    // Handle error - you might want to show a snackbar here
-                                    android.util.Log.e("CompetitionsScreen", "MSL refresh failed: ${result.exceptionOrNull()?.message}")
-                                }
-                            } catch (e: Exception) {
-                                android.util.Log.e("CompetitionsScreen", "MSL refresh error", e)
-                            } finally {
-                                isRefreshing = false
-                            }
-                        }
-                    },
-                    indicator = {
-                        Indicator(
-                            modifier = Modifier.align(Alignment.Center),
-                            isRefreshing = isRefreshing,
-                            state = refreshState
-                        )
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    CompetitionsListSection(
-                        game = localGame
-                    )
-                }
-
-                // Footer section
-                FooterContent(
-                    includeRound = includeRound,
-                    golfer = currentGolfer,
-                    sogoGolfer = sogoGolfer,
-                    tokenCost = tokenCost, // Use computed value instead of mslFees
-                    canProceed = canProceed,
-                    onIncludeRoundChanged = { newValue ->
-                        includeRound = newValue
-                        competitionViewModel.setIncludeRound(newValue)
-                    },
-                    onNextClick = {
-                        navController.navigate(nextRoute)
-                    },
-                )
             }
+
+            Text("123")
+            // Footer section
+//            FooterContent(
+//                includeRound = includeRound,
+//                golfer = currentGolfer,
+//                sogoGolfer = sogoGolfer,
+//                tokenCost = tokenCost, // Use computed value instead of mslFees
+//                canProceed = canProceed,
+//                onIncludeRoundChanged = { newValue ->
+//                    includeRound = newValue
+//                    competitionViewModel.setIncludeRound(newValue)
+//                },
+//                onNextClick = {
+//                    navController.navigate(nextRoute)
+//                },
+//            )
         }
+
+        // Ticker overlay - positioned on top of everything
+//        if (showTicker) {
+//            gameState.game?.scorecardMessageOfTheDay?.let { message ->
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .statusBarsPadding()
+//                        .padding(top = 56.dp) // Account for header
+//                ) {
+//                    TickerText(
+//                        message = message,
+//                        backgroundColor = mslYellow,
+//                        textColor = mslBlack,
+//                        heightPercentage = 0,
+//                        fixedHeight = 60.dp,
+//                        onClose = {
+//                            viewModel.trackMessageTickerClosed()
+//                            showTicker = false
+//                        },
+//                    )
+//                }
+//            }
+//        }
+
+//        Box(
+//            modifier = Modifier
+//                .fillMaxSize()
+////                .windowInsetsPadding(WindowInsets.systemBars)
+//        ) {
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .background(Color.White)
+//            ) {
+//                // Header with menu button and title
+////                Row(
+////                    modifier = Modifier
+////                        .fillMaxWidth()
+////                        .padding(horizontal = 16.dp, vertical = 8.dp),
+////                    verticalAlignment = Alignment.CenterVertically,
+////                    horizontalArrangement = Arrangement.SpaceBetween
+////                ) {
+////                    // Menu button space (handled by ScreenWithDrawer)
+////                    Spacer(modifier = Modifier.weight(1f))
+////
+////                    Text(
+////                        text = "Competitions",
+////                        style = TextStyle(
+////                            fontWeight = FontWeight.Bold,
+////                            fontSize = MaterialTheme.typography.headlineMedium.fontSize,
+////                            color = Color.Black
+////                        ),
+////                        textAlign = TextAlign.Center,
+////                        modifier = Modifier.weight(6f)
+////                    )
+////
+////                    Spacer(modifier = Modifier.weight(1f))
+////                }
+//
+//                // User information section
+//                UserInfoSection(
+//                    golfer = currentGolfer,
+//                    game = localGame
+//                )
+//
+//                // Competitions list with pull-to-refresh
+//                PullToRefreshBox(
+//                    state = refreshState,
+//                    isRefreshing = isRefreshing,
+//                    onRefresh = {
+//                        coroutineScope.launch {
+//                            isRefreshing = true
+//                            try {
+//                                val result = competitionViewModel.refreshMslData()
+//                                if (result.isFailure) {
+//                                    // Handle error - you might want to show a snackbar here
+//                                    android.util.Log.e("CompetitionsScreen", "MSL refresh failed: ${result.exceptionOrNull()?.message}")
+//                                }
+//                            } catch (e: Exception) {
+//                                android.util.Log.e("CompetitionsScreen", "MSL refresh error", e)
+//                            } finally {
+//                                isRefreshing = false
+//                            }
+//                        }
+//                    },
+//                    indicator = {
+//                        Indicator(
+//                            modifier = Modifier.align(Alignment.Center),
+//                            isRefreshing = isRefreshing,
+//                            state = refreshState
+//                        )
+//                    },
+//                    modifier = Modifier.weight(1f)
+//                ) {
+//                    CompetitionsListSection(
+//                        game = localGame
+//                    )
+//                }
+//
+//                // Footer section
+//                FooterContent(
+//                    includeRound = includeRound,
+//                    golfer = currentGolfer,
+//                    sogoGolfer = sogoGolfer,
+//                    tokenCost = tokenCost, // Use computed value instead of mslFees
+//                    canProceed = canProceed,
+//                    onIncludeRoundChanged = { newValue ->
+//                        includeRound = newValue
+//                        competitionViewModel.setIncludeRound(newValue)
+//                    },
+//                    onNextClick = {
+//                        navController.navigate(nextRoute)
+//                    },
+//                )
+//            }
+//        }
     }
 }
 

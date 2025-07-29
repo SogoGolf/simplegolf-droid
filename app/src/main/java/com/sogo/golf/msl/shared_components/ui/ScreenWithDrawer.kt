@@ -3,8 +3,8 @@ package com.sogo.golf.msl.shared_components.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ScreenWithDrawer(
     navController: NavController,
+    topBar: @Composable () -> Unit = {}, // Optional custom top bar
     content: @Composable () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -49,17 +50,19 @@ fun ScreenWithDrawer(
         }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            // Main content
             content()
 
-            // Top bar with hamburger menu and debug icon
-            androidx.compose.foundation.layout.Row(
+            // Top bar overlay
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.TopStart)
-                    .padding(top = 35.dp),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+                    .fillMaxSize()
+                    .statusBarsPadding()
             ) {
-                // Hamburger menu button
+                // Custom top bar if provided
+                topBar()
+
+                // Hamburger menu button (always on top left)
                 IconButton(
                     onClick = {
                         scope.launch {
@@ -69,7 +72,10 @@ fun ScreenWithDrawer(
                                 drawerState.close()
                             }
                         }
-                    }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(start = 4.dp, top = 4.dp) // Slight padding for visual balance
                 ) {
                     Icon(
                         imageVector = Icons.Default.Menu,
@@ -78,9 +84,12 @@ fun ScreenWithDrawer(
                     )
                 }
 
-                // Debug icon in top right
+                // Debug icon (always on top right)
                 IconButton(
-                    onClick = { showDebugScreen = true }
+                    onClick = { showDebugScreen = true },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 4.dp, top = 4.dp) // Slight padding for visual balance
                 ) {
                     Icon(
                         imageVector = Icons.Default.Settings,

@@ -36,6 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.features.competitions.presentation.CompetitionViewModel
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
+import com.sogo.golf.msl.shared_components.ui.UnifiedScreenHeader
 import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
 
 @Composable
@@ -62,12 +63,20 @@ fun ChoosePlayingPartnerScreen(
         }
     }
 
-    ScreenWithDrawer(navController = navController) {
+    ScreenWithDrawer(
+        navController = navController,
+        topBar = {
+            UnifiedScreenHeader(
+                title = "Competitions",
+                backgroundColor = Color.White
+            )
+        }
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .verticalScroll(rememberScrollState()),
+//                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
