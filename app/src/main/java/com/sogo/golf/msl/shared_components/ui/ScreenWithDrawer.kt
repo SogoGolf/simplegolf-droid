@@ -3,6 +3,7 @@ package com.sogo.golf.msl.shared_components.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
@@ -30,6 +31,7 @@ import kotlinx.coroutines.launch
 fun ScreenWithDrawer(
     navController: NavController,
     topBar: @Composable () -> Unit = {}, // Optional custom top bar
+    bottomBar: @Composable () -> Unit = {}, // Optional bottom bar
     content: @Composable () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -52,6 +54,15 @@ fun ScreenWithDrawer(
         Box(modifier = Modifier.fillMaxSize()) {
             // Main content
             content()
+
+            // Bottom bar overlay (anchored to bottom)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            ) {
+                bottomBar()
+            }
 
             // Top bar overlay
             Box(

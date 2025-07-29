@@ -1,5 +1,6 @@
 package com.sogo.golf.msl.features.choose_playing_partner.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -70,13 +71,85 @@ fun ChoosePlayingPartnerScreen(
                 title = "Competitions",
                 backgroundColor = Color.White
             )
+        },
+        bottomBar = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(16.dp)
+            ) {
+                if (navController.previousBackStackEntry != null) {
+                    Button(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Back")
+                    }
+                }
+
+                Button(
+                    onClick = { viewModel.removeMarker() },
+                    enabled = viewModel.hasPartnerMarkedByMe() && !markerUiState.isRemovingMarker && !markerUiState.isSelectingMarker,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    if (markerUiState.isRemovingMarker) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Removing...")
+                        }
+                    } else {
+                        Text("Remove Marker")
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        if (selectedPartner != null) {
+                            viewModel.selectMarker()
+                        } else {
+                            viewModel.proceedWithoutMarker()
+                        }
+                    },
+                    enabled = !markerUiState.isSelectingMarker && !markerUiState.isRemovingMarker,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    if (markerUiState.isSelectingMarker) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Selecting...")
+                        }
+                    } else {
+                        Text("Next")
+                    }
+                }
+            }
         }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-//                .padding(16.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+                .padding(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -326,79 +399,8 @@ fun ChoosePlayingPartnerScreen(
                 }
             }
 
-            // Navigation buttons
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (navController.previousBackStackEntry != null) {
-                    Button(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Back")
-                    }
-                }
-
-                // NEW: Remove Marker button
-                Button(
-                    onClick = { viewModel.removeMarker() },
-                    enabled = viewModel.hasPartnerMarkedByMe() && !markerUiState.isRemovingMarker && !markerUiState.isSelectingMarker,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    )
-                ) {
-                    if (markerUiState.isRemovingMarker) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = MaterialTheme.colorScheme.onSecondary
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Removing...")
-                        }
-                    } else {
-                        Text("Remove Marker")
-                    }
-                }
-
-                // UPDATED: Next button waits for API success before navigating
-                Button(
-                    onClick = {
-                        if (selectedPartner != null) {
-                            viewModel.selectMarker() // Call API first, navigation handled by LaunchedEffect
-                        } else {
-                            // If no partner selected, proceed directly
-                            viewModel.proceedWithoutMarker()
-                        }
-                    },
-                    enabled = !markerUiState.isSelectingMarker && !markerUiState.isRemovingMarker,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    if (markerUiState.isSelectingMarker) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Selecting...")
-                        }
-                    } else {
-                        Text("Next")
-                    }
-                }
-            }
-
             // Add some bottom padding for better scrolling experience
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(80.dp))
         }
 
         // Network messages for marker API

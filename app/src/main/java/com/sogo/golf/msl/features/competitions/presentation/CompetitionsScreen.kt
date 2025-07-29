@@ -74,6 +74,22 @@ fun CompetitionsScreen(
                 title = "Competitions",
                 backgroundColor = Color.White
             )
+        },
+        bottomBar = {
+            FooterContent(
+                includeRound = includeRound,
+                golfer = currentGolfer,
+                sogoGolfer = sogoGolfer,
+                tokenCost = tokenCost,
+                canProceed = canProceed,
+                onIncludeRoundChanged = { newValue ->
+                    includeRound = newValue
+                    competitionViewModel.setIncludeRound(newValue)
+                },
+                onNextClick = {
+                    navController.navigate(nextRoute)
+                },
+            )
         }
     ) {
 
@@ -83,6 +99,7 @@ fun CompetitionsScreen(
                 .background(Color.White)
                 .statusBarsPadding()
                 .padding(top = 56.dp) // Account for header height
+                .padding(bottom = 120.dp) // Account for footer height
         ) {
             // User information section
             UserInfoSection(
@@ -123,23 +140,6 @@ fun CompetitionsScreen(
                     game = localGame
                 )
             }
-
-            Text("123")
-            // Footer section
-//            FooterContent(
-//                includeRound = includeRound,
-//                golfer = currentGolfer,
-//                sogoGolfer = sogoGolfer,
-//                tokenCost = tokenCost, // Use computed value instead of mslFees
-//                canProceed = canProceed,
-//                onIncludeRoundChanged = { newValue ->
-//                    includeRound = newValue
-//                    competitionViewModel.setIncludeRound(newValue)
-//                },
-//                onNextClick = {
-//                    navController.navigate(nextRoute)
-//                },
-//            )
         }
 
         // Ticker overlay - positioned on top of everything
