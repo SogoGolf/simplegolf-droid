@@ -1,11 +1,13 @@
 package com.sogo.golf.msl.features.playing_partner.presentation
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
@@ -13,25 +15,30 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
-import com.sogo.golf.msl.domain.model.mongodb.Fee
-import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
+import com.sogo.golf.msl.domain.model.msl.MslGame
+import com.sogo.golf.msl.domain.model.msl.MslPlayingPartner
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 import com.sogo.golf.msl.shared_components.ui.UnifiedScreenHeader
 import com.sogo.golf.msl.shared_components.ui.components.ColoredSquare
+import com.sogo.golf.msl.ui.theme.MSLColors.mslBlack
+import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
+import com.sogo.golf.msl.ui.theme.MSLColors.mslGreen
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,17 +51,14 @@ fun PlayingPartnerScreen(
 ) {
     val view = LocalView.current
     var isRefreshing by remember { mutableStateOf(false) }
-    var includeRound by remember { mutableStateOf(true) }
     val refreshState = rememberPullToRefreshState()
     val coroutineScope = rememberCoroutineScope()
-
 
     // Get the data from the view model
     val currentGolfer by playingPartnerViewModel.currentGolfer.collectAsState()
     val localGame by playingPartnerViewModel.localGame.collectAsState()
-    val sogoGolfer by playingPartnerViewModel.sogoGolfer.collectAsState()
-    val tokenCost by playingPartnerViewModel.tokenCost.collectAsState()
-    val canProceed by playingPartnerViewModel.canProceed.collectAsState()
+    val mslGameState by playingPartnerViewModel.mslGameState.collectAsState()
+    val selectedPartner by playingPartnerViewModel.selectedPartner.collectAsState()
 
     // Set status bar to white with black text and icons
     SideEffect {
@@ -82,6 +86,7 @@ fun PlayingPartnerScreen(
                 .fillMaxSize()
                 .background(Color.White)
                 .statusBarsPadding()
+                .navigationBarsPadding()
                 .padding(top = 56.dp) // Account for header height
         ) {
             // User information section
@@ -98,10 +103,11 @@ fun PlayingPartnerScreen(
                     coroutineScope.launch {
                         isRefreshing = true
                         try {
-                            // Empty refresh logic for now
-                            delay(1000)
+                            android.util.Log.d("PlayingPartnerScreen", "🔄 Starting pull-to-refresh...")
+                            val success = playingPartnerViewModel.refreshAllData()
+                            android.util.Log.d("PlayingPartnerScreen", if (success) "✅ Refresh completed successfully" else "⚠️ Refresh completed with some errors")
                         } catch (e: Exception) {
-                            android.util.Log.e("PlayingPartnerScreen", "Refresh error", e)
+                            android.util.Log.e("PlayingPartnerScreen", "❌ Refresh error", e)
                         } finally {
                             isRefreshing = false
                         }
@@ -116,26 +122,31 @@ fun PlayingPartnerScreen(
                 },
                 modifier = Modifier.weight(1f)
             ) {
-                CompetitionsListSection(
-                    game = localGame
+                PlayingPartnersListSection(
+                    mslGameState = mslGameState,
+                    selectedPartner = selectedPartner,
+                    onPartnerSelected = { partner -> playingPartnerViewModel.selectPartner(partner) }
                 )
             }
 
-            // Footer content at bottom
-            FooterContent(
-                includeRound = includeRound,
-                golfer = currentGolfer,
-                sogoGolfer = sogoGolfer,
-                tokenCost = tokenCost,
-                canProceed = canProceed,
-                onIncludeRoundChanged = { newValue ->
-                    includeRound = newValue
-                    playingPartnerViewModel.setIncludeRound(newValue)
-                },
-                onNextClick = {
-                    navController.navigate(nextRoute)
-                },
-            )
+            // Simple "Let's Play" button at bottom
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.dp)
+                    .background(mslYellow)
+                    .clickable {
+                        navController.navigate(nextRoute)
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Let's Play",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 28.sp
+                )
+            }
         }
     }
 }
@@ -261,9 +272,18 @@ fun UserInfoSection(
     }
 }
 
+data class MslGameState(
+    val isLoading: Boolean = false,
+    val game: MslGame? = null,
+    val error: String = ""
+)
+
+
 @Composable
-fun CompetitionsListSection(
-    game: com.sogo.golf.msl.domain.model.msl.MslGame?
+fun PlayingPartnersListSection(
+    mslGameState: MslGameState,
+    selectedPartner: MslPlayingPartner?,
+    onPartnerSelected: (MslPlayingPartner) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -272,35 +292,44 @@ fun CompetitionsListSection(
         contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)
     ) {
         when {
-            game == null -> {
+            mslGameState.isLoading -> {
                 item {
                     Box(
                         modifier = Modifier.fillParentMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Waiting for scorecard data...",
-                            fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                            text = "Waiting for playing partner data...",
+                            fontSize = MaterialTheme.typography.bodyLarge.fontSize
                         )
                     }
                 }
             }
 
-            game.competitions.isEmpty() -> {
+            mslGameState.game?.playingPartners?.isNotEmpty() == true -> {
+                items(mslGameState.game!!.playingPartners.size) { index ->
+                    val playingPartner = mslGameState.game!!.playingPartners[index]
+                    PlayingPartnerCard(
+                        title = "${playingPartner.firstName} ${playingPartner.lastName}",
+                        dailyHandicap = playingPartner.dailyHandicap.toString(),
+                        isAvailable = playingPartner.markedByGolfLinkNumber == null,
+                        selected = selectedPartner?.golfLinkNumber == playingPartner.golfLinkNumber,
+                        onCardClick = { onPartnerSelected(playingPartner) }
+                    )
+                }
+            }
+
+            mslGameState.error.isNotEmpty() -> {
                 item {
                     Box(
-                        modifier = Modifier.fillParentMaxSize(),
+                        modifier = Modifier.fillParentMaxSize()
+                            .padding(horizontal = 30.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "No competitions available",
-                                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
-                            )
-                            Text(
-                                text = "(Pull down to refresh)",
-                                fontSize = MaterialTheme.typography.headlineSmall.fontSize,
-                                modifier = Modifier.padding(top = 5.dp)
+                                text = mslGameState.error,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -308,11 +337,104 @@ fun CompetitionsListSection(
             }
 
             else -> {
-                items(game.competitions.size) { index ->
-                    val competition = game.competitions[index]
-                    CompetitionCard(
-                        title = competition.name,
-                        subtitle = game.teeName ?: ""
+                item {
+                    Box(
+                        modifier = Modifier.fillParentMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "No playing partners available",
+                                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                            )
+                            Text(
+                                text = "(Pull down to refresh)",
+                                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                                modifier = Modifier.padding(top = 5.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun PlayingPartnerCard(
+    title: String,
+    dailyHandicap: String,
+    isAvailable: Boolean,
+    selected: Boolean,
+    onCardClick: () -> Unit
+) {
+    val backgroundColor = if (isAvailable) Color.White else Color(0xFFB0B0B0)
+    val availabilityText = if (isAvailable) "Available" else "Already Selected"
+    val availabilityTextColor = if (isAvailable) mslGreen else mslYellow
+    val availabilityBorderColor = if (isAvailable) mslGreen else mslYellow
+    val titleAlpha = if (isAvailable) 1f else 0.4f
+    val borderColor = if (selected) mslBlue else Color.Transparent
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 3.dp)
+            .border(
+                BorderStroke(3.dp, SolidColor(borderColor)),
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
+            .clickable(enabled = isAvailable, onClick = onCardClick)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            RadioButton(
+                selected = selected,
+                onClick = null, // null because we're handling clicks on the entire card
+                enabled = isAvailable,
+                colors = RadioButtonDefaults.colors(
+                    selectedColor = mslBlue,
+                    unselectedColor = Color.Gray
+                )
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = MaterialTheme.typography.headlineMedium.fontSize,
+                    color = mslBlack,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.alpha(titleAlpha)
+                )
+                Text(
+                    text = "Daily Handicap: $dailyHandicap",
+                    fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .border(1.dp, availabilityBorderColor, shape = RoundedCornerShape(4.dp))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = availabilityText,
+                        fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                        color = availabilityTextColor,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -320,107 +442,3 @@ fun CompetitionsListSection(
     }
 }
 
-@Composable
-fun CompetitionCard(
-    title: String,
-    subtitle: String
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-fun FooterContent(
-    includeRound: Boolean,
-    golfer: com.sogo.golf.msl.domain.model.msl.MslGolfer?,
-    sogoGolfer: SogoGolfer?,
-    tokenCost: Double,
-    canProceed: Boolean,
-    onIncludeRoundChanged: (Boolean) -> Unit,
-    onNextClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.LightGray)
-            .navigationBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp)
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    onIncludeRoundChanged(!includeRound)
-                },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Checkbox(
-                checked = includeRound,
-                onCheckedChange = onIncludeRoundChanged,
-            )
-            Text(
-                text = "Include this round on SOGO Golf",
-                fontSize = MaterialTheme.typography.titleMedium.fontSize,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
-
-        Text(
-            text = "Token cost: $tokenCost",
-            fontSize = MaterialTheme.typography.titleMedium.fontSize,
-            modifier = Modifier.padding(bottom = 5.dp)
-        )
-
-        // Token balance display
-        Text(
-            text = "Your Token Balance: ${sogoGolfer?.tokenBalance ?: 0}",
-            fontSize = MaterialTheme.typography.titleMedium.fontSize,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Next button - enable only if competitions are available
-        val hasCompetitions = true //localGame?.competitions?.isNotEmpty() == true
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .background(if (hasCompetitions) mslYellow else Color.LightGray)
-                .clickable(enabled = hasCompetitions) {
-                    if (hasCompetitions) {
-                        onNextClick()
-                    }
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Next",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 28.sp
-            )
-        }
-    }
-}
