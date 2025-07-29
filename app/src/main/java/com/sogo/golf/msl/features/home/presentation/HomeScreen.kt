@@ -3,9 +3,11 @@ package com.sogo.golf.msl.features.home.presentation
 
 import android.app.Activity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -188,12 +190,23 @@ fun HomeScreen(
                     modifier = Modifier
                         .padding(horizontal = screenWidth * 0.15f)
                         .height(80.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .then(
+                            if (updateState.isCheckingForUpdate) {
+                                Modifier.border(
+                                    width = 0.5.dp,
+                                    color = Color.Gray.copy(alpha = 0.5f),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                            } else {
+                                Modifier
+                            }
+                        ),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = mslYellow,
                         contentColor = Color.Black
                     ),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     // Show different text based on state
                     if (updateState.isCheckingForUpdate) {

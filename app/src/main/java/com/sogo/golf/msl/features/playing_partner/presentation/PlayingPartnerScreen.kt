@@ -132,24 +132,36 @@ fun PlayingPartnerScreen(
 
             // Simple "Let's Play" button at bottom - disabled until partner selected
             val isButtonEnabled = selectedPartner != null
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .background(if (isButtonEnabled) mslYellow else Color.LightGray)
-                    .clickable(enabled = isButtonEnabled) {
-                        if (isButtonEnabled) {
-                            navController.navigate(nextRoute)
-                        }
-                    },
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Let's Play",
-                    color = if (isButtonEnabled) Color.White else Color.DarkGray,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 28.sp
-                )
+                // Top border when disabled
+                if (!isButtonEnabled) {
+                    HorizontalDivider(
+                        thickness = 0.5.dp,
+                        color = Color.Black.copy(alpha = 0.5f)
+                    )
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .background(if (isButtonEnabled) mslYellow else Color.LightGray)
+                        .clickable(enabled = isButtonEnabled) {
+                            if (isButtonEnabled) {
+                                navController.navigate(nextRoute)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Let's Play",
+                        color = if (isButtonEnabled) Color.White else Color.DarkGray,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 28.sp
+                    )
+                }
             }
         }
     }

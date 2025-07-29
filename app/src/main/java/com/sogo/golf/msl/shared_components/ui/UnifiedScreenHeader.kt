@@ -42,8 +42,8 @@ fun UnifiedScreenHeader(
         Text(
             text = title,
             style = TextStyle(
-                fontWeight = FontWeight.Bold,
                 fontSize = MaterialTheme.typography.headlineMedium.fontSize,
+                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
             ),
             textAlign = TextAlign.Center,

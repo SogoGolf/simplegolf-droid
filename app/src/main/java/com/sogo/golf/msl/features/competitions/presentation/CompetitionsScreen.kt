@@ -31,6 +31,7 @@ import com.sogo.golf.msl.shared_components.ui.UnifiedScreenHeader
 import com.sogo.golf.msl.shared_components.ui.components.ColoredSquare
 import com.sogo.golf.msl.shared.utils.TimeFormatUtils
 import com.sogo.golf.msl.shared_components.ui.UserInfoSection
+import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
