@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import com.sogo.golf.msl.domain.model.msl.MslPlayingPartner
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import kotlinx.coroutines.launch
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 class PlayingPartnerViewModel @Inject constructor(
     private val getMslGolferUseCase: GetMslGolferUseCase,
     private val gameRepository: MslGameLocalDbRepository,
+    private val competitionRepository: MslCompetitionLocalDbRepository,
     private val getSogoGolferUseCase: GetSogoGolferUseCase,
     private val getFeesUseCase: GetFeesUseCase,
     private val selectMarkerUseCase: SelectMarkerUseCase,
@@ -53,6 +55,14 @@ class PlayingPartnerViewModel @Inject constructor(
 
     // Observe local game data from Room database
     val localGame = gameRepository.getGame()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    // Always observe local competition data (works offline)
+    val currentCompetition = competitionRepository.getCompetition()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
