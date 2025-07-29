@@ -37,7 +37,7 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
 
 val MIGRATION_9_10 = object : Migration(9, 10) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // Create rounds table with comprehensive structure
+        // Create rounds table - SQL must match exactly what Room expects
         database.execSQL("""
             CREATE TABLE IF NOT EXISTS rounds (
                 id TEXT NOT NULL PRIMARY KEY,
@@ -50,7 +50,7 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
                 scorecardUrl TEXT,
                 roundRefCode TEXT,
                 roundDate TEXT,
-                roundType TEXT NOT NULL DEFAULT '',
+                roundType TEXT NOT NULL,
                 startTime TEXT,
                 finishTime TEXT,
                 scratchRating REAL,
@@ -96,15 +96,15 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
                 markerEmail TEXT,
                 markerGLNumber TEXT,
                 compType TEXT,
-                holeScores TEXT,
+                holeScores TEXT NOT NULL,
                 sogoAppVersion TEXT,
                 transactionId TEXT,
                 playingPartnerRound TEXT,
                 roundApprovalSignatureUrl TEXT,
                 thirdPartyScorecardId TEXT,
                 mslMetaData TEXT,
-                lastUpdated INTEGER NOT NULL DEFAULT 0,
-                isSynced INTEGER NOT NULL DEFAULT 0
+                lastUpdated INTEGER NOT NULL,
+                isSynced INTEGER NOT NULL
             )
         """.trimIndent())
     }
