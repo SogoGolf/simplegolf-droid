@@ -76,55 +76,74 @@ fun CompetitionsScreen(
             )
         }
     ) {
-
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
-                .statusBarsPadding()
-                .padding(top = 56.dp) // Account for header height
         ) {
-            // User information section
-            UserInfoSection(
-                golfer = currentGolfer,
-                game = localGame
-            )
-
-            // Competitions list with pull-to-refresh
-            PullToRefreshBox(
-                state = refreshState,
-                isRefreshing = isRefreshing,
-                onRefresh = {
-                    coroutineScope.launch {
-                        isRefreshing = true
-                        try {
-                            val result = competitionViewModel.refreshMslData()
-                            if (result.isFailure) {
-                                // Handle error - you might want to show a snackbar here
-                                android.util.Log.e("CompetitionsScreen", "MSL refresh failed: ${result.exceptionOrNull()?.message}")
-                            }
-                        } catch (e: Exception) {
-                            android.util.Log.e("CompetitionsScreen", "MSL refresh error", e)
-                        } finally {
-                            isRefreshing = false
-                        }
-                    }
-                },
-                indicator = {
-                    Indicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        isRefreshing = isRefreshing,
-                        state = refreshState
-                    )
-                },
-                modifier = Modifier.weight(1f)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .padding(top = 56.dp) // Account for header height
             ) {
-                CompetitionsListSection(
+                UserInfoSection(
+                    golfer = currentGolfer,
                     game = localGame
                 )
+
+                PullToRefreshBox(
+                    state = refreshState,
+                    isRefreshing = isRefreshing,
+                    onRefresh = {
+                        coroutineScope.launch {
+                            isRefreshing = true
+                            try {
+                                val result = competitionViewModel.refreshMslData()
+                                if (result.isFailure) {
+                                    android.util.Log.e("CompetitionsScreen", "MSL refresh failed: ${result.exceptionOrNull()?.message}")
+                                }
+                            } catch (e: Exception) {
+                                android.util.Log.e("CompetitionsScreen", "MSL refresh error", e)
+                            } finally {
+                                isRefreshing = false
+                            }
+                        }
+                    },
+                    indicator = {
+                        Indicator(
+                            modifier = Modifier.align(Alignment.Center),
+                            isRefreshing = isRefreshing,
+                            state = refreshState
+                        )
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                ) {
+                    CompetitionsListSection(
+                        game = localGame
+                    )
+                }
             }
 
-            Text("123")
+            // Footer pinned to bottom
+            FooterContent(
+                includeRound = includeRound,
+                golfer = currentGolfer,
+                sogoGolfer = sogoGolfer,
+                tokenCost = tokenCost,
+                canProceed = canProceed,
+                onIncludeRoundChanged = { newValue ->
+                    includeRound = newValue
+                    competitionViewModel.setIncludeRound(newValue)
+                },
+                onNextClick = {
+                    navController.navigate(nextRoute)
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+            )
+
             // Footer section
 //            FooterContent(
 //                includeRound = includeRound,
@@ -475,10 +494,12 @@ fun FooterContent(
     canProceed: Boolean,
     onIncludeRoundChanged: (Boolean) -> Unit,
     onNextClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .background(Color.LightGray),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
