@@ -2,6 +2,7 @@
 package com.sogo.golf.msl.shared.utils
 
 import org.threeten.bp.LocalDate
+import org.threeten.bp.LocalDateTime
 import org.threeten.bp.format.DateTimeFormatter
 
 object DateUtils {
@@ -89,5 +90,21 @@ object DateUtils {
     fun clearDebugDate() {
         debugDate = null
         android.util.Log.d("DateUtils", "🔧 DEBUG: Cleared debug date, using real date")
+    }
+
+    /**
+     * Format LocalDateTime to 12-hour time format (e.g., "11:55 PM")
+     * @param dateTime LocalDateTime to format
+     * @return Formatted time string like "11:55 PM" or null if dateTime is null
+     */
+    fun formatTimeForDisplay(dateTime: LocalDateTime?): String? {
+        if (dateTime == null) return null
+        
+        return try {
+            dateTime.format(DateTimeFormatter.ofPattern("h:mm a"))
+        } catch (e: Exception) {
+            android.util.Log.w("DateUtils", "Error formatting time: $dateTime", e)
+            null
+        }
     }
 }

@@ -158,8 +158,7 @@ fun UserInfoSection(
     ) {
         // Start time and hole
         val startTime = if (game?.startingHoleNumber != 0 && game?.startingHoleNumber != null) {
-            // TODO: Format booking time when available
-            "10:30 AM" // Placeholder for now
+            com.sogo.golf.msl.shared.utils.DateUtils.formatTimeForDisplay(game.bookingTime) ?: "-"
         } else {
             "-"
         }
