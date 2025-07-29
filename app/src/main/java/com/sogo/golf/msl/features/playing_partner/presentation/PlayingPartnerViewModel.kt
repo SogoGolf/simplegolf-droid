@@ -62,7 +62,7 @@ class PlayingPartnerViewModel @Inject constructor(
         )
 
     // Always observe local competition data (works offline)
-    val currentCompetition = competitionRepository.getCompetition()
+    val localCompetition = competitionRepository.getCompetition()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
