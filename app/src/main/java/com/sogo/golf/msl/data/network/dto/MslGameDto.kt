@@ -5,6 +5,7 @@ import com.sogo.golf.msl.domain.model.msl.MslGame
 data class MslGameDto(
     val errorMessage: String? = null,
     val scorecardMessageOfTheDay: String? = null,
+    val bookingTime: String? = null,
     val startingHoleNumber: Int,
     val mainCompetitionId: Int,
     val golflinkNumber: String? = null,
@@ -22,6 +23,14 @@ fun MslGameDto.toDomainModel(): MslGame {
     return MslGame(
         errorMessage = errorMessage,
         scorecardMessageOfTheDay = scorecardMessageOfTheDay,
+        bookingTime = bookingTime?.let { 
+            try {
+                org.threeten.bp.LocalDateTime.parse(it)
+            } catch (e: Exception) {
+                android.util.Log.w("MslGameDto", "Error parsing bookingTime: $it", e)
+                null
+            }
+        },
         startingHoleNumber = startingHoleNumber,
         mainCompetitionId = mainCompetitionId,
         golflinkNumber = golflinkNumber,
