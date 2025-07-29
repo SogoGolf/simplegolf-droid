@@ -159,6 +159,54 @@ class PlayingPartnerViewModel @Inject constructor(
         initialValue = false
     )
 
+    init {
+        viewModelScope.launch {
+            currentGolfer.collect { golfer ->
+                if (golfer != null) {
+                    android.util.Log.d("PlayingPartnerVM", "=== MSL GOLFER LOADED ===")
+                    android.util.Log.d("PlayingPartnerVM", "Golfer: ${golfer.firstName} ${golfer.surname} (${golfer.golfLinkNo})")
+                } else {
+                    android.util.Log.d("PlayingPartnerVM", "⚠️ MSL Golfer is null")
+                }
+            }
+        }
+        
+        viewModelScope.launch {
+            sogoGolfer.collect { sogo ->
+                if (sogo != null) {
+                    android.util.Log.d("PlayingPartnerVM", "=== SOGO GOLFER LOADED ===")
+                    android.util.Log.d("PlayingPartnerVM", "SogoGolfer: ${sogo.firstName} ${sogo.lastName}")
+                    android.util.Log.d("PlayingPartnerVM", "Token Balance: ${sogo.tokenBalance}")
+                    android.util.Log.d("PlayingPartnerVM", "Entity ID: ${sogo.entityId}")
+                } else {
+                    android.util.Log.d("PlayingPartnerVM", "⚠️ Sogo Golfer is null")
+                }
+            }
+        }
+        
+        viewModelScope.launch {
+            localGame.collect { game ->
+                if (game != null) {
+                    android.util.Log.d("PlayingPartnerVM", "=== GAME DATA LOADED ===")
+                    android.util.Log.d("PlayingPartnerVM", "Game: ${game.bookingTime}, Partners: ${game.playingPartners.size}")
+                } else {
+                    android.util.Log.d("PlayingPartnerVM", "⚠️ Game data is null")
+                }
+            }
+        }
+        
+        viewModelScope.launch {
+            localCompetition.collect { competition ->
+                if (competition != null) {
+                    android.util.Log.d("PlayingPartnerVM", "=== COMPETITION DATA LOADED ===")
+                    android.util.Log.d("PlayingPartnerVM", "Competition: ${competition.players.size} players")
+                } else {
+                    android.util.Log.d("PlayingPartnerVM", "⚠️ Competition data is null")
+                }
+            }
+        }
+    }
+
     fun setIncludeRound(include: Boolean) {
         _includeRound.value = include
     }
@@ -301,8 +349,44 @@ class PlayingPartnerViewModel @Inject constructor(
                     errorMessage = null
                 )
 
-                // Step 1: Call PUT marker API
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 1: Calling PUT marker API...")
+                // Step 1: Verify we have required data from Room
+                val currentGolferData = currentGolfer.value
+                val gameData = localGame.value
+                val sogoGolferData = sogoGolfer.value
+                val competitionData = localCompetition.value
+
+                android.util.Log.d("PlayingPartnerVM", "🔍 Checking Room data availability...")
+                android.util.Log.d("PlayingPartnerVM", "Current golfer: ${currentGolferData?.firstName} ${currentGolferData?.surname}")
+                android.util.Log.d("PlayingPartnerVM", "Game data: ${gameData?.bookingTime}")
+                android.util.Log.d("PlayingPartnerVM", "Sogo golfer: ${sogoGolferData?.firstName} (tokens: ${sogoGolferData?.tokenBalance})")
+                android.util.Log.d("PlayingPartnerVM", "Competition data: ${competitionData?.players?.size ?: 0} players")
+
+                if (currentGolferData == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLetsPlayLoading = false,
+                        errorMessage = "Current golfer data not available. Please refresh the app."
+                    )
+                    return@launch
+                }
+
+                if (gameData == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLetsPlayLoading = false,
+                        errorMessage = "Game data not available. Please refresh the app."
+                    )
+                    return@launch
+                }
+
+                if (sogoGolferData == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isLetsPlayLoading = false,
+                        errorMessage = "Sogo golfer data not available. Please refresh the app."
+                    )
+                    return@launch
+                }
+
+                // Step 2: Call PUT marker API
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 2: Calling PUT marker API...")
                 when (val markerResult = selectMarkerUseCase(selectedPartner.golfLinkNumber)) {
                     is NetworkResult.Success -> {
                         android.util.Log.d("PlayingPartnerVM", "✅ Marker selected successfully")
@@ -318,53 +402,12 @@ class PlayingPartnerViewModel @Inject constructor(
                     is NetworkResult.Loading -> { /* Ignore */ }
                 }
 
-                // Step 2: Get club ID for data refresh
-                val selectedClub = getMslClubAndTenantIdsUseCase()
-                if (selectedClub?.clubId == null) {
-                    _uiState.value = _uiState.value.copy(
-                        isLetsPlayLoading = false,
-                        errorMessage = "No club selected"
-                    )
-                    return@launch
-                }
-                val clubIdStr = selectedClub.clubId.toString()
+                // Step 3: Create Round object using Room data (no internet refresh)
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 3: Creating Round object from Room data...")
+                val round = createRoundFromRoomData(selectedPartner, currentGolferData, gameData, sogoGolferData, competitionData)
 
-                // Step 3: Refresh game data
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 3: Refreshing game data...")
-                when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
-                    is NetworkResult.Success -> {
-                        android.util.Log.d("PlayingPartnerVM", "✅ Game data refreshed successfully")
-                    }
-                    is NetworkResult.Error -> {
-                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
-                        _uiState.value = _uiState.value.copy(
-                            isLetsPlayLoading = false,
-                            errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
-                        )
-                        return@launch
-                    }
-                    is NetworkResult.Loading -> { /* Ignore */ }
-                }
-
-                // Step 4: Refresh competition data
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 4: Refreshing competition data...")
-                when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
-                    is NetworkResult.Success -> {
-                        android.util.Log.d("PlayingPartnerVM", "✅ Competition data refreshed successfully")
-                    }
-                    is NetworkResult.Error -> {
-                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
-                        // Don't fail the entire flow for competition data
-                    }
-                    is NetworkResult.Loading -> { /* Ignore */ }
-                }
-
-                // Step 5: Create Round object
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 5: Creating Round object...")
-                val round = createRoundFromCurrentData(selectedPartner)
-
-                // Step 6: Save Round to Room
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 6: Saving Round to database...")
+                // Step 4: Save Round to Room
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 4: Saving Round to database...")
                 roundRepository.saveRound(round)
                 android.util.Log.d("PlayingPartnerVM", "✅ Round saved to database")
 
@@ -373,8 +416,8 @@ class PlayingPartnerViewModel @Inject constructor(
                     successMessage = "Ready to play!"
                 )
 
-                // Step 7: Navigate to PlayRound screen
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 7: Navigating to PlayRound screen...")
+                // Step 5: Navigate to PlayRound screen
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 5: Navigating to PlayRound screen...")
                 onNavigateToPlayRound()
 
             } catch (e: Exception) {
@@ -387,22 +430,32 @@ class PlayingPartnerViewModel @Inject constructor(
         }
     }
 
-    private suspend fun createRoundFromCurrentData(selectedPartner: MslPlayingPartner): Round {
-        val currentGolferData = currentGolfer.value
-        val gameData = localGame.value
-        val sogoGolferData = sogoGolfer.value
+    private fun createRoundFromRoomData(
+        selectedPartner: MslPlayingPartner,
+        currentGolferData: com.sogo.golf.msl.domain.model.msl.MslGolfer,
+        gameData: com.sogo.golf.msl.domain.model.msl.MslGame,
+        sogoGolferData: com.sogo.golf.msl.domain.model.mongodb.SogoGolfer,
+        competitionData: com.sogo.golf.msl.domain.model.msl.MslCompetition?
+    ): Round {
         val includeRoundValue = _includeRound.value
+
+        android.util.Log.d("PlayingPartnerVM", "📝 Creating Round with data:")
+        android.util.Log.d("PlayingPartnerVM", "  - Golfer: ${currentGolferData.firstName} ${currentGolferData.surname}")
+        android.util.Log.d("PlayingPartnerVM", "  - Game: ${gameData.bookingTime}")
+        android.util.Log.d("PlayingPartnerVM", "  - Sogo tokens: ${sogoGolferData.tokenBalance}")
+        android.util.Log.d("PlayingPartnerVM", "  - Competition: ${competitionData?.players?.size ?: 0} players")
+        android.util.Log.d("PlayingPartnerVM", "  - Include round: $includeRoundValue")
 
         return Round(
             id = UUID.randomUUID().toString(),
             uuid = UUID.randomUUID().toString(),
-            entityId = null,
-            roundPlayedOff = gameData?.gaHandicap,
-            dailyHandicap = gameData?.dailyHandicap?.toDouble(),
-            golfLinkHandicap = gameData?.gaHandicap,
-            golflinkNo = currentGolferData?.golfLinkNo,
-            roundDate = gameData?.bookingTime?.toLocalDate()?.atStartOfDay(),
-            startTime = gameData?.bookingTime,
+            entityId = sogoGolferData.entityId,
+            roundPlayedOff = gameData.gaHandicap,
+            dailyHandicap = gameData.dailyHandicap?.toDouble(),
+            golfLinkHandicap = gameData.gaHandicap,
+            golflinkNo = currentGolferData.golfLinkNo,
+            roundDate = gameData.bookingTime?.toLocalDate()?.atStartOfDay(),
+            startTime = gameData.bookingTime,
             finishTime = null,
             scratchRating = null,
             slopeRating = null,
@@ -412,14 +465,14 @@ class PlayingPartnerViewModel @Inject constructor(
             clubId = null,
             clubName = null,
             golferId = null,
-            golferFirstName = currentGolferData?.firstName,
-            golferLastName = currentGolferData?.surname,
-            golferGLNumber = currentGolferData?.golfLinkNo,
+            golferFirstName = currentGolferData.firstName,
+            golferLastName = currentGolferData.surname,
+            golferGLNumber = currentGolferData.golfLinkNo,
             markerFirstName = selectedPartner.firstName,
             markerLastName = selectedPartner.lastName,
             markerGLNumber = selectedPartner.golfLinkNumber,
-            compType = gameData?.competitions?.firstOrNull()?.name,
-            teeColor = gameData?.teeColour,
+            compType = gameData.competitions?.firstOrNull()?.name,
+            teeColor = gameData.teeColour,
             isClubComp = true,
             isSubmitted = false,
             isApproved = false,
