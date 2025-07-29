@@ -16,6 +16,7 @@ import com.sogo.golf.msl.domain.model.PlayingPartnerRound
 import com.sogo.golf.msl.domain.model.HoleScore
 import com.sogo.golf.msl.domain.model.MslMetaData
 import com.sogo.golf.msl.domain.model.NetworkResult
+import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import org.threeten.bp.LocalDateTime
 import java.util.UUID
@@ -457,8 +458,10 @@ class PlayingPartnerViewModel @Inject constructor(
         val playingPartnerRound = createPlayingPartnerRound(
             selectedPartner = selectedPartner,
             gameData = gameData,
-            competitionData = competitionData
+            competitionData = competitionData,
+            sogoGolferData = sogoGolferData
         )
+
         val holeScores = createHoleScores(competitionData)
 
         return Round(
@@ -499,12 +502,18 @@ class PlayingPartnerViewModel @Inject constructor(
     }
 
     private fun createHoleScores(competitionData: MslCompetition?): List<HoleScore> {
-        return (1..18).map { holeNumber ->
+        val numberOfHoles = competitionData?.players?.first()?.holes?.count() ?: 0
+        return (1..numberOfHoles).map { holeNumber ->
             val holeData = competitionData?.players?.firstOrNull()?.holes?.find { it.holeNumber == holeNumber }
             HoleScore(
                 holeNumber = holeNumber,
-                par = holeData?.par ?: 4,
-                strokes = 0
+                par = holeData?.par ?: 0,
+                index1 = holeData?.strokeIndexes?.indexOf(0) ?: 0,
+                index2 = holeData?.strokeIndexes?.indexOf(1) ?: 0,
+                index3 = holeData?.strokeIndexes?.indexOf(2) ?: 0,
+                meters = holeData?.distance ?: 0,
+                strokes = 0,
+                score = 0f,
             )
         }
     }
@@ -512,16 +521,19 @@ class PlayingPartnerViewModel @Inject constructor(
     private fun createPlayingPartnerRound(
         selectedPartner: MslPlayingPartner,
         gameData: MslGame,
-        competitionData: MslCompetition?
+        competitionData: MslCompetition?,
+        sogoGolferData: SogoGolfer
     ): PlayingPartnerRound {
         android.util.Log.d("PlayingPartnerVM", "📝 Creating PlayingPartnerRound for: ${selectedPartner.firstName} ${selectedPartner.lastName}")
+
+        //val golferGender = competitionData?.players?.find { it.golfLinkNumber == selectedPartner.golfLinkNumber }
 
         val partnerGolfer = competitionData?.players?.find { it.golfLinkNumber == selectedPartner.golfLinkNumber }
         val holeScores = createHoleScores(competitionData)
 
         return PlayingPartnerRound(
-            uuid = UUID.randomUUID().toString(),
-            entityId = null,
+            uuid = null,
+            entityId = sogoGolferData.entityId,
             dailyHandicap = selectedPartner.dailyHandicap.toFloat(),
             golfLinkHandicap = partnerGolfer?.dailyHandicap?.toFloat(),
             roundDate = gameData.bookingTime?.toLocalDate()?.atStartOfDay(),
@@ -535,14 +547,14 @@ class PlayingPartnerViewModel @Inject constructor(
             teeColor = gameData.teeColour,
             compType = gameData.competitions.firstOrNull()?.name?.lowercase(Locale.ROOT),
             isSubmitted = false,
-            golferId = null,
+            golferId = null, ///////////////////////////////////////
             golferFirstName = selectedPartner.firstName,
             golferLastName = selectedPartner.lastName,
             golferGLNumber = selectedPartner.golfLinkNumber,
             golflinkNo = selectedPartner.golfLinkNumber,
-            golferEmail = null,
+            golferEmail = sogoGolferData.email,
             golferImageUrl = null,
-            golferGender = null,
+            golferGender = null, /////////////////////////////////////
             holeScores = holeScores,
             roundApprovalSignatureUrl = null,
             createdDate = LocalDateTime.now(),
