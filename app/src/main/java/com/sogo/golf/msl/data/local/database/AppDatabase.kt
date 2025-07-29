@@ -110,6 +110,13 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
     }
 }
 
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Add entityId column to sogo_golfers table
+        database.execSQL("ALTER TABLE sogo_golfers ADD COLUMN entityId TEXT")
+    }
+}
+
 @Database(
     entities = [
         CompetitionEntity::class,
@@ -119,7 +126,7 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
         SogoGolferEntity::class,
         RoundEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -8,6 +8,7 @@ import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 data class SogoGolferEntity(
     @PrimaryKey
     val id: String,
+    val entityId: String?,
     val golfLinkNo: String,
     val firstName: String,
     val lastName: String,
@@ -22,10 +23,11 @@ data class SogoGolferEntity(
     val updatedAt: String?,
     val tokenBalance: Int, // ✅ NEW: Token balance field
     val lastUpdated: Long = System.currentTimeMillis()
-) {
+){
     fun toDomainModel(): SogoGolfer {
         return SogoGolfer(
             id = id,
+            entityId = entityId,
             golfLinkNo = golfLinkNo,
             firstName = firstName,
             lastName = lastName,
@@ -46,6 +48,7 @@ data class SogoGolferEntity(
         fun fromDomainModel(sogoGolfer: SogoGolfer): SogoGolferEntity {
             return SogoGolferEntity(
                 id = sogoGolfer.id,
+                entityId = sogoGolfer.entityId,
                 golfLinkNo = sogoGolfer.golfLinkNo,
                 firstName = sogoGolfer.firstName,
                 lastName = sogoGolfer.lastName,

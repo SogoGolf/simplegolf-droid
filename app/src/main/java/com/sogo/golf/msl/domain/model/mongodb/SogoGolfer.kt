@@ -2,6 +2,7 @@ package com.sogo.golf.msl.domain.model.mongodb
 
 data class SogoGolfer(
     val id: String,
+    val entityId: String?,
     val golfLinkNo: String,
     val firstName: String,
     val lastName: String,

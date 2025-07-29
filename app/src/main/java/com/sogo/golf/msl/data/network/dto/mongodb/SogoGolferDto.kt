@@ -7,6 +7,9 @@ data class SogoGolferDto(
     @SerializedName("id")
     val id: String,
 
+    @SerializedName("entityId")
+    val entityId: String? = null,
+
     @SerializedName("golflinkNo")
     val golfLinkNo: String,
 
@@ -50,6 +53,7 @@ data class SogoGolferDto(
 fun SogoGolferDto.toDomainModel(): SogoGolfer {
     return SogoGolfer(
         id = id,
+        entityId = entityId,
         golfLinkNo = golfLinkNo,
         firstName = firstName,
         lastName = lastName,
