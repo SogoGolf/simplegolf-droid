@@ -32,6 +32,7 @@ import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @HiltViewModel
 class PlayingPartnerViewModel @Inject constructor(
@@ -118,6 +119,7 @@ class PlayingPartnerViewModel @Inject constructor(
         )
 
     // Include round state
+    //todo: isnt this stored in state ?
     private val _includeRound = MutableStateFlow(true)
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
 
@@ -446,6 +448,8 @@ class PlayingPartnerViewModel @Inject constructor(
         android.util.Log.d("PlayingPartnerVM", "  - Competition: ${competitionData?.players?.size ?: 0} players")
         android.util.Log.d("PlayingPartnerVM", "  - Include round: $includeRoundValue")
 
+        val golfer = competitionData?.players?.find { it.golfLinkNumber == currentGolferData.golfLinkNo }
+
         return Round(
             id = UUID.randomUUID().toString(),
             uuid = UUID.randomUUID().toString(),
@@ -457,21 +461,21 @@ class PlayingPartnerViewModel @Inject constructor(
             roundDate = gameData.bookingTime?.toLocalDate()?.atStartOfDay(),
             startTime = gameData.bookingTime,
             finishTime = null,
-            scratchRating = null,
-            slopeRating = null,
+            scratchRating = golfer?.scratchRating?.toFloat(),
+            slopeRating = golfer?.slopeRating?.toFloat(),
             submittedTime = null,
-            compScoreTotal = null,
-            roundType = "MSL",
+            compScoreTotal = 0,
+            roundType = "competition", /////////////
             clubId = null,
-            clubName = null,
-            golferId = null,
-            golferFirstName = currentGolferData.firstName,
-            golferLastName = currentGolferData.surname,
-            golferGLNumber = currentGolferData.golfLinkNo,
+            clubName = null, ///////////////////
+            golferId = sogoGolferData.id,
+            golferFirstName = sogoGolferData.firstName,
+            golferLastName = sogoGolferData.lastName,
+            golferGLNumber = sogoGolferData.golfLinkNo,
             markerFirstName = selectedPartner.firstName,
             markerLastName = selectedPartner.lastName,
             markerGLNumber = selectedPartner.golfLinkNumber,
-            compType = gameData.competitions?.firstOrNull()?.name,
+            compType = gameData.competitions.firstOrNull()?.name?.lowercase(Locale.ROOT),
             teeColor = gameData.teeColour,
             isClubComp = true,
             isSubmitted = false,
