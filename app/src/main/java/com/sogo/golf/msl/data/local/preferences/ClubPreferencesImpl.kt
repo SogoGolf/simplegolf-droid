@@ -41,19 +41,11 @@ class ClubPreferencesImpl @Inject constructor(
     }
 
     override suspend fun setSelectedClub(clubId: Int, tenantId: String, clubName: String?) {
-        android.util.Log.d("ClubPreferencesImpl", "=== STORING CLUB IN PREFERENCES ===")
-        android.util.Log.d("ClubPreferencesImpl", "Club ID: $clubId")
-        android.util.Log.d("ClubPreferencesImpl", "Tenant ID: $tenantId")
-        android.util.Log.d("ClubPreferencesImpl", "Club Name: '$clubName'")
-        android.util.Log.d("ClubPreferencesImpl", "Club Name is null: ${clubName == null}")
-        
         prefs.edit()
             .putInt(KEY_SELECTED_CLUB_ID, clubId)
             .putString(KEY_SELECTED_TENANT_ID, tenantId)
             .putString(KEY_SELECTED_CLUB_NAME, clubName)
             .apply()
-            
-        android.util.Log.d("ClubPreferencesImpl", "✅ Club stored in SharedPreferences")
     }
 
     override suspend fun getSelectedClubId(): Int? {
@@ -66,11 +58,7 @@ class ClubPreferencesImpl @Inject constructor(
     }
 
     override suspend fun getSelectedClubName(): String? {
-        val clubName = prefs.getString(KEY_SELECTED_CLUB_NAME, null)
-        android.util.Log.d("ClubPreferencesImpl", "=== RETRIEVING CLUB NAME ===")
-        android.util.Log.d("ClubPreferencesImpl", "Retrieved club name: '$clubName'")
-        android.util.Log.d("ClubPreferencesImpl", "Club name is null: ${clubName == null}")
-        return clubName
+        return prefs.getString(KEY_SELECTED_CLUB_NAME, null)
     }
 
     override suspend fun clearSelectedClub() {
