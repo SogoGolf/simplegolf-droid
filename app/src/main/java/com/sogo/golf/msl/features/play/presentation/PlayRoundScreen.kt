@@ -15,6 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -50,16 +53,13 @@ private fun Screen4Portrait(
     val deleteMarkerEnabled by playRoundViewModel.deleteMarkerEnabled.collectAsState()
     val isRemovingMarker by playRoundViewModel.isRemovingMarker.collectAsState()
     val markerError by playRoundViewModel.markerError.collectAsState()
+    val gameState by playRoundViewModel.gameState.collectAsState()
+    
+    var showBackConfirmDialog by remember { mutableStateOf(false) }
 
     BackHandler {
-        // Check if delete marker is enabled
-        if (deleteMarkerEnabled) {
-            // Call remove marker API before navigating back
-            playRoundViewModel.removeMarkerAndNavigateBack(navController)
-        } else {
-            // TODO: Implement back navigation logic
-            // navController.popBackStack()
-        }
+        // Show confirmation dialog before navigating back
+        showBackConfirmDialog = true
     }
 
     Column(
@@ -69,8 +69,8 @@ private fun Screen4Portrait(
         HoleHeader(
             holeNumber = 1, // TODO: Get from viewmodel
             onBack = {
-                // TODO: Implement hole navigation
-                // playRoundViewModel.decrementHoleNumber()
+                // Show confirmation dialog before navigating back
+                showBackConfirmDialog = true
             },
             onClose = {
                 // TODO: Implement close functionality
@@ -108,6 +108,36 @@ private fun Screen4Portrait(
                 )
             }
         }
+    }
+
+    // Back confirmation dialog
+    if (showBackConfirmDialog) {
+        val markerName = gameState.game?.getPartnerMarkedByMe()?.firstName ?: "Unknown"
+        
+        AlertDialog(
+            onDismissRequest = { showBackConfirmDialog = false },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showBackConfirmDialog = false
+                        playRoundViewModel.removeMarkerAndNavigateBack(navController)
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showBackConfirmDialog = false }
+                ) {
+                    Text("No")
+                }
+            },
+            title = { Text("Remove Marker") },
+            text = { 
+                Text("This will remove your marker ($markerName) and you will need to choose again. Are you sure?") 
+            }
+        )
     }
 
     // Keep error dialogs
