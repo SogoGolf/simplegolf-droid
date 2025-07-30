@@ -56,6 +56,10 @@ class PlayRoundViewModel @Inject constructor(
     private val _debugMessage = MutableStateFlow("")
     val debugMessage: StateFlow<String> = _debugMessage.asStateFlow()
 
+    // Back button visibility based on stroke counts
+    private val _showBackButton = MutableStateFlow(true)
+    val showBackButton: StateFlow<Boolean> = _showBackButton.asStateFlow()
+
     // Get the local game data
     val localGame = getLocalGameUseCase()
         .stateIn(
@@ -71,6 +75,10 @@ class PlayRoundViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
         )
+
+    // Get the current active round data
+    private val _currentRound = MutableStateFlow<com.sogo.golf.msl.domain.model.Round?>(null)
+    val currentRound: StateFlow<com.sogo.golf.msl.domain.model.Round?> = _currentRound.asStateFlow()
 
 
     init {
@@ -93,6 +101,18 @@ class PlayRoundViewModel @Inject constructor(
                 }
             }
         }
+
+        // Load current round data and monitor changes
+        viewModelScope.launch {
+            loadCurrentRound()
+        }
+        
+        // Monitor round data and update back button visibility
+        viewModelScope.launch {
+            currentRound.collect { round ->
+                updateBackButtonVisibility(round)
+            }
+        }
     }
 
 
@@ -102,6 +122,49 @@ class PlayRoundViewModel @Inject constructor(
 
     fun clearMarkerError() {
         _markerError.value = null
+    }
+
+    private suspend fun loadCurrentRound() {
+        try {
+            val round = getActiveTodayRoundUseCase()
+            _currentRound.value = round
+            android.util.Log.d("PlayRoundVM", "Loaded current round: ${round?.id}")
+        } catch (e: Exception) {
+            android.util.Log.e("PlayRoundVM", "Error loading current round", e)
+            _currentRound.value = null
+        }
+    }
+
+    private fun updateBackButtonVisibility(round: com.sogo.golf.msl.domain.model.Round?) {
+        val canNavigateBack = canNavigateBackBasedOnStrokes(round)
+        
+        android.util.Log.d("PlayRoundVM", "=== UPDATE BACK BUTTON VISIBILITY ===")
+        android.util.Log.d("PlayRoundVM", "Round available: ${round != null}")
+        android.util.Log.d("PlayRoundVM", "Can navigate back: $canNavigateBack")
+        
+        _showBackButton.value = canNavigateBack
+    }
+
+    private fun canNavigateBackBasedOnStrokes(round: com.sogo.golf.msl.domain.model.Round?): Boolean {
+        if (round == null) {
+            android.util.Log.d("PlayRoundVM", "No round data - allowing back navigation")
+            return true
+        }
+
+        // Check main golfer's first hole strokes
+        val mainGolferFirstHoleStrokes = round.holeScores.firstOrNull()?.strokes ?: 0
+        android.util.Log.d("PlayRoundVM", "Main golfer first hole strokes: $mainGolferFirstHoleStrokes")
+
+        // Check playing partner's first hole strokes
+        val partnerFirstHoleStrokes = round.playingPartnerRound?.holeScores?.firstOrNull()?.strokes ?: 0
+        android.util.Log.d("PlayRoundVM", "Partner first hole strokes: $partnerFirstHoleStrokes")
+
+        // Allow back navigation only if BOTH golfers have 0 strokes on first hole
+        val canNavigateBack = mainGolferFirstHoleStrokes == 0 && partnerFirstHoleStrokes == 0
+        
+        android.util.Log.d("PlayRoundVM", "Back navigation allowed: $canNavigateBack (main: $mainGolferFirstHoleStrokes, partner: $partnerFirstHoleStrokes)")
+        
+        return canNavigateBack
     }
 
     // Find the partner marked by current user
@@ -135,6 +198,14 @@ class PlayRoundViewModel @Inject constructor(
 
     fun removeMarkerAndNavigateBack(navController: NavController) {
         android.util.Log.d("PlayRoundVM", "=== removeMarkerAndNavigateBack called ===")
+
+        // Check if back navigation is allowed based on strokes
+        val round = currentRound.value
+        if (!canNavigateBackBasedOnStrokes(round)) {
+            android.util.Log.d("PlayRoundVM", "❌ Back navigation blocked - strokes exist on first hole")
+            _markerError.value = "Cannot go back - round has already started"
+            return
+        }
 
         val partnerGolfLinkNumber = getPartnerMarkedByMe()
         android.util.Log.d("PlayRoundVM", "Partner golf link number: $partnerGolfLinkNumber")
@@ -328,5 +399,11 @@ class PlayRoundViewModel @Inject constructor(
 
     fun clearDebugMessage() {
         _debugMessage.value = ""
+    }
+
+    fun refreshBackButtonState() {
+        viewModelScope.launch {
+            loadCurrentRound()
+        }
     }
 }

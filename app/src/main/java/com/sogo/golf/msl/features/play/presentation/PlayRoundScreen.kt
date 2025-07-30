@@ -55,10 +55,16 @@ private fun Screen4Portrait(
     val markerError by playRoundViewModel.markerError.collectAsState()
     val localGame by playRoundViewModel.localGame.collectAsState()
     val currentGolfer by playRoundViewModel.currentGolfer.collectAsState()
+    val showBackButton by playRoundViewModel.showBackButton.collectAsState()
     
     var showBackConfirmDialog by remember { mutableStateOf(false) }
 
-    BackHandler {
+    BackHandler(enabled = showBackButton) {
+        if (!showBackButton) {
+            android.util.Log.d("PlayRoundScreen", "Back navigation blocked - strokes exist on first hole")
+            return@BackHandler
+        }
+        
         // Show confirmation dialog before navigating back
         showBackConfirmDialog = true
     }
@@ -85,7 +91,7 @@ private fun Screen4Portrait(
                 // TODO: Implement hole selection dialog
                 // playRoundViewModel.showGoToHoleDialog()
             },
-            showBackButton = true // TODO: Get from viewmodel state
+            showBackButton = showBackButton
         )
 
         // Main content area
