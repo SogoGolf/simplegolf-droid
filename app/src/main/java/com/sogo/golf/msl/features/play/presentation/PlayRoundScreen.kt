@@ -23,8 +23,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.SideEffect
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.navigation.NavViewModel
@@ -70,6 +74,21 @@ private fun Screen4Portrait(
         
         // Show confirmation dialog before navigating back
         showBackConfirmDialog = true
+    }
+
+    // Reset window background and set consistent system UI
+    val view = LocalView.current
+    SideEffect {
+        val window = (view.context as? androidx.activity.ComponentActivity)?.window ?: return@SideEffect
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        
+        // Reset window background to white to override any previous screen's background
+        window.decorView.setBackgroundColor(Color.White.toArgb())
+        window.statusBarColor = Color.White.toArgb()
+        windowInsetsController.isAppearanceLightStatusBars = true
+        
+        // Ensure consistent system UI handling
+        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
     Scaffold(
