@@ -119,9 +119,14 @@ private fun Screen4Portrait(
         
         // Find the partner marked by current user
         val markerName = if (currentGolferValue != null && localGameValue != null) {
-            localGameValue.playingPartners.find { partner ->
+            val partner = localGameValue.playingPartners.find { partner ->
                 partner.markedByGolfLinkNumber == currentGolferValue.golfLinkNo
-            }?.firstName ?: "Unknown"
+            }
+            if (partner != null) {
+                "${partner.firstName} ${partner.lastName}".trim()
+            } else {
+                "Unknown"
+            }
         } else {
             "Unknown"
         }
