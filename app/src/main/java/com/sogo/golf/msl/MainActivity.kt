@@ -1,7 +1,6 @@
 package com.sogo.golf.msl
 
 import android.app.Activity
-import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
@@ -33,7 +32,7 @@ import com.sogo.golf.msl.features.login.presentation.LoginScreen
 import com.sogo.golf.msl.features.login.presentation.WebAuthScreen
 import com.sogo.golf.msl.features.play.presentation.PlayRoundScreen
 import com.sogo.golf.msl.features.review_scores.presentation.ReviewScoresScreen
-import com.sogo.golf.msl.features.sogohome.presentation.SogoHomePage
+import com.sogo.golf.msl.features.sogogolf_home.presentation.SogoHomePage
 import com.sogo.golf.msl.features.splashscreen.presentation.SplashScreen
 import com.sogo.golf.msl.navigation.NavViewModel
 import dagger.hilt.android.AndroidEntryPoint

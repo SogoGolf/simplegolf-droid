@@ -1,5 +1,5 @@
 
-package com.sogo.golf.msl.features.sogohome.presentation
+package com.sogo.golf.msl.features.sogogolf_home.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
