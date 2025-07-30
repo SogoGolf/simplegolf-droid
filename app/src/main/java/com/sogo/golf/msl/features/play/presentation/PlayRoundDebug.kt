@@ -68,7 +68,7 @@ private fun Screen4PortraitDebug(
 ) {
     val backNavDisabled by viewModel.backNavDisabled.collectAsState()
     val simulateError by viewModel.simulateError.collectAsState()
-    val finishedRound by viewModel.finishedRound.collectAsState()
+    val hasActiveRound by viewModel.hasActiveRound.collectAsState()
     val deleteMarkerEnabled by playRoundDebugViewModel.deleteMarkerEnabled.collectAsState()
     val isRemovingMarker by playRoundDebugViewModel.isRemovingMarker.collectAsState()
     val markerError by playRoundDebugViewModel.markerError.collectAsState()
@@ -240,13 +240,13 @@ private fun Screen4PortraitDebug(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Finished Round toggle
-                Text("Finished Round is ${if (finishedRound) "ON" else "OFF"}")
+                // Active Round toggle
+                Text("Active Round is ${if (hasActiveRound) "ON" else "OFF"}")
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Switch(
-                    checked = finishedRound,
+                    checked = hasActiveRound,
                     onCheckedChange = { viewModel.setFinishedRound(it) },
                     enabled = !isRemovingMarker
                 )

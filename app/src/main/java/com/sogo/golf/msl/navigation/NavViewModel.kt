@@ -50,8 +50,8 @@ class NavViewModel @Inject constructor(
             initialValue = false
         )
 
-    val finishedRound: StateFlow<Boolean> = authState
-        .map { it.hasFinishedRound }
+    val hasActiveRound: StateFlow<Boolean> = authState
+        .map { it.hasActiveRound }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -94,7 +94,7 @@ class NavViewModel @Inject constructor(
         return authState.value.isLoggedIn
     }
 
-    fun isFinishedRound(): Boolean {
-        return authState.value.hasFinishedRound
+    fun hasActiveRound(): Boolean {
+        return authState.value.hasActiveRound
     }
 }

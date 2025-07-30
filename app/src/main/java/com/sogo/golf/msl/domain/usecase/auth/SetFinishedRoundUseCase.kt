@@ -7,6 +7,7 @@ class SetFinishedRoundUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
     suspend operator fun invoke(finished: Boolean): Result<Unit> {
-        return authRepository.setFinishedRound(finished)
+        // Legacy method - now refreshes active round state from database
+        return authRepository.refreshActiveRoundState()
     }
 }

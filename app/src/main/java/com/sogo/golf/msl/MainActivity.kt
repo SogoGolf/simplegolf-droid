@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
 
                     val startDestination = when {
                         !authState.isLoggedIn -> "login"
-                        authState.hasFinishedRound -> "playroundscreen"
+                        authState.hasActiveRound -> "playroundscreen"
                         else -> "homescreen"
                     }
 

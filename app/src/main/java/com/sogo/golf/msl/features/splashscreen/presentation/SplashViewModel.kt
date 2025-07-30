@@ -23,7 +23,7 @@ class SplashViewModel @Inject constructor(
     fun getNextDestination(): String {
         return when {
             !authState.value.isLoggedIn -> "login"
-            authState.value.hasFinishedRound -> "playroundscreen"
+            authState.value.hasActiveRound -> "playroundscreen"
             else -> "homescreen"
         }
     }

@@ -8,6 +8,7 @@ import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
+import com.sogo.golf.msl.domain.usecase.round.CheckActiveTodayRoundUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -24,10 +25,11 @@ import javax.inject.Singleton
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val authPreferences: AuthPreferences,
-    private val clubPreferences: ClubPreferences, // NEW: Inject club preferences
+    private val clubPreferences: ClubPreferences,
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val mslCompetitionLocalDbRepository: MslCompetitionLocalDbRepository,
-    private val mslGameLocalDbRepository: MslGameLocalDbRepository
+    private val mslGameLocalDbRepository: MslGameLocalDbRepository,
+    private val checkActiveTodayRoundUseCase: CheckActiveTodayRoundUseCase
 ) : AuthRepository {
 
     // Repository scope for initialization
@@ -46,8 +48,8 @@ class AuthRepositoryImpl @Inject constructor(
             initialValue = false
         )
 
-    override val finishedRound: StateFlow<Boolean> = authState
-        .map { it.hasFinishedRound }
+    override val hasActiveRound: StateFlow<Boolean> = authState
+        .map { it.hasActiveRound }
         .stateIn(
             scope = repositoryScope,
             started = SharingStarted.Eagerly,
@@ -55,11 +57,18 @@ class AuthRepositoryImpl @Inject constructor(
         )
 
     init {
-        // Initialize state from preferences
+        // Initialize state from preferences and database
         repositoryScope.launch {
+            val isLoggedIn = authPreferences.isLoggedIn()
+            val hasActiveRound = if (isLoggedIn) {
+                checkActiveTodayRoundUseCase()
+            } else {
+                false
+            }
+            
             _authState.value = AuthState(
-                isLoggedIn = authPreferences.isLoggedIn(),
-                hasFinishedRound = authPreferences.hasFinishedRound()
+                isLoggedIn = isLoggedIn,
+                hasActiveRound = hasActiveRound
             )
         }
     }
@@ -77,8 +86,6 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun logout(): Result<Unit> {
         return try {
             authPreferences.setLoggedIn(false)
-            authPreferences.setFinishedRound(false)
-
             // ✅ CLEAR GOLFER DATA ON LOGOUT
             mslGolferLocalDbRepository.clearGolfer()
             mslCompetitionLocalDbRepository.clearAllCompetitions()
@@ -87,7 +94,7 @@ class AuthRepositoryImpl @Inject constructor(
             // NEW: ✅ CLEAR CLUB SELECTION ON LOGOUT
             clubPreferences.clearSelectedClub()
 
-            _authState.value = AuthState(isLoggedIn = false, hasFinishedRound = false)
+            _authState.value = AuthState(isLoggedIn = false, hasActiveRound = false)
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -95,12 +102,14 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun setFinishedRound(finished: Boolean): Result<Unit> {
+    override suspend fun refreshActiveRoundState(): Result<Unit> {
         return try {
-            authPreferences.setFinishedRound(finished)
-            _authState.value = _authState.value.copy(hasFinishedRound = finished)
+            val hasActiveRound = checkActiveTodayRoundUseCase()
+            _authState.value = _authState.value.copy(hasActiveRound = hasActiveRound)
+            android.util.Log.d("AuthRepository", "Refreshed active round state: $hasActiveRound")
             Result.success(Unit)
         } catch (e: Exception) {
+            android.util.Log.e("AuthRepository", "Failed to refresh active round state", e)
             Result.failure(e)
         }
     }
@@ -110,7 +119,7 @@ class AuthRepositoryImpl @Inject constructor(
         return _authState.value.isLoggedIn
     }
 
-    override fun isFinishedRound(): Boolean {
-        return _authState.value.hasFinishedRound
+    override fun hasActiveRound(): Boolean {
+        return _authState.value.hasActiveRound
     }
 }

@@ -32,9 +32,9 @@ class ResetStaleDataUseCase @Inject constructor(
             mslCompetitionLocalDbRepository.clearAllCompetitions()
             // Note: Keep golfer data as it's user-specific, not date-specific
 
-            // Step 2: Clear finished round state (fresh start for new day)
-            android.util.Log.d("ResetStaleData", "🔄 Step 2: Resetting finished round state...")
-            authRepository.setFinishedRound(false)
+            // Step 2: Refresh active round state (check database for today's rounds)
+            android.util.Log.d("ResetStaleData", "🔄 Step 2: Refreshing active round state...")
+            authRepository.refreshActiveRoundState()
 
             // Step 3: Fetch fresh data for today
             android.util.Log.d("ResetStaleData", "📥 Step 3: Fetching fresh data...")

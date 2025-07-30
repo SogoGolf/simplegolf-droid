@@ -11,4 +11,6 @@ interface RoundLocalDbRepository {
     suspend fun clearAllRounds()
     suspend fun getUnsyncedRounds(): List<Round>
     suspend fun markAsSynced(roundId: String)
+    suspend fun getRoundCount(): Int
+    suspend fun getActiveTodayRound(dateString: String): Round?
 }

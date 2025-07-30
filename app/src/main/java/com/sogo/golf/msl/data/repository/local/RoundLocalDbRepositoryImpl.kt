@@ -65,4 +65,16 @@ class RoundLocalDbRepositoryImpl @Inject constructor(
         roundDao.markAsSynced(roundId)
         Log.d(TAG, "Round marked as synced")
     }
+
+    override suspend fun getRoundCount(): Int {
+        Log.d(TAG, "getRoundCount called")
+        return roundDao.getRoundCount()
+    }
+
+    override suspend fun getActiveTodayRound(dateString: String): Round? {
+        Log.d(TAG, "getActiveTodayRound called with date: $dateString")
+        val entity = roundDao.getActiveTodayRound(dateString)
+        Log.d(TAG, "Found active round entity: ${entity != null}")
+        return entity?.toDomainModel()
+    }
 }
