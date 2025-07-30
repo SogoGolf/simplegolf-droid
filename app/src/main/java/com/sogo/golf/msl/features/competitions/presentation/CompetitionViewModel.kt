@@ -215,7 +215,10 @@ class CompetitionViewModel @Inject constructor(
         viewModelScope.launch {
             // First, check for network availability.
             if (!networkChecker.isNetworkAvailable()) {
-                _uiState.value = _uiState.value.copy(errorMessage = "No internet connection")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "No internet connection"
+                )
                 return@launch // Exit without showing the spinner
             }
 
