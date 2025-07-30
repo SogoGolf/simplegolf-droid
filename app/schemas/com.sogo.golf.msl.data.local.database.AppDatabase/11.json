@@ -1,0 +1,766 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 11,
+    "identityHash": "2fd3491f82773798abe23e8cdd8ce9ca",
+    "entities": [
+      {
+        "tableName": "competitions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `competitionName` TEXT, `competitionType` TEXT, `players` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "competitionName",
+            "columnName": "competitionName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "competitionType",
+            "columnName": "competitionType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "players",
+            "columnName": "players",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "golfer",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`golfLinkNo` TEXT NOT NULL, `firstName` TEXT NOT NULL, `surname` TEXT NOT NULL, `email` TEXT, `dateOfBirth` TEXT NOT NULL, `mobileNo` TEXT, `gender` TEXT, `country` TEXT NOT NULL, `state` TEXT, `postCode` TEXT, `primary` REAL NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`golfLinkNo`))",
+        "fields": [
+          {
+            "fieldPath": "golfLinkNo",
+            "columnName": "golfLinkNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "surname",
+            "columnName": "surname",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "dateOfBirth",
+            "columnName": "dateOfBirth",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mobileNo",
+            "columnName": "mobileNo",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "country",
+            "columnName": "country",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "postCode",
+            "columnName": "postCode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "primary",
+            "columnName": "primary",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "golfLinkNo"
+          ]
+        }
+      },
+      {
+        "tableName": "games",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `errorMessage` TEXT, `scorecardMessageOfTheDay` TEXT, `bookingTime` TEXT, `startingHoleNumber` INTEGER NOT NULL, `mainCompetitionId` INTEGER NOT NULL, `golflinkNumber` TEXT, `teeName` TEXT, `teeColourName` TEXT, `teeColour` TEXT, `dailyHandicap` INTEGER, `gaHandicap` REAL, `numberOfHoles` INTEGER, `playingPartners` TEXT NOT NULL, `competitions` TEXT NOT NULL, `lastUpdated` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "errorMessage",
+            "columnName": "errorMessage",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "scorecardMessageOfTheDay",
+            "columnName": "scorecardMessageOfTheDay",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bookingTime",
+            "columnName": "bookingTime",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "startingHoleNumber",
+            "columnName": "startingHoleNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mainCompetitionId",
+            "columnName": "mainCompetitionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "golflinkNumber",
+            "columnName": "golflinkNumber",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "teeName",
+            "columnName": "teeName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "teeColourName",
+            "columnName": "teeColourName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "teeColour",
+            "columnName": "teeColour",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "dailyHandicap",
+            "columnName": "dailyHandicap",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "gaHandicap",
+            "columnName": "gaHandicap",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "numberOfHoles",
+            "columnName": "numberOfHoles",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "playingPartners",
+            "columnName": "playingPartners",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "competitions",
+            "columnName": "competitions",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "fees",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `uuid` TEXT NOT NULL, `entityId` TEXT NOT NULL, `entityName` TEXT NOT NULL, `numberHoles` INTEGER NOT NULL, `cost` REAL NOT NULL, `description` TEXT NOT NULL, `isWaived` INTEGER NOT NULL, `item` TEXT NOT NULL, `appIsFreeText` TEXT NOT NULL, `updateDate` TEXT, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uuid",
+            "columnName": "uuid",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityId",
+            "columnName": "entityId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityName",
+            "columnName": "entityName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numberHoles",
+            "columnName": "numberHoles",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cost",
+            "columnName": "cost",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isWaived",
+            "columnName": "isWaived",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "item",
+            "columnName": "item",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "appIsFreeText",
+            "columnName": "appIsFreeText",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updateDate",
+            "columnName": "updateDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "sogo_golfers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `entityId` TEXT, `golfLinkNo` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `email` TEXT, `phone` TEXT, `dateOfBirth` TEXT, `handicap` REAL, `club` TEXT, `membershipType` TEXT, `isActive` INTEGER NOT NULL, `createdAt` TEXT, `updatedAt` TEXT, `tokenBalance` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "entityId",
+            "columnName": "entityId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "golfLinkNo",
+            "columnName": "golfLinkNo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "firstName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "lastName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "dateOfBirth",
+            "columnName": "dateOfBirth",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "handicap",
+            "columnName": "handicap",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "club",
+            "columnName": "club",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "membershipType",
+            "columnName": "membershipType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "tokenBalance",
+            "columnName": "tokenBalance",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "rounds",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `uuid` TEXT, `entityId` TEXT, `roundPlayedOff` REAL, `dailyHandicap` REAL, `golfLinkHandicap` REAL, `golflinkNo` TEXT, `scorecardUrl` TEXT, `roundRefCode` TEXT, `roundDate` TEXT, `roundType` TEXT NOT NULL, `startTime` TEXT, `finishTime` TEXT, `scratchRating` REAL, `slopeRating` REAL, `submittedTime` TEXT, `compScoreTotal` INTEGER, `whsFrontScoreStableford` INTEGER, `whsBackScoreStableford` INTEGER, `whsFrontScorePar` INTEGER, `whsBackScorePar` INTEGER, `whsFrontScoreStroke` INTEGER, `whsBackScoreStroke` INTEGER, `whsFrontScoreMaximumScore` INTEGER, `whsBackScoreMaximumScore` INTEGER, `roundApprovedBy` TEXT, `comment` TEXT, `createdDate` TEXT, `updateDate` TEXT, `updateUserId` TEXT, `courseId` TEXT, `courseUuid` TEXT, `isClubSubmitted` INTEGER, `isSubmitted` INTEGER, `isMarkedForReview` INTEGER, `isApproved` INTEGER, `teeColor` TEXT, `isClubComp` INTEGER, `isDeleted` INTEGER, `isAbandoned` INTEGER, `clubId` TEXT, `clubUuid` TEXT, `golferId` TEXT, `golferGender` TEXT, `golferEmail` TEXT, `golferFirstName` TEXT, `golferLastName` TEXT, `golferGLNumber` TEXT, `golferImageUrl` TEXT, `clubState` TEXT, `clubName` TEXT, `markerFirstName` TEXT, `markerLastName` TEXT, `markerEmail` TEXT, `markerGLNumber` TEXT, `compType` TEXT, `holeScores` TEXT NOT NULL, `sogoAppVersion` TEXT, `transactionId` TEXT, `playingPartnerRound` TEXT, `roundApprovalSignatureUrl` TEXT, `thirdPartyScorecardId` TEXT, `mslMetaData` TEXT, `lastUpdated` INTEGER NOT NULL, `isSynced` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uuid",
+            "columnName": "uuid",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "entityId",
+            "columnName": "entityId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "roundPlayedOff",
+            "columnName": "roundPlayedOff",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "dailyHandicap",
+            "columnName": "dailyHandicap",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "golfLinkHandicap",
+            "columnName": "golfLinkHandicap",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "golflinkNo",
+            "columnName": "golflinkNo",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "scorecardUrl",
+            "columnName": "scorecardUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "roundRefCode",
+            "columnName": "roundRefCode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "roundDate",
+            "columnName": "roundDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "roundType",
+            "columnName": "roundType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTime",
+            "columnName": "startTime",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "finishTime",
+            "columnName": "finishTime",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "scratchRating",
+            "columnName": "scratchRating",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "slopeRating",
+            "columnName": "slopeRating",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "submittedTime",
+            "columnName": "submittedTime",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "compScoreTotal",
+            "columnName": "compScoreTotal",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "whsFrontScoreStableford",
+            "columnName": "whsFrontScoreStableford",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "whsBackScoreStableford",
+            "columnName": "whsBackScoreStableford",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "whsFrontScorePar",
+            "columnName": "whsFrontScorePar",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "whsBackScorePar",
+            "columnName": "whsBackScorePar",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "whsFrontScoreStroke",
+            "columnName": "whsFrontScoreStroke",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "whsBackScoreStroke",
+            "columnName": "whsBackScoreStroke",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "whsFrontScoreMaximumScore",
+            "columnName": "whsFrontScoreMaximumScore",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "whsBackScoreMaximumScore",
+            "columnName": "whsBackScoreMaximumScore",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "roundApprovedBy",
+            "columnName": "roundApprovedBy",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "comment",
+            "columnName": "comment",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdDate",
+            "columnName": "createdDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updateDate",
+            "columnName": "updateDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "updateUserId",
+            "columnName": "updateUserId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "courseId",
+            "columnName": "courseId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "courseUuid",
+            "columnName": "courseUuid",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isClubSubmitted",
+            "columnName": "isClubSubmitted",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isSubmitted",
+            "columnName": "isSubmitted",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isMarkedForReview",
+            "columnName": "isMarkedForReview",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isApproved",
+            "columnName": "isApproved",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "teeColor",
+            "columnName": "teeColor",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isClubComp",
+            "columnName": "isClubComp",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "isDeleted",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isAbandoned",
+            "columnName": "isAbandoned",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "clubId",
+            "columnName": "clubId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "clubUuid",
+            "columnName": "clubUuid",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "golferId",
+            "columnName": "golferId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "golferGender",
+            "columnName": "golferGender",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "golferEmail",
+            "columnName": "golferEmail",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "golferFirstName",
+            "columnName": "golferFirstName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "golferLastName",
+            "columnName": "golferLastName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "golferGLNumber",
+            "columnName": "golferGLNumber",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "golferImageUrl",
+            "columnName": "golferImageUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "clubState",
+            "columnName": "clubState",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "clubName",
+            "columnName": "clubName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "markerFirstName",
+            "columnName": "markerFirstName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "markerLastName",
+            "columnName": "markerLastName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "markerEmail",
+            "columnName": "markerEmail",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "markerGLNumber",
+            "columnName": "markerGLNumber",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "compType",
+            "columnName": "compType",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "holeScores",
+            "columnName": "holeScores",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sogoAppVersion",
+            "columnName": "sogoAppVersion",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "transactionId",
+            "columnName": "transactionId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "playingPartnerRound",
+            "columnName": "playingPartnerRound",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "roundApprovalSignatureUrl",
+            "columnName": "roundApprovalSignatureUrl",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "thirdPartyScorecardId",
+            "columnName": "thirdPartyScorecardId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mslMetaData",
+            "columnName": "mslMetaData",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isSynced",
+            "columnName": "isSynced",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2fd3491f82773798abe23e8cdd8ce9ca')"
+    ]
+  }
+}

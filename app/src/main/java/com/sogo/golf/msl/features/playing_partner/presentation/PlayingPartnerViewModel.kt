@@ -418,7 +418,7 @@ class PlayingPartnerViewModel @Inject constructor(
                 roundRepository.saveRound(round)
                 android.util.Log.d("PlayingPartnerVM", "✅ Round saved to database")
 
-                
+
 
                 _uiState.value = _uiState.value.copy(
                     isLetsPlayLoading = false,

@@ -3,19 +3,44 @@ package com.sogo.golf.msl.features.competitions.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.LaunchedEffect
+import android.widget.Toast
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -23,18 +48,13 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
-import com.sogo.golf.msl.domain.model.mongodb.Fee
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 import com.sogo.golf.msl.shared_components.ui.UnifiedScreenHeader
-import com.sogo.golf.msl.shared_components.ui.components.ColoredSquare
-import com.sogo.golf.msl.shared.utils.TimeFormatUtils
 import com.sogo.golf.msl.shared_components.ui.UserInfoSection
-import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,10 +65,8 @@ fun CompetitionsScreen(
     competitionViewModel: CompetitionViewModel = hiltViewModel()
 ) {
     val view = LocalView.current
-    var isRefreshing by remember { mutableStateOf(false) }
     var includeRound by remember { mutableStateOf(true) }
     val refreshState = rememberPullToRefreshState()
-    val coroutineScope = rememberCoroutineScope()
 
 
     // Get the data from the view model
@@ -58,6 +76,17 @@ fun CompetitionsScreen(
     val mslFees by competitionViewModel.mslFees.collectAsState()
     val tokenCost by competitionViewModel.tokenCost.collectAsState()
     val canProceed by competitionViewModel.canProceed.collectAsState()
+    val uiState by competitionViewModel.uiState.collectAsState()
+    
+    val context = LocalContext.current
+
+    // Show toast for error messages
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let {
+            Toast.makeText(context, "No internet connection", Toast.LENGTH_LONG).show()
+            competitionViewModel.clearMessages()
+        }
+    }
 
     // Set status bar to white with black text and icons
     SideEffect {
@@ -77,57 +106,77 @@ fun CompetitionsScreen(
             )
         }
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.White)
+                .statusBarsPadding()
+                .padding(top = 56.dp) // Account for header height
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
-                    .padding(top = 56.dp) // Account for header height
-            ) {
-                UserInfoSection(
-                    golfer = currentGolfer,
-                    game = localGame
-                )
+            UserInfoSection(
+                golfer = currentGolfer,
+                game = localGame
+            )
 
-                PullToRefreshBox(
-                    state = refreshState,
-                    isRefreshing = isRefreshing,
-                    onRefresh = {
-                        coroutineScope.launch {
-                            isRefreshing = true
-                            try {
-                                val result = competitionViewModel.refreshMslData()
-                                if (result.isFailure) {
-                                    android.util.Log.e("CompetitionsScreen", "MSL refresh failed: ${result.exceptionOrNull()?.message}")
+            PullToRefreshBox(
+                state = refreshState,
+                isRefreshing = uiState.isLoading,
+                onRefresh = {
+                    competitionViewModel.triggerRefresh()
+                },
+                indicator = {
+                    Indicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        isRefreshing = uiState.isLoading,
+                        state = refreshState
+                    )
+                },
+                modifier = Modifier
+                    .weight(1f)
+            ) {
+                val game = localGame
+                when {
+                    game == null -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Waiting for scorecard data...",
+                                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                            )
+                        }
+                    }
+                        game.competitions.isEmpty() -> {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Red)
+                            ) {
+                                item {
+                                    Box(
+                                        modifier = Modifier.fillParentMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "No Competitions Registrations or Entries found, try registering in a competition or printing a scorecard\n\n(Pull down to refresh)",
+                                            fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier.padding(horizontal = 40.dp)
+                                        )
+                                    }
                                 }
-                            } catch (e: Exception) {
-                                android.util.Log.e("CompetitionsScreen", "MSL refresh error", e)
-                            } finally {
-                                isRefreshing = false
                             }
                         }
-                    },
-                    indicator = {
-                        Indicator(
-                            modifier = Modifier.align(Alignment.Center),
-                            isRefreshing = isRefreshing,
-                            state = refreshState
+                    else -> {
+                        CompetitionsListSection(
+                            game = game
                         )
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                ) {
-                    CompetitionsListSection(
-                        game = localGame
-                    )
+                    }
                 }
             }
 
-            // Footer pinned to bottom
+            // Footer is now a direct child of the Column
             FooterContent(
                 includeRound = includeRound,
                 golfer = currentGolfer,
@@ -140,9 +189,7 @@ fun CompetitionsScreen(
                 },
                 onNextClick = {
                     navController.navigate(nextRoute)
-                },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
+                }
             )
         }
     }
@@ -152,56 +199,19 @@ fun CompetitionsScreen(
 fun CompetitionsListSection(
     game: com.sogo.golf.msl.domain.model.msl.MslGame?
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.LightGray),
-        contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)
-    ) {
-        when {
-            game == null -> {
-                item {
-                    Box(
-                        modifier = Modifier.fillParentMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Waiting for scorecard data...",
-                            fontSize = MaterialTheme.typography.bodyLarge.fontSize,
-                        )
-                    }
-                }
-            }
-
-            game.competitions.isEmpty() -> {
-                item {
-                    Box(
-                        modifier = Modifier.fillParentMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "No competitions available",
-                                fontSize = MaterialTheme.typography.bodyLarge.fontSize,
-                            )
-                            Text(
-                                text = "(Pull down to refresh)",
-                                fontSize = MaterialTheme.typography.headlineSmall.fontSize,
-                                modifier = Modifier.padding(top = 5.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            else -> {
-                items(game.competitions.size) { index ->
-                    val competition = game.competitions[index]
-                    CompetitionCard(
-                        title = competition.name,
-                        subtitle = game.teeName ?: ""
-                    )
-                }
+    game?.let { nonNullGame ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.LightGray),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)
+        ) {
+            items(nonNullGame.competitions.size) { index ->
+                val competition = nonNullGame.competitions[index]
+                CompetitionCard(
+                    title = competition.name,
+                    subtitle = nonNullGame.teeName ?: ""
+                )
             }
         }
     }
@@ -253,7 +263,6 @@ fun FooterContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp)
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
@@ -270,14 +279,12 @@ fun FooterContent(
             Text(
                 text = "Include this round on SOGO Golf",
                 fontSize = MaterialTheme.typography.titleMedium.fontSize,
-                modifier = Modifier.padding(start = 8.dp)
             )
         }
 
         Text(
             text = "Token cost: $tokenCost",
             fontSize = MaterialTheme.typography.titleMedium.fontSize,
-            modifier = Modifier.padding(bottom = 5.dp)
         )
 
         // Token balance display
@@ -287,7 +294,7 @@ fun FooterContent(
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         // Next button - enable only if competitions are available
         val hasCompetitions = true //localGame?.competitions?.isNotEmpty() == true
