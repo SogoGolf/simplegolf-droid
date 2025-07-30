@@ -7,10 +7,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -20,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -56,7 +58,7 @@ private fun Screen4Portrait(
     val localGame by playRoundViewModel.localGame.collectAsState()
     val currentGolfer by playRoundViewModel.currentGolfer.collectAsState()
     val showBackButton by playRoundViewModel.showBackButton.collectAsState()
-    
+
     var showBackConfirmDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showBackButton) {
@@ -64,65 +66,130 @@ private fun Screen4Portrait(
             android.util.Log.d("PlayRoundScreen", "Back navigation blocked - strokes exist on first hole")
             return@BackHandler
         }
-        
+
         // Show confirmation dialog before navigating back
         showBackConfirmDialog = true
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().navigationBarsPadding()
-    ) {
-        // HoleHeader as top bar
-        HoleHeader(
-            holeNumber = 1, // TODO: Get from viewmodel
-            onBack = {
-                // Show confirmation dialog before navigating back
-                showBackConfirmDialog = true
-            },
-            onClose = {
-                // TODO: Implement close functionality
-                // viewModel.logout(navController)
-            },
-            onNext = {
-                // TODO: Implement hole navigation
-                // playRoundViewModel.incrementHoleNumber()
-            },
-            onTapHoleNumber = {
-                // TODO: Implement hole selection dialog
-                // playRoundViewModel.showGoToHoleDialog()
-            },
-            showBackButton = showBackButton
-        )
-
-        // Main content area
-        Box(
+    Scaffold(
+        topBar = {
+            HoleHeader(
+                holeNumber = 1, // TODO: Get from viewmodel
+                onBack = {
+                    // Show confirmation dialog before navigating back
+                    showBackConfirmDialog = true
+                },
+                onClose = {
+                    // TODO: Implement close functionality
+                    // viewModel.logout(navController)
+                },
+                onNext = {
+                    // TODO: Implement hole navigation
+                    // playRoundViewModel.incrementHoleNumber()
+                },
+                onTapHoleNumber = {
+                    // TODO: Implement hole selection dialog
+                    // playRoundViewModel.showGoToHoleDialog()
+                },
+                showBackButton = showBackButton
+            )
+        }
+        // No bottomBar parameter = no bottom bar
+    ) { paddingValues ->
+        // Your screen content
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .weight(1f),
-            contentAlignment = Alignment.Center
+                .padding(paddingValues) // <-- APPLY THE PADDING HERE
+                .navigationBarsPadding()
+              .padding(vertical = 6.dp)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Play Round Content",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "HoleHeader integration complete",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
+            // Top card (green background)
+            HoleCard(
+                backgroundColor = Color.Green,
+                golferName = "Main Golfer",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+                    .padding(horizontal = 10.dp)
+            )
+
+            // Gap between cards
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Bottom card (blue background)
+            HoleCard(
+                backgroundColor = Color.Blue,
+                golferName = "Playing Partner",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+                    .padding(horizontal = 10.dp)
+            )
         }
     }
+
+//    Column(
+//        modifier = Modifier.fillMaxSize().navigationBarsPadding()
+//    ) {
+    // HoleHeader as top bar
+//        HoleHeader(
+//            holeNumber = 1, // TODO: Get from viewmodel
+//            onBack = {
+//                // Show confirmation dialog before navigating back
+//                showBackConfirmDialog = true
+//            },
+//            onClose = {
+//                // TODO: Implement close functionality
+//                // viewModel.logout(navController)
+//            },
+//            onNext = {
+//                // TODO: Implement hole navigation
+//                // playRoundViewModel.incrementHoleNumber()
+//            },
+//            onTapHoleNumber = {
+//                // TODO: Implement hole selection dialog
+//                // playRoundViewModel.showGoToHoleDialog()
+//            },
+//            showBackButton = showBackButton
+//        )
+
+    // Two HoleCard components taking up remaining vertical space
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .navigationBarsPadding()
+////                .padding(horizontal = 16.dp)
+//        ) {
+//            // Top card (green background)
+//            HoleCard(
+//                backgroundColor = Color.Green,
+//                golferName = "Main Golfer",
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .weight(1f)
+//            )
+//
+//            // Gap between cards
+//            Spacer(modifier = Modifier.height(10.dp))
+//
+//            // Bottom card (blue background)
+//            HoleCard(
+//                backgroundColor = Color.Blue,
+//                golferName = "Playing Partner",
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .weight(1f)
+//            )
+//        }
+    // }
 
     // Back confirmation dialog
     if (showBackConfirmDialog) {
         // Extract StateFlow values to local variables for null checking
         val currentGolferValue = currentGolfer
         val localGameValue = localGame
-        
+
         // Find the partner marked by current user
         val markerName = if (currentGolferValue != null && localGameValue != null) {
             val partner = localGameValue.playingPartners.find { partner ->
@@ -136,7 +203,7 @@ private fun Screen4Portrait(
         } else {
             "Unknown"
         }
-        
+
         AlertDialog(
             onDismissRequest = { showBackConfirmDialog = false },
             confirmButton = {
@@ -157,8 +224,8 @@ private fun Screen4Portrait(
                 }
             },
             title = { Text("Remove Marker") },
-            text = { 
-                Text("This will remove your marker ($markerName) and you will need to choose again. Are you sure?") 
+            text = {
+                Text("This will remove your marker ($markerName) and you will need to choose again. Are you sure?")
             }
         )
     }

@@ -84,13 +84,18 @@ fun CompetitionsScreen(
     val canProceed by competitionViewModel.canProceed.collectAsState()
     val uiState by competitionViewModel.uiState.collectAsState()
     
-    // Set status bar to white with black text and icons
+    // Reset window background and set consistent system UI
     SideEffect {
         val window = (view.context as? androidx.activity.ComponentActivity)?.window ?: return@SideEffect
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
 
+        // Reset window background to white to override any previous screen's background
+        window.decorView.setBackgroundColor(Color.White.toArgb())
         window.statusBarColor = Color.White.toArgb()
         windowInsetsController.isAppearanceLightStatusBars = true
+        
+        // Ensure consistent system UI handling
+        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
     ScreenWithDrawer(

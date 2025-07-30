@@ -24,8 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -34,7 +32,6 @@ import com.sogo.golf.msl.ui.theme.MSLColors
 @Composable
 fun HoleHeader(
     modifier: Modifier = Modifier,
-    headerHeightPercentage: Float = 0.125f,
     holeNumber: Int,
     onBack: () -> Unit,
     onClose: () -> Unit,
@@ -42,15 +39,13 @@ fun HoleHeader(
     onTapHoleNumber: () -> Unit,
     showBackButton: Boolean
 ) {
-    // Get the screen height
-    val configuration = LocalConfiguration.current
-    val screenHeightPx = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
-    val headerHeightDp = with(LocalDensity.current) { (screenHeightPx * headerHeightPercentage).toDp() }
+    // Use fixed height for better Scaffold topBar integration
+    val headerHeight = 80.dp
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(headerHeightDp),
+            .height(headerHeight),
             //.background(mslBlue),
         contentAlignment = Alignment.Center
     ) {
