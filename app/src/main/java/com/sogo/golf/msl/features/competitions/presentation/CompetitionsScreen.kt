@@ -38,9 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.runtime.LaunchedEffect
-import android.widget.Toast
+import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -77,16 +75,6 @@ fun CompetitionsScreen(
     val tokenCost by competitionViewModel.tokenCost.collectAsState()
     val canProceed by competitionViewModel.canProceed.collectAsState()
     val uiState by competitionViewModel.uiState.collectAsState()
-    
-    val context = LocalContext.current
-
-    // Show toast for error messages
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let {
-            Toast.makeText(context, "No internet connection", Toast.LENGTH_LONG).show()
-            competitionViewModel.clearMessages()
-        }
-    }
 
     // Set status bar to white with black text and icons
     SideEffect {
@@ -192,6 +180,13 @@ fun CompetitionsScreen(
                 }
             )
         }
+
+        // Network messages
+        NetworkMessageSnackbar(
+            message = uiState.errorMessage,
+            isError = true,
+            onDismiss = { competitionViewModel.clearMessages() }
+        )
     }
 }
 
