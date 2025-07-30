@@ -41,6 +41,7 @@ import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.round.CreateRoundUseCase
+import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -527,7 +528,7 @@ class PlayingPartnerViewModel @Inject constructor(
         val holeScores = createHoleScores(competitionData)
 
         return Round(
-            id = UUID.randomUUID().toString(),
+            id = ObjectIdUtils.generateObjectId(),
             uuid = UUID.randomUUID().toString(),
             entityId = sogoGolferData.entityId,
             roundPlayedOff = gameData.gaHandicap,
