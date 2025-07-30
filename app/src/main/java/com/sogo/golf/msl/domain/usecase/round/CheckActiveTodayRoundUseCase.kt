@@ -1,17 +1,15 @@
 package com.sogo.golf.msl.domain.usecase.round
 
-import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
-import com.sogo.golf.msl.shared.utils.DateUtils
+import com.sogo.golf.msl.domain.usecase.round.GetActiveTodayRoundUseCase
 import javax.inject.Inject
 
 class CheckActiveTodayRoundUseCase @Inject constructor(
-    private val roundRepository: RoundLocalDbRepository
+    private val getActiveTodayRoundUseCase: GetActiveTodayRoundUseCase
 ) {
     suspend operator fun invoke(): Boolean {
-        val todayDateString = DateUtils.getTodayDateString()
-        val activeRound = roundRepository.getActiveTodayRound(todayDateString)
+        val activeRound = getActiveTodayRoundUseCase()
         
-        android.util.Log.d("CheckActiveTodayRound", "Checking for active round on: $todayDateString")
+        android.util.Log.d("CheckActiveTodayRound", "Checking for active round")
         android.util.Log.d("CheckActiveTodayRound", "Found active round: ${activeRound != null}")
         
         return activeRound != null

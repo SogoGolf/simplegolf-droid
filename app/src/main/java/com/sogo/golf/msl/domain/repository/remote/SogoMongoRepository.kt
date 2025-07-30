@@ -9,4 +9,5 @@ interface SogoMongoRepository {
     suspend fun getFees(): NetworkResult<List<Fee>>
     suspend fun getSogoGolferByGolfLinkNo(golfLinkNo: String): NetworkResult<SogoGolfer>
     suspend fun createRound(round: Round): NetworkResult<Round>
+    suspend fun deleteRound(roundId: String): NetworkResult<Unit>
 }

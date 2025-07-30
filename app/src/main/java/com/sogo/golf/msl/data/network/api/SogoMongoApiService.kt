@@ -6,6 +6,7 @@ import com.sogo.golf.msl.data.network.dto.mongodb.RoundDto
 import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -25,5 +26,8 @@ interface SogoMongoApiService {
     suspend fun createRound(
         @Body roundDto: RoundDto
     ): Response<RoundDto>
+    
+    @DELETE("round/{id}")
+    suspend fun deleteRound(@Path("id") roundId: String): Response<Unit>
 
 }

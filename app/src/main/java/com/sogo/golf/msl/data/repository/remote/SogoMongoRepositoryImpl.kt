@@ -92,4 +92,21 @@ class SogoMongoRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun deleteRound(roundId: String): NetworkResult<Unit> {
+        return safeNetworkCall {
+            Log.d(TAG, "Deleting round from SOGO Mongo API: $roundId")
+            
+            val response = sogoMongoApiService.deleteRound(roundId)
+            
+            if (response.isSuccessful) {
+                Log.d(TAG, "Successfully deleted round: $roundId")
+                Unit
+            } else {
+                Log.e(TAG, "Failed to delete round: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to delete round: ${response.message()}")
+            }
+        }
+    }
 }

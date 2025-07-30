@@ -15,6 +15,8 @@ import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.marker.RemoveMarkerUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
+import com.sogo.golf.msl.domain.usecase.round.GetActiveTodayRoundUseCase
+import com.sogo.golf.msl.domain.usecase.round.DeleteLocalAndRemoteRoundUseCase
 import com.sogo.golf.msl.shared.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +35,8 @@ class PlayRoundViewModel @Inject constructor(
     private val fetchAndSaveGameUseCase: FetchAndSaveGameUseCase,
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
     private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
+    private val getActiveTodayRoundUseCase: GetActiveTodayRoundUseCase,
+    private val deleteLocalAndRemoteRoundUseCase: DeleteLocalAndRemoteRoundUseCase,
     private val mslRepository: MslRepository,
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val appLifecycleManager: AppLifecycleManager,
@@ -142,82 +146,88 @@ class PlayRoundViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            android.util.Log.d("PlayRoundVM", "Starting marker removal process")
+            android.util.Log.d("PlayRoundVM", "Starting marker removal and round deletion process")
             _isRemovingMarker.value = true
             _markerError.value = null
 
-            android.util.Log.d("PlayRoundVM", "=== REMOVING MARKER ON BACK NAVIGATION ===")
-            android.util.Log.d("PlayRoundVM", "Golf Link Number: $partnerGolfLinkNumber")
-
-            when (val result = removeMarkerUseCase(partnerGolfLinkNumber)) {
+            android.util.Log.d("PlayRoundVM", "Step 1: Removing marker...")
+            when (val markerResult = removeMarkerUseCase(partnerGolfLinkNumber)) {
                 is NetworkResult.Success -> {
-                    android.util.Log.d("PlayRoundVM", "✅ SUCCESS: Marker removed successfully")
+                    android.util.Log.d("PlayRoundVM", "✅ Marker removed successfully")
 
-                    // 🔄 CRITICAL: Refresh data BEFORE navigating back
-                    android.util.Log.d("PlayRoundVM", "🔄 Refreshing game and competition data...")
-
-                    try {
-                        val selectedClub = getMslClubAndTenantIdsUseCase()
-                        if (selectedClub?.clubId != null) {
-                            val clubIdStr = selectedClub.clubId.toString()
-
-                            // Step 1: Refresh game data to get updated marker assignments
-                            android.util.Log.d("PlayRoundVM", "Step 1: Refreshing game data...")
-                            when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
-                                is NetworkResult.Success -> {
-                                    android.util.Log.d("PlayRoundVM", "✅ Game data refreshed successfully")
-                                    android.util.Log.d("PlayRoundVM", "Updated playing partners: ${gameResult.data.playingPartners.size}")
-
-                                    // Log the updated marker assignments
-                                    gameResult.data.playingPartners.forEach { partner ->
-                                        android.util.Log.d("PlayRoundVM",
-                                            "Partner: ${partner.firstName} ${partner.lastName} - Marked by: ${partner.markedByGolfLinkNumber}")
-                                    }
-                                }
-                                is NetworkResult.Error -> {
-                                    android.util.Log.w("PlayRoundVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
-                                    // Don't fail the whole operation - marker was still removed successfully
-                                }
-                                is NetworkResult.Loading -> { /* Ignore */ }
+                    android.util.Log.d("PlayRoundVM", "Step 2: Getting current round for deletion...")
+                    val currentRound = getActiveTodayRoundUseCase()
+                    
+                    if (currentRound != null) {
+                        android.util.Log.d("PlayRoundVM", "Step 3: Deleting round: ${currentRound.id}")
+                        
+                        when (val deleteResult = deleteLocalAndRemoteRoundUseCase(currentRound.id)) {
+                            is NetworkResult.Success<*> -> {
+                                android.util.Log.d("PlayRoundVM", "✅ Round deleted successfully")
+                                
+                                android.util.Log.d("PlayRoundVM", "Step 4: Refreshing game and competition data...")
+                                refreshDataAfterMarkerRemoval()
+                                
+                                _isRemovingMarker.value = false
+                                android.util.Log.d("PlayRoundVM", "✅ Complete flow successful - navigating back")
+                                navController.popBackStack()
                             }
-
-                            // Step 2: Refresh competition data
-                            android.util.Log.d("PlayRoundVM", "Step 2: Refreshing competition data...")
-                            when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
-                                is NetworkResult.Success -> {
-                                    android.util.Log.d("PlayRoundVM", "✅ Competition data refreshed successfully")
-                                }
-                                is NetworkResult.Error -> {
-                                    android.util.Log.w("PlayRoundVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
-                                    // Don't fail the whole operation
-                                }
-                                is NetworkResult.Loading -> { /* Ignore */ }
+                            is NetworkResult.Error<*> -> {
+                                android.util.Log.e("PlayRoundVM", "❌ Failed to delete round: ${deleteResult.error}")
+                                _isRemovingMarker.value = false
+                                _markerError.value = "Failed to delete round: ${deleteResult.error.toUserMessage()}"
                             }
-
-                            android.util.Log.d("PlayRoundVM", "✅ All data refresh operations completed")
-
-                        } else {
-                            android.util.Log.w("PlayRoundVM", "⚠️ No club selected, cannot refresh data")
+                            is NetworkResult.Loading<*> -> {
+                                android.util.Log.d("PlayRoundVM", "Round deletion in progress...")
+                            }
                         }
-                    } catch (e: Exception) {
-                        android.util.Log.w("PlayRoundVM", "⚠️ Exception while refreshing data", e)
+                    } else {
+                        android.util.Log.w("PlayRoundVM", "⚠️ No active round found for deletion")
+                        refreshDataAfterMarkerRemoval()
+                        _isRemovingMarker.value = false
+                        navController.popBackStack()
                     }
-
-                    _isRemovingMarker.value = false
-
-                    android.util.Log.d("PlayRoundVM", "🔄 Data refresh complete - now navigating back to choose partner screen")
-                    // ✅ NOW navigate back - the fresh data is in Room DB
-                    navController.popBackStack()
                 }
                 is NetworkResult.Error -> {
-                    android.util.Log.e("PlayRoundVM", "❌ ERROR: Failed to remove marker: ${result.error}")
+                    android.util.Log.e("PlayRoundVM", "❌ Failed to remove marker: ${markerResult.error}")
                     _isRemovingMarker.value = false
-                    _markerError.value = "Failed to remove marker: ${result.error.toUserMessage()}"
+                    _markerError.value = "Failed to remove marker: ${markerResult.error.toUserMessage()}"
                 }
                 is NetworkResult.Loading -> {
-                    android.util.Log.d("PlayRoundVM", "Loading state received")
+                    android.util.Log.d("PlayRoundVM", "Marker removal in progress...")
                 }
             }
+        }
+    }
+
+    private suspend fun refreshDataAfterMarkerRemoval() {
+        try {
+            val selectedClub = getMslClubAndTenantIdsUseCase()
+            if (selectedClub?.clubId != null) {
+                val clubIdStr = selectedClub.clubId.toString()
+
+                when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("PlayRoundVM", "✅ Game data refreshed successfully")
+                    }
+                    is NetworkResult.Error -> {
+                        android.util.Log.w("PlayRoundVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
+                    }
+                    is NetworkResult.Loading -> { }
+                }
+
+                when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("PlayRoundVM", "✅ Competition data refreshed successfully")
+                    }
+                    is NetworkResult.Error -> {
+                        android.util.Log.w("PlayRoundVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
+                    }
+                    is NetworkResult.Loading -> { }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("PlayRoundVM", "⚠️ Exception while refreshing data", e)
         }
     }
 
