@@ -9,13 +9,23 @@ class GetMslClubAndTenantIdsUseCase @Inject constructor(
     private val clubPreferences: ClubPreferences
 ) {
     suspend operator fun invoke(): SelectedClub? {
+        android.util.Log.d("GetMslClubAndTenantIdsUseCase", "=== RETRIEVING SELECTED CLUB ===")
+        
         val clubId = clubPreferences.getSelectedClubId()
         val tenantId = clubPreferences.getSelectedTenantId()
         val clubName = clubPreferences.getSelectedClubName()
 
+        android.util.Log.d("GetMslClubAndTenantIdsUseCase", "Club ID: $clubId")
+        android.util.Log.d("GetMslClubAndTenantIdsUseCase", "Tenant ID: $tenantId")
+        android.util.Log.d("GetMslClubAndTenantIdsUseCase", "Club Name: '$clubName'")
+        android.util.Log.d("GetMslClubAndTenantIdsUseCase", "Club Name is null: ${clubName == null}")
+
         return if (clubId != null && tenantId != null) {
-            SelectedClub(clubId = clubId, tenantId = tenantId, clubName = clubName)
+            val selectedClub = SelectedClub(clubId = clubId, tenantId = tenantId, clubName = clubName)
+            android.util.Log.d("GetMslClubAndTenantIdsUseCase", "✅ Returning SelectedClub: $selectedClub")
+            selectedClub
         } else {
+            android.util.Log.w("GetMslClubAndTenantIdsUseCase", "⚠️ No club selected (clubId=$clubId, tenantId=$tenantId)")
             null
         }
     }

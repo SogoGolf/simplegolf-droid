@@ -10,13 +10,23 @@ class SetSelectedClubUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(club: MslClub): Result<Unit> {
         return try {
+            android.util.Log.d("SetSelectedClubUseCase", "=== STORING CLUB ===")
+            android.util.Log.d("SetSelectedClubUseCase", "Club ID: ${club.clubId}")
+            android.util.Log.d("SetSelectedClubUseCase", "Tenant ID: ${club.tenantId}")
+            android.util.Log.d("SetSelectedClubUseCase", "Club Name: '${club.name}'")
+            android.util.Log.d("SetSelectedClubUseCase", "Club Name is null: ${club.name == null}")
+            android.util.Log.d("SetSelectedClubUseCase", "Club Name is blank: ${club.name?.isBlank()}")
+            
             clubPreferences.setSelectedClub(
                 clubId = club.clubId,
                 tenantId = club.tenantId,
                 clubName = club.name
             )
+            
+            android.util.Log.d("SetSelectedClubUseCase", "✅ Club stored successfully")
             Result.success(Unit)
         } catch (e: Exception) {
+            android.util.Log.e("SetSelectedClubUseCase", "❌ Failed to store club", e)
             Result.failure(e)
         }
     }
