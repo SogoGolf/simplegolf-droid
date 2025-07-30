@@ -34,6 +34,6 @@ interface RoundDao {
     @Query("SELECT COUNT(*) FROM rounds")
     suspend fun getRoundCount(): Int
 
-    @Query("SELECT * FROM rounds WHERE DATE(roundDate) = :dateString AND (isSubmitted = 0 OR isSubmitted IS NULL) AND (isAbandoned = 0 OR isAbandoned IS NULL) LIMIT 1")
+    @Query("SELECT * FROM rounds WHERE DATE(createdDate) = :dateString AND (isSubmitted = 0 OR isSubmitted IS NULL) AND (isAbandoned = 0 OR isAbandoned IS NULL) LIMIT 1")
     suspend fun getActiveTodayRound(dateString: String): RoundEntity?
 }
