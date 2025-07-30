@@ -108,7 +108,7 @@ private fun Screen4Portrait(
 //                showBackButton = showBackButton
 //            )
 
-            Column() {
+            Column(modifier = Modifier.padding(top = 6.dp)) {
 
                 Row(
                     modifier = Modifier
@@ -212,7 +212,7 @@ private fun Screen4Portrait(
 //                Text("123", modifier = Modifier.statusBarsPadding())
 //            }
 
-            // Spacer(modifier = Modifier.height(20.dp))
+             Spacer(modifier = Modifier.height(5.dp))
 
             HoleCardTest(
                 golferName = "Daniel Seymour",
@@ -235,6 +235,8 @@ private fun Screen4Portrait(
                     .weight(1f)  // This makes it take up the other half
                     .padding(horizontal = 10.dp)
             )
+
+            Spacer(Modifier.height(5.dp))
         }
 
 
