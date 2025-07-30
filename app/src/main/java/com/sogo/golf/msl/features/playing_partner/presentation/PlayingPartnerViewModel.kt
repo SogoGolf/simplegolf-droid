@@ -2,6 +2,7 @@ package com.sogo.golf.msl.features.playing_partner.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.fees.GetFeesUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
@@ -41,6 +42,7 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class PlayingPartnerViewModel @Inject constructor(
+    private val networkChecker: NetworkChecker,
     private val getMslGolferUseCase: GetMslGolferUseCase,
     private val gameRepository: MslGameLocalDbRepository,
     private val competitionRepository: MslCompetitionLocalDbRepository,
@@ -240,8 +242,21 @@ class PlayingPartnerViewModel @Inject constructor(
     // Method to refresh all data from internet
     suspend fun refreshAllData(): Boolean {
         return try {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            
+            if (!networkChecker.isNetworkAvailable()) {
+                // Start with loading state to acknowledge the gesture
+                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+                // Give the UI time to register the refresh gesture
+                kotlinx.coroutines.delay(100) // Small delay
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "No internet connection"
+                )
+
+                return false
+            }
+
             // Get the current club ID
             val selectedClub = getMslClubAndTenantIdsUseCase()
             if (selectedClub?.clubId != null) {
@@ -562,6 +577,13 @@ class PlayingPartnerViewModel @Inject constructor(
             createdDate = LocalDateTime.now(),
             updateDate = null,
             deleteDate = null
+        )
+    }
+
+    fun clearMessages() {
+        _uiState.value = _uiState.value.copy(
+            errorMessage = null,
+            successMessage = null
         )
     }
 

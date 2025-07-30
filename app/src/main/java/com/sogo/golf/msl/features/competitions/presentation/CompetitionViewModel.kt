@@ -215,8 +215,17 @@ class CompetitionViewModel @Inject constructor(
         viewModelScope.launch {
             // First, check for network availability.
             if (!networkChecker.isNetworkAvailable()) {
-                _uiState.value = _uiState.value.copy(errorMessage = "No internet connection")
-                return@launch // Exit without showing the spinner
+                // Start with loading state to acknowledge the gesture
+                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+                // Give the UI time to register the refresh gesture
+                kotlinx.coroutines.delay(100) // Small delay
+
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "No internet connection"
+                )
+                return@launch
             }
 
             // Network is available, so show the spinner and then yield.
@@ -343,6 +352,10 @@ class CompetitionViewModel @Inject constructor(
             errorMessage = null,
             successMessage = null
         )
+    }
+
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 
     // Debug function to check what's in the database

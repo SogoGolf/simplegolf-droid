@@ -1,5 +1,6 @@
 package com.sogo.golf.msl.features.competitions.presentation
 
+import android.net.Network
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -41,6 +42,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.LaunchedEffect
 import android.widget.Toast
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,6 +57,7 @@ import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 import com.sogo.golf.msl.shared_components.ui.UnifiedScreenHeader
 import com.sogo.golf.msl.shared_components.ui.UserInfoSection
+import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -78,16 +84,6 @@ fun CompetitionsScreen(
     val canProceed by competitionViewModel.canProceed.collectAsState()
     val uiState by competitionViewModel.uiState.collectAsState()
     
-    val context = LocalContext.current
-
-    // Show toast for error messages
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let {
-            Toast.makeText(context, "No internet connection", Toast.LENGTH_LONG).show()
-            competitionViewModel.clearMessages()
-        }
-    }
-
     // Set status bar to white with black text and icons
     SideEffect {
         val window = (view.context as? androidx.activity.ComponentActivity)?.window ?: return@SideEffect
@@ -189,6 +185,22 @@ fun CompetitionsScreen(
                 },
                 onNextClick = {
                     navController.navigate(nextRoute)
+                }
+            )
+        }
+    }
+
+    uiState.errorMessage?.let { error ->
+        Box(modifier = Modifier.padding(top = 50.dp)) {
+            NetworkMessageSnackbar (
+                message = error,
+                verticalAlignment = Alignment.CenterVertically,
+                textColor = Color.White,
+                backgroundColor = Color.Red,
+                isError = false,
+                onDismiss = {
+                    competitionViewModel.clearError()
+                    competitionViewModel.clearMessages()
                 }
             )
         }

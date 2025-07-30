@@ -36,6 +36,7 @@ import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 import com.sogo.golf.msl.shared_components.ui.UnifiedScreenHeader
 import com.sogo.golf.msl.shared_components.ui.UserInfoSection
 import com.sogo.golf.msl.shared_components.ui.components.ColoredSquare
+import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlack
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import com.sogo.golf.msl.ui.theme.MSLColors.mslGreen
@@ -69,24 +70,6 @@ fun PlayingPartnerScreen(
 
         window.statusBarColor = Color.White.toArgb()
         windowInsetsController.isAppearanceLightStatusBars = true
-    }
-
-    // Show error dialog for Let's Play flow
-    uiState.errorMessage?.let { error ->
-        AlertDialog(
-            onDismissRequest = { 
-                playingPartnerViewModel.clearError()
-            },
-            confirmButton = {
-                Button(onClick = { 
-                    playingPartnerViewModel.clearError()
-                }) {
-                    Text("OK")
-                }
-            },
-            title = { Text("Error") },
-            text = { Text(error) }
-        )
     }
 
     ScreenWithDrawer(
@@ -203,6 +186,23 @@ fun PlayingPartnerScreen(
             }
         }
     }
+
+    uiState.errorMessage?.let { error ->
+        Box(modifier = Modifier.padding(top = 50.dp)) {
+            NetworkMessageSnackbar (
+                message = error,
+                verticalAlignment = Alignment.CenterVertically,
+                textColor = Color.White,
+                backgroundColor = Color.Red,
+                isError = false,
+                onDismiss = {
+                    playingPartnerViewModel.clearError()
+                    playingPartnerViewModel.clearMessages()
+                }
+            )
+        }
+    }
+
 }
 
 data class MslGameState(
