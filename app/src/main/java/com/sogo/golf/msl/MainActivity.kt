@@ -33,6 +33,7 @@ import com.sogo.golf.msl.features.login.presentation.LoginScreen
 import com.sogo.golf.msl.features.login.presentation.WebAuthScreen
 import com.sogo.golf.msl.features.play.presentation.PlayRoundScreen
 import com.sogo.golf.msl.features.review_scores.presentation.ReviewScoresScreen
+import com.sogo.golf.msl.features.sogohome.presentation.SogoHomePage
 import com.sogo.golf.msl.features.splashscreen.presentation.SplashScreen
 import com.sogo.golf.msl.navigation.NavViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -152,6 +153,10 @@ class MainActivity : ComponentActivity() {
                         composable("reviewscreen") {
                             SetUnspecifiedOrientation()
                             ReviewScoresScreen(navController, viewModel)
+                        }
+                        composable("sogohome") {
+                            SetPortraitOrientation()
+                            SogoHomePage(navController)
                         }
                         composable("webauth") {
                             SetPortraitOrientation()

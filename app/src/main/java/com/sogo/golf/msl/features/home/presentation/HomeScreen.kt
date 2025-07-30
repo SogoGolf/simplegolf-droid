@@ -303,8 +303,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
                     .clickable {
-                        // Add navigation to SOGO home screen if needed
-                        // navigationManager.navigateToSogoHomeScreen()
+                        navController.navigate("sogohome")
                     },
                 contentAlignment = Alignment.Center
             ) {
