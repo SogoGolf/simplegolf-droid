@@ -170,6 +170,7 @@ class PlayRoundViewModel @Inject constructor(
                                 
                                 _isRemovingMarker.value = false
                                 android.util.Log.d("PlayRoundVM", "✅ Complete flow successful - navigating back")
+
                                 navController.popBackStack()
                             }
                             is NetworkResult.Error<*> -> {

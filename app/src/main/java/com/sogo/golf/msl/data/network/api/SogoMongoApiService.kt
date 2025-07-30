@@ -27,7 +27,7 @@ interface SogoMongoApiService {
         @Body roundDto: RoundDto
     ): Response<RoundDto>
     
-    @DELETE("round/{id}")
+    @DELETE("rounds/{id}")
     suspend fun deleteRound(@Path("id") roundId: String): Response<Unit>
 
 }

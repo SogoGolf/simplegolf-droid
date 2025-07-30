@@ -453,6 +453,24 @@ class PlayingPartnerViewModel @Inject constructor(
                     is NetworkResult.Loading -> { /* Ignore */ }
                 }
 
+                //we should also refetch the game since it has who is marking who data which we will need in playroundviewmodel
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 2: Refreshing game data...")
+                when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("PlayingPartnerVM", "✅ Game data refreshed successfully")
+                        android.util.Log.d("PlayingPartnerVM", "Updated playing partners: ${gameResult.data.playingPartners.size}")
+                    }
+                    is NetworkResult.Error -> {
+                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
+                        _uiState.value = _uiState.value.copy(
+                            errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
+                        )
+                        return@launch
+                    }
+                    is NetworkResult.Loading -> { /* Ignore */ }
+                }
+
+
                 // Step 3: Get fresh competition data from Room after refetch
                 android.util.Log.d("PlayingPartnerVM", "🔄 Step 3: Getting fresh competition data from Room...")
                 val freshCompetitionData = localCompetition.value
