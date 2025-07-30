@@ -94,34 +94,35 @@ private fun Screen4Portrait(
     Scaffold(
         topBar = {
             HoleHeader(
-                holeNumber = 1, // TODO: Get from viewmodel
-                onBack = {
-                    // Show confirmation dialog before navigating back
-                    showBackConfirmDialog = true
-                },
-                onClose = {
-                    // TODO: Implement close functionality
-                    // viewModel.logout(navController)
-                },
-                onNext = {
-                    // TODO: Implement hole navigation
-                    // playRoundViewModel.incrementHoleNumber()
-                },
-                onTapHoleNumber = {
-                    // TODO: Implement hole selection dialog
-                    // playRoundViewModel.showGoToHoleDialog()
-                },
-                showBackButton = showBackButton
-            )
-        },
-        modifier = Modifier.navigationBarsPadding()
+            holeNumber = 1, // TODO: Get from viewmodel
+            onBack = {
+                // Show confirmation dialog before navigating back
+                showBackConfirmDialog = true
+            },
+            onClose = {
+                // TODO: Implement close functionality
+                // viewModel.logout(navController)
+            },
+            onNext = {
+                // TODO: Implement hole navigation
+                // playRoundViewModel.incrementHoleNumber()
+            },
+            onTapHoleNumber = {
+                // TODO: Implement hole selection dialog
+                // playRoundViewModel.showGoToHoleDialog()
+            },
+            showBackButton = showBackButton
+        )
+        }
+        // No bottomBar parameter = no bottom bar
     ) { paddingValues ->
-        // Two HoleCard components taking up remaining vertical space
+        // Your screen content
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(paddingValues) // <-- APPLY THE PADDING HERE
+                .navigationBarsPadding()
+//          .padding(horizontal = 16.dp)
         ) {
             // Top card (green background)
             HoleCard(
@@ -131,10 +132,10 @@ private fun Screen4Portrait(
                     .fillMaxSize()
                     .weight(1f)
             )
-            
+
             // Gap between cards
             Spacer(modifier = Modifier.height(10.dp))
-            
+
             // Bottom card (blue background)
             HoleCard(
                 backgroundColor = Color.Blue,
