@@ -20,6 +20,8 @@ import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.SogoGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
+import com.sogo.golf.msl.data.repository.local.RoundLocalDbRepositoryImpl
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
@@ -86,5 +88,10 @@ abstract class DataModule {
     abstract fun bindSogoGolferLocalDbRepository(
         sogoGolferLocalDbRepositoryImpl: SogoGolferLocalDbRepositoryImpl
     ): SogoGolferLocalDbRepository
+
+    @Binds
+    abstract fun bindRoundLocalDbRepository(
+        roundLocalDbRepositoryImpl: RoundLocalDbRepositoryImpl
+    ): RoundLocalDbRepository
 
 }

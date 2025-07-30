@@ -18,6 +18,7 @@ data class MslPlayer(
     val scoreType: String?,
     val slopeRating: Int,
     val scratchRating: Double,
+    val gender: String?,
     val holes: List<MslHole>
 )
 
