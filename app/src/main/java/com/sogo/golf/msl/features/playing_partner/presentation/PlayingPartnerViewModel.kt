@@ -2,6 +2,7 @@ package com.sogo.golf.msl.features.playing_partner.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.revenuecat.purchases.paywalls.components.common.ComponentOverride
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.fees.GetFeesUseCase
@@ -34,6 +35,7 @@ import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import com.sogo.golf.msl.domain.model.msl.MslPlayingPartner
 import com.sogo.golf.msl.domain.model.msl.MslGame
+import com.sogo.golf.msl.domain.model.msl.SelectedClub
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
@@ -424,9 +426,37 @@ class PlayingPartnerViewModel @Inject constructor(
                     is NetworkResult.Loading -> { /* Ignore */ }
                 }
 
-                // Step 3: Create Round object using Room data (no internet refresh)
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 3: Creating Round object from Room data...")
-                val round = createRoundFromRoomData(selectedPartner, currentGolferData, gameData, sogoGolferData, competitionData)
+                val selectedClub = getMslClubAndTenantIdsUseCase()
+                var clubIdStr = ""
+                if (selectedClub?.clubId != null) {
+                    clubIdStr = selectedClub.clubId.toString()
+                }
+
+                //now we need to refetch the competition since the selected marker data will be there
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 3: Refreshing competition data...")
+                when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("PlayingPartnerVM", "✅ Competition data refreshed successfully")
+                    }
+                    is NetworkResult.Error -> {
+                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
+                        _uiState.value = _uiState.value.copy(
+                            isLetsPlayLoading = false,
+                            errorMessage = "Failed to re-fetch msl competition data: ${competitionResult.error.toUserMessage()}"
+                        )
+                        return@launch
+                    }
+                    is NetworkResult.Loading -> { /* Ignore */ }
+                }
+
+                // Step 3: Get fresh competition data from Room after refetch
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 3: Getting fresh competition data from Room...")
+                val freshCompetitionData = localCompetition.value
+                android.util.Log.d("PlayingPartnerVM", "Fresh competition data: ${freshCompetitionData?.players?.size ?: 0} players")
+
+                // Step 4: Create Round object using fresh Room data
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 4: Creating Round object from fresh Room data...")
+                val round = createRoundFromRoomData(selectedPartner, currentGolferData, gameData, sogoGolferData, freshCompetitionData, selectedClub)
 
                 // Step 4: Save Round to Room
                 android.util.Log.d("PlayingPartnerVM", "🔄 Step 4: Saving Round to database...")
@@ -459,7 +489,8 @@ class PlayingPartnerViewModel @Inject constructor(
         currentGolferData: com.sogo.golf.msl.domain.model.msl.MslGolfer,
         gameData: MslGame,
         sogoGolferData: SogoGolfer,
-        competitionData: MslCompetition?
+        competitionData: MslCompetition?,
+        selectedClub: SelectedClub?
     ): Round {
         val includeRoundValue = _includeRound.value
 
@@ -498,7 +529,7 @@ class PlayingPartnerViewModel @Inject constructor(
             compScoreTotal = 0,
             roundType = "competition",
             clubId = null,  //////////////////////////////////////
-            clubName = null,    /////////////////////////////////
+            clubName = selectedClub?.clubName,
             golferId = sogoGolferData.id,
             golferFirstName = sogoGolferData.firstName,
             golferLastName = sogoGolferData.lastName,
@@ -507,7 +538,7 @@ class PlayingPartnerViewModel @Inject constructor(
             markerLastName = selectedPartner.lastName,
             markerGLNumber = selectedPartner.golfLinkNumber,
             compType = gameData.competitions.firstOrNull()?.name?.lowercase(Locale.ROOT),
-            teeColor = gameData.teeColour,
+            teeColor = gameData.teeColourName?.lowercase(),
             isClubComp = true,
             isSubmitted = false,
             isApproved = false,
@@ -552,7 +583,7 @@ class PlayingPartnerViewModel @Inject constructor(
             uuid = null,
             entityId = sogoGolferData.entityId,
             dailyHandicap = selectedPartner.dailyHandicap.toFloat(),
-            golfLinkHandicap = partnerGolfer?.dailyHandicap?.toFloat(),
+            golfLinkHandicap = selectedPartner.dailyHandicap.toFloat(),
             roundDate = gameData.bookingTime?.toLocalDate()?.atStartOfDay(),
             roundType = "competition",
             startTime = gameData.bookingTime,
@@ -561,17 +592,17 @@ class PlayingPartnerViewModel @Inject constructor(
             scratchRating = partnerGolfer?.scratchRating?.toFloat(),
             slopeRating = partnerGolfer?.slopeRating?.toFloat(),
             compScoreTotal = 0,
-            teeColor = gameData.teeColour,
+            teeColor = gameData.teeColourName?.lowercase(),
             compType = gameData.competitions.firstOrNull()?.name?.lowercase(Locale.ROOT),
             isSubmitted = false,
-            golferId = null, ///////////////////////////////////////
+            golferId = null, /////////////////////////////////////// todo:
             golferFirstName = selectedPartner.firstName,
             golferLastName = selectedPartner.lastName,
             golferGLNumber = selectedPartner.golfLinkNumber,
             golflinkNo = selectedPartner.golfLinkNumber,
             golferEmail = sogoGolferData.email,
             golferImageUrl = null,
-            golferGender = null, /////////////////////////////////////
+            golferGender = partnerGolfer?.gender?.lowercase(),
             holeScores = holeScores,
             roundApprovalSignatureUrl = null,
             createdDate = LocalDateTime.now(),
