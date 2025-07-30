@@ -13,6 +13,7 @@ import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
+import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.marker.RemoveMarkerUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.usecase.round.GetActiveTodayRoundUseCase
@@ -30,6 +31,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PlayRoundViewModel @Inject constructor(
     private val getLocalGameUseCase: GetLocalGameUseCase,
+    private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
     private val getMslGolferUseCase: GetMslGolferUseCase,
     private val removeMarkerUseCase: RemoveMarkerUseCase,
     private val fetchAndSaveGameUseCase: FetchAndSaveGameUseCase,
@@ -62,6 +64,14 @@ class PlayRoundViewModel @Inject constructor(
 
     // Get the local game data
     val localGame = getLocalGameUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
+    // Get the local competition data
+    val localCompetition = getLocalCompetitionUseCase()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

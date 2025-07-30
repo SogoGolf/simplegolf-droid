@@ -70,6 +70,7 @@ private fun Screen4Portrait(
     val isRemovingMarker by playRoundViewModel.isRemovingMarker.collectAsState()
     val markerError by playRoundViewModel.markerError.collectAsState()
     val localGame by playRoundViewModel.localGame.collectAsState()
+    val localCompetition by playRoundViewModel.localCompetition.collectAsState()
     val currentGolfer by playRoundViewModel.currentGolfer.collectAsState()
     val showBackButton by playRoundViewModel.showBackButton.collectAsState()
 
@@ -214,8 +215,25 @@ private fun Screen4Portrait(
 
              Spacer(modifier = Modifier.height(5.dp))
 
+            // Extract golfer names from Room data
+            val currentGolferValue = currentGolfer
+            val localGameValue = localGame
+            
+            val mainGolferName = currentGolferValue?.let { golfer ->
+                "${golfer.firstName} ${golfer.surname}".trim()
+            } ?: "Main Golfer"
+
+            val playingPartnerName = if (currentGolferValue != null && localGameValue != null) {
+                val partner = localGameValue.playingPartners.find { partner ->
+                    partner.markedByGolfLinkNumber == currentGolferValue.golfLinkNo
+                }
+                partner?.let { "${it.firstName ?: ""} ${it.lastName ?: ""}".trim() }
+            } else null
+            val partnerDisplayName = playingPartnerName?.takeIf { it.isNotBlank() } ?: "Playing Partner"
+
+            // Top card - Playing Partner
             HoleCardTest(
-                golferName = "Daniel Seymour",
+                golferName = partnerDisplayName,
                 backgroundColor = Color.Green,
                 modifier = Modifier
                     .fillMaxSize()
@@ -226,9 +244,9 @@ private fun Screen4Portrait(
             // Gap between cards
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Bottom card - Playing Partner
+            // Bottom card - Main Golfer
             HoleCardTest(
-                golferName = "Playing Partner",
+                golferName = mainGolferName,
                 backgroundColor = Color.Blue,
                 modifier = Modifier
                     .fillMaxSize()
