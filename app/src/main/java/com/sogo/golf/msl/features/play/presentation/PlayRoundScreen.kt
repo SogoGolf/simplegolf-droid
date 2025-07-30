@@ -12,6 +12,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -71,36 +72,36 @@ private fun Screen4Portrait(
         showBackConfirmDialog = true
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().navigationBarsPadding()
-    ) {
-        // HoleHeader as top bar
-        HoleHeader(
-            holeNumber = 1, // TODO: Get from viewmodel
-            onBack = {
-                // Show confirmation dialog before navigating back
-                showBackConfirmDialog = true
-            },
-            onClose = {
-                // TODO: Implement close functionality
-                // viewModel.logout(navController)
-            },
-            onNext = {
-                // TODO: Implement hole navigation
-                // playRoundViewModel.incrementHoleNumber()
-            },
-            onTapHoleNumber = {
-                // TODO: Implement hole selection dialog
-                // playRoundViewModel.showGoToHoleDialog()
-            },
-            showBackButton = showBackButton
-        )
-
+    Scaffold(
+        topBar = {
+            HoleHeader(
+                holeNumber = 1, // TODO: Get from viewmodel
+                onBack = {
+                    // Show confirmation dialog before navigating back
+                    showBackConfirmDialog = true
+                },
+                onClose = {
+                    // TODO: Implement close functionality
+                    // viewModel.logout(navController)
+                },
+                onNext = {
+                    // TODO: Implement hole navigation
+                    // playRoundViewModel.incrementHoleNumber()
+                },
+                onTapHoleNumber = {
+                    // TODO: Implement hole selection dialog
+                    // playRoundViewModel.showGoToHoleDialog()
+                },
+                showBackButton = showBackButton
+            )
+        },
+        modifier = Modifier.navigationBarsPadding()
+    ) { paddingValues ->
         // Two HoleCard components taking up remaining vertical space
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .weight(1f)
+                .padding(paddingValues)
                 .padding(horizontal = 16.dp)
         ) {
             // Top card (green background)
