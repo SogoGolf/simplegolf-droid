@@ -53,7 +53,8 @@ private fun Screen4Portrait(
     val deleteMarkerEnabled by playRoundViewModel.deleteMarkerEnabled.collectAsState()
     val isRemovingMarker by playRoundViewModel.isRemovingMarker.collectAsState()
     val markerError by playRoundViewModel.markerError.collectAsState()
-    val gameState by playRoundViewModel.gameState.collectAsState()
+    val localGame by playRoundViewModel.localGame.collectAsState()
+    val currentGolfer by playRoundViewModel.currentGolfer.collectAsState()
     
     var showBackConfirmDialog by remember { mutableStateOf(false) }
 
@@ -112,7 +113,18 @@ private fun Screen4Portrait(
 
     // Back confirmation dialog
     if (showBackConfirmDialog) {
-        val markerName = gameState.game?.getPartnerMarkedByMe()?.firstName ?: "Unknown"
+        // Extract StateFlow values to local variables for null checking
+        val currentGolferValue = currentGolfer
+        val localGameValue = localGame
+        
+        // Find the partner marked by current user
+        val markerName = if (currentGolferValue != null && localGameValue != null) {
+            localGameValue.playingPartners.find { partner ->
+                partner.markedByGolfLinkNumber == currentGolferValue.golfLinkNo
+            }?.firstName ?: "Unknown"
+        } else {
+            "Unknown"
+        }
         
         AlertDialog(
             onDismissRequest = { showBackConfirmDialog = false },
