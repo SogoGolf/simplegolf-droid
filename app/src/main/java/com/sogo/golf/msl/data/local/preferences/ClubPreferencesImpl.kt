@@ -18,6 +18,7 @@ class ClubPreferencesImpl @Inject constructor(
         private const val CLUB_PREFS = "club_preferences"
         private const val KEY_SELECTED_CLUB_ID = "selected_club_id"
         private const val KEY_SELECTED_TENANT_ID = "selected_tenant_id"
+        private const val KEY_SELECTED_CLUB_NAME = "selected_club_name"
     }
 
     private val masterKey = MasterKey.Builder(context)
@@ -39,10 +40,11 @@ class ClubPreferencesImpl @Inject constructor(
         }
     }
 
-    override suspend fun setSelectedClub(clubId: Int, tenantId: String) {
+    override suspend fun setSelectedClub(clubId: Int, tenantId: String, clubName: String?) {
         prefs.edit()
             .putInt(KEY_SELECTED_CLUB_ID, clubId)
             .putString(KEY_SELECTED_TENANT_ID, tenantId)
+            .putString(KEY_SELECTED_CLUB_NAME, clubName)
             .apply()
     }
 
@@ -55,10 +57,15 @@ class ClubPreferencesImpl @Inject constructor(
         return prefs.getString(KEY_SELECTED_TENANT_ID, null)
     }
 
+    override suspend fun getSelectedClubName(): String? {
+        return prefs.getString(KEY_SELECTED_CLUB_NAME, null)
+    }
+
     override suspend fun clearSelectedClub() {
         prefs.edit()
             .remove(KEY_SELECTED_CLUB_ID)
             .remove(KEY_SELECTED_TENANT_ID)
+            .remove(KEY_SELECTED_CLUB_NAME)
             .apply()
     }
 

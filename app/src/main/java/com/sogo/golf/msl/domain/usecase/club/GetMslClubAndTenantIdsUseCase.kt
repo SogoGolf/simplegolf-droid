@@ -11,9 +11,10 @@ class GetMslClubAndTenantIdsUseCase @Inject constructor(
     suspend operator fun invoke(): SelectedClub? {
         val clubId = clubPreferences.getSelectedClubId()
         val tenantId = clubPreferences.getSelectedTenantId()
+        val clubName = clubPreferences.getSelectedClubName()
 
         return if (clubId != null && tenantId != null) {
-            SelectedClub(clubId = clubId, tenantId = tenantId)
+            SelectedClub(clubId = clubId, tenantId = tenantId, clubName = clubName)
         } else {
             null
         }

@@ -12,7 +12,8 @@ class SetSelectedClubUseCase @Inject constructor(
         return try {
             clubPreferences.setSelectedClub(
                 clubId = club.clubId,
-                tenantId = club.tenantId
+                tenantId = club.tenantId,
+                clubName = club.name
             )
             Result.success(Unit)
         } catch (e: Exception) {

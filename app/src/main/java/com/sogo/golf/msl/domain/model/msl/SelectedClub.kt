@@ -3,5 +3,6 @@ package com.sogo.golf.msl.domain.model.msl
 
 data class SelectedClub(
     val clubId: Int,
-    val tenantId: String
+    val tenantId: String,
+    val clubName: String? = null
 )
