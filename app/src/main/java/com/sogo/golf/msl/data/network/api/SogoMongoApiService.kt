@@ -2,9 +2,12 @@
 package com.sogo.golf.msl.data.network.api
 
 import com.sogo.golf.msl.data.network.dto.mongodb.FeeDto
+import com.sogo.golf.msl.data.network.dto.mongodb.RoundDto
 import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -17,5 +20,10 @@ interface SogoMongoApiService {
     suspend fun getSogoGolferByGolfLinkNo(
         @Query("golflinkNo") golfLinkNo: String
     ): Response<SogoGolferDto>
+
+    @POST("round")
+    suspend fun createRound(
+        @Body roundDto: RoundDto
+    ): Response<RoundDto>
 
 }

@@ -38,6 +38,7 @@ import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
+import com.sogo.golf.msl.domain.usecase.round.CreateRoundUseCase
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -56,6 +57,7 @@ class PlayingPartnerViewModel @Inject constructor(
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
     private val roundRepository: RoundLocalDbRepository,
+    private val createRoundUseCase: CreateRoundUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -433,15 +435,27 @@ class PlayingPartnerViewModel @Inject constructor(
                 roundRepository.saveRound(round)
                 android.util.Log.d("PlayingPartnerVM", "✅ Round saved to database")
 
-
+                // Step 5: Save Round to MongoDB API
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 5: Syncing Round to MongoDB...")
+                when (val createRoundResult = createRoundUseCase(round)) {
+                    is NetworkResult.Success -> {
+                        android.util.Log.d("PlayingPartnerVM", "✅ Round synced to MongoDB successfully")
+                        val syncedRound = round.copy(isSynced = true)
+                        roundRepository.saveRound(syncedRound)
+                    }
+                    is NetworkResult.Error -> {
+                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to sync round to MongoDB: ${createRoundResult.error}")
+                    }
+                    is NetworkResult.Loading -> { /* Ignore */ }
+                }
 
                 _uiState.value = _uiState.value.copy(
                     isLetsPlayLoading = false,
                     successMessage = "Ready to play!"
                 )
 
-                // Step 5: Navigate to PlayRound screen
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 5: Navigating to PlayRound screen...")
+                // Step 6: Navigate to PlayRound screen
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 6: Navigating to PlayRound screen...")
                 onNavigateToPlayRound()
 
             } catch (e: Exception) {

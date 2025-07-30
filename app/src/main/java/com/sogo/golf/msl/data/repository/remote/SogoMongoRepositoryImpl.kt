@@ -4,8 +4,10 @@ import android.util.Log
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.data.network.api.SogoMongoApiService
 import com.sogo.golf.msl.data.network.dto.mongodb.toDomainModel
+import com.sogo.golf.msl.data.network.dto.mongodb.toDto
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.model.NetworkResult
+import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.mongodb.Fee
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
@@ -67,6 +69,26 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 Log.e(TAG, "Failed to get SogoGolfer: ${response.code()} - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to get SogoGolfer: ${response.message()}")
+            }
+        }
+    }
+
+    override suspend fun createRound(round: Round): NetworkResult<Round> {
+        return safeNetworkCall {
+            Log.d(TAG, "Creating round in SOGO Mongo API for golfer: ${round.golflinkNo}")
+            
+            val roundDto = round.toDto()
+            val response = sogoMongoApiService.createRound(roundDto)
+            
+            if (response.isSuccessful) {
+                val createdRoundDto = response.body()
+                Log.d(TAG, "Successfully created round with ID: ${createdRoundDto?.id}")
+                
+                round.copy(isSynced = true)
+            } else {
+                Log.e(TAG, "Failed to create round: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to create round: ${response.message()}")
             }
         }
     }
