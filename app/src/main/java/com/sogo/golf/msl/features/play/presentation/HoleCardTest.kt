@@ -61,13 +61,17 @@ fun HoleCardTest(
                 .padding(16.dp)
                 .pointerInput(Unit) {
                     var totalDragX = 0f
+                    var isDragging = false
+                    val tapThreshold = 20f // Small threshold to distinguish taps from swipes
+                    
                     detectHorizontalDragGestures(
                         onDragStart = { 
                             totalDragX = 0f
+                            isDragging = false
                         },
                         onDragEnd = {
-                            // Check if total horizontal swipe distance exceeds threshold
-                            if (abs(totalDragX) > swipeThreshold) {
+                            // Only handle swipe if we moved significantly
+                            if (isDragging && abs(totalDragX) > swipeThreshold) {
                                 if (totalDragX > 0) {
                                     // Left-to-right swipe: go to previous hole
                                     onSwipePrevious()
@@ -76,9 +80,20 @@ fun HoleCardTest(
                                     onSwipeNext()
                                 }
                             }
+                            isDragging = false
                         }
                     ) { change, dragAmount ->
                         totalDragX += dragAmount
+                        
+                        // Only start consuming events if we've moved beyond tap threshold
+                        if (!isDragging && abs(totalDragX) > tapThreshold) {
+                            isDragging = true
+                        }
+                        
+                        // Only consume the change if we're in dragging mode
+                        if (isDragging) {
+                            change.consume()
+                        }
                     }
                 },
             contentAlignment = Alignment.Center
