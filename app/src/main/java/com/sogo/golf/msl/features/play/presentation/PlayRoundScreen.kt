@@ -126,7 +126,17 @@ private fun Screen4Portrait(
                     ) {
                         if (showBackButton) {
                             IconButton(
-                                onClick = { showBackConfirmDialog = true },
+                                onClick = { 
+                                    // Check if we're on the starting hole
+                                    val startingHoleNumber = localGame?.startingHoleNumber ?: 1
+                                    if (currentHoleNumber == startingHoleNumber) {
+                                        // On first hole - show confirmation dialog
+                                        showBackConfirmDialog = true
+                                    } else {
+                                        // Not on first hole - navigate normally
+                                        playRoundViewModel.navigateToPreviousHole()
+                                    }
+                                },
                                 modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
