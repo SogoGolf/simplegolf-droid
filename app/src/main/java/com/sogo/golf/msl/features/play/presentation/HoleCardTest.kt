@@ -46,27 +46,7 @@ fun HoleCardTest(
     val swipeThreshold = with(density) { 100.dp.toPx() }
     
     Card(
-        modifier = modifier
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragEnd = {
-                        // Drag ended, no action needed
-                    }
-                ) { change, dragAmount ->
-                    val (x, _) = dragAmount
-                    
-                    // Check if horizontal swipe distance exceeds threshold
-                    if (abs(x) > swipeThreshold) {
-                        if (x > 0) {
-                            // Left-to-right swipe: go to previous hole
-                            onSwipePrevious()
-                        } else {
-                            // Right-to-left swipe: go to next hole
-                            onSwipeNext()
-                        }
-                    }
-                }
-            },
+        modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
@@ -74,7 +54,30 @@ fun HoleCardTest(
             modifier = Modifier
                 .fillMaxSize()
                 .background(backgroundColor)
-                .padding(16.dp),
+                .padding(16.dp)
+                .pointerInput(Unit) {
+                    var totalDragX = 0f
+                    detectDragGestures(
+                        onDragStart = {
+                            totalDragX = 0f
+                        },
+                        onDragEnd = {
+                            // Check if total horizontal swipe distance exceeds threshold
+                            if (abs(totalDragX) > swipeThreshold) {
+                                if (totalDragX > 0) {
+                                    // Left-to-right swipe: go to previous hole
+                                    onSwipePrevious()
+                                } else {
+                                    // Right-to-left swipe: go to next hole
+                                    onSwipeNext()
+                                }
+                            }
+                        }
+                    ) { change, dragAmount ->
+                        val (x, _) = dragAmount
+                        totalDragX += x
+                    }
+                },
             contentAlignment = Alignment.Center
         ) {
             Column(
