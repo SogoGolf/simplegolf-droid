@@ -21,6 +21,9 @@ import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.usecase.round.GetActiveTodayRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.DeleteLocalAndRemoteRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.UpdateHoleScoreUseCase
+import com.sogo.golf.msl.domain.usecase.round.BulkSyncRoundUseCase
+import com.sogo.golf.msl.data.network.NetworkStateMonitor
+import com.sogo.golf.msl.data.network.NetworkState
 import com.sogo.golf.msl.shared.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +46,8 @@ class PlayRoundViewModel @Inject constructor(
     private val getActiveTodayRoundUseCase: GetActiveTodayRoundUseCase,
     private val deleteLocalAndRemoteRoundUseCase: DeleteLocalAndRemoteRoundUseCase,
     private val updateHoleScoreUseCase: UpdateHoleScoreUseCase,
+    private val bulkSyncRoundUseCase: BulkSyncRoundUseCase,
+    private val networkStateMonitor: NetworkStateMonitor,
     private val holeStatePreferences: HoleStatePreferences,
     private val mslRepository: MslRepository,
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
@@ -145,6 +150,21 @@ class PlayRoundViewModel @Inject constructor(
                     val startingHole = game.startingHoleNumber
                     _currentHoleNumber.value = startingHole
                     android.util.Log.d("PlayRoundVM", "Set starting hole number to: $startingHole")
+                }
+            }
+        }
+        
+        // Monitor network state changes for bulk sync
+        viewModelScope.launch {
+            networkStateMonitor.networkStateFlow().collect { networkState ->
+                when (networkState) {
+                    is NetworkState.Available -> {
+                        android.util.Log.d("PlayRoundVM", "🌐 Network restored - checking for bulk sync")
+                        triggerBulkSyncIfNeeded()
+                    }
+                    is NetworkState.Lost -> {
+                        android.util.Log.d("PlayRoundVM", "📵 Network lost")
+                    }
                 }
             }
         }
@@ -756,6 +776,23 @@ class PlayRoundViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 android.util.Log.e("PlayRoundVM", "Error clearing current hole", e)
+            }
+        }
+    }
+
+    private fun triggerBulkSyncIfNeeded() {
+        viewModelScope.launch {
+            try {
+                val syncResult = bulkSyncRoundUseCase()
+                if (syncResult) {
+                    android.util.Log.d("PlayRoundVM", "✅ Bulk sync completed successfully")
+                    // Reload current round to refresh UI with synced state
+                    loadCurrentRound()
+                } else {
+                    android.util.Log.d("PlayRoundVM", "ℹ️ Bulk sync not needed or failed silently")
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("PlayRoundVM", "⚠️ Error during bulk sync trigger", e)
             }
         }
     }

@@ -38,6 +38,12 @@ interface SogoMongoApiService {
         @Body payload: HoleScoreUpdatePayload
     ): Response<Unit>
 
+    @PATCH("updateAllHoleScores/{roundId}")
+    suspend fun updateAllHoleScores(
+        @Path("roundId") roundId: String,
+        @Body payload: BulkHoleScoreUpdatePayload
+    ): Response<Unit>
+
 }
 
 data class HoleScoreUpdatePayload(
@@ -45,4 +51,15 @@ data class HoleScoreUpdatePayload(
     val score: Int,
     val playingPartnerStrokes: Int,
     val playingPartnerScore: Int
+)
+
+data class BulkHoleScoreUpdatePayload(
+    val golfer: List<HoleScoreData>,
+    val playingPartner: List<HoleScoreData>
+)
+
+data class HoleScoreData(
+    val holeNumber: Int,
+    val strokes: Int,
+    val score: Int
 )

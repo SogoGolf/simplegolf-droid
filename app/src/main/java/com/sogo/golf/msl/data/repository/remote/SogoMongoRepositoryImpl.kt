@@ -4,6 +4,8 @@ import android.util.Log
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.data.network.api.SogoMongoApiService
 import com.sogo.golf.msl.data.network.api.HoleScoreUpdatePayload
+import com.sogo.golf.msl.data.network.api.HoleScoreData
+import com.sogo.golf.msl.data.network.api.BulkHoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.dto.mongodb.toDomainModel
 import com.sogo.golf.msl.data.network.dto.mongodb.toDto
 import com.sogo.golf.msl.data.repository.BaseRepository
@@ -131,6 +133,46 @@ class SogoMongoRepositoryImpl @Inject constructor(
             } else {
                 Log.e(TAG, "Failed to update hole score: ${response.code()} - ${response.message()}")
                 throw Exception("Failed to update hole score: ${response.message()}")
+            }
+        }
+    }
+
+    override suspend fun updateAllHoleScores(
+        roundId: String,
+        round: Round
+    ): NetworkResult<Unit> {
+        return safeNetworkCall {
+            Log.d(TAG, "Bulk updating all hole scores for round $roundId")
+            
+            val golferHoleScores = round.holeScores.map { holeScore ->
+                HoleScoreData(
+                    holeNumber = holeScore.holeNumber,
+                    strokes = holeScore.strokes,
+                    score = holeScore.score.toInt()
+                )
+            }
+            
+            val partnerHoleScores = round.playingPartnerRound?.holeScores?.map { holeScore ->
+                HoleScoreData(
+                    holeNumber = holeScore.holeNumber,
+                    strokes = holeScore.strokes,
+                    score = holeScore.score.toInt()
+                )
+            } ?: emptyList()
+            
+            val payload = BulkHoleScoreUpdatePayload(
+                golfer = golferHoleScores,
+                playingPartner = partnerHoleScores
+            )
+            
+            val response = sogoMongoApiService.updateAllHoleScores(roundId, payload)
+            
+            if (response.isSuccessful) {
+                Log.d(TAG, "Successfully bulk updated all hole scores")
+                Unit
+            } else {
+                Log.e(TAG, "Failed to bulk update hole scores: ${response.code()} - ${response.message()}")
+                throw Exception("Failed to bulk update hole scores: ${response.message()}")
             }
         }
     }

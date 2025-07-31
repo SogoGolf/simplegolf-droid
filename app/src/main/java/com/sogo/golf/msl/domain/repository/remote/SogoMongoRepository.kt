@@ -19,4 +19,9 @@ interface SogoMongoRepository {
         playingPartnerStrokes: Int, 
         playingPartnerScore: Int
     ): NetworkResult<Unit>
+    
+    suspend fun updateAllHoleScores(
+        roundId: String,
+        round: Round
+    ): NetworkResult<Unit>
 }

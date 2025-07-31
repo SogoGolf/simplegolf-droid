@@ -3,6 +3,7 @@ package com.sogo.golf.msl.di
 import android.content.Context
 import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.data.network.NetworkChecker
+import com.sogo.golf.msl.data.network.NetworkStateMonitor
 import com.sogo.golf.msl.data.network.api.GolfApiService
 import com.sogo.golf.msl.data.network.api.SogoApiService
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
@@ -48,6 +49,12 @@ object NetworkModule {
     fun provideNetworkChecker(
         @ApplicationContext context: Context
     ): NetworkChecker = NetworkChecker(context)
+
+    @Provides
+    @Singleton
+    fun provideNetworkStateMonitor(
+        @ApplicationContext context: Context
+    ): NetworkStateMonitor = NetworkStateMonitor(context)
 
     @Provides
     @Singleton
