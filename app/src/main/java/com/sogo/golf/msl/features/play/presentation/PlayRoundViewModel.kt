@@ -206,18 +206,22 @@ class PlayRoundViewModel @Inject constructor(
             return true
         }
 
-        // Check main golfer's first hole strokes
-        val mainGolferFirstHoleStrokes = round.holeScores.firstOrNull()?.strokes ?: 0
-        android.util.Log.d("PlayRoundVM", "Main golfer first hole strokes: $mainGolferFirstHoleStrokes")
-
-        // Check playing partner's first hole strokes
-        val partnerFirstHoleStrokes = round.playingPartnerRound?.holeScores?.firstOrNull()?.strokes ?: 0
-        android.util.Log.d("PlayRoundVM", "Partner first hole strokes: $partnerFirstHoleStrokes")
-
-        // Prevent back navigation only if BOTH golfers have strokes > 0 on first hole
-        val canNavigateBack = !(mainGolferFirstHoleStrokes > 0 && partnerFirstHoleStrokes > 0)
+        // Get the starting hole number from game data
+        val game = localGame.value
+        val startingHoleNumber = game?.startingHoleNumber ?: 1
         
-        android.util.Log.d("PlayRoundVM", "Back navigation allowed: $canNavigateBack (main: $mainGolferFirstHoleStrokes, partner: $partnerFirstHoleStrokes)")
+        // Check main golfer's starting hole strokes
+        val mainGolferStartingHoleStrokes = round.holeScores.find { it.holeNumber == startingHoleNumber }?.strokes ?: 0
+        android.util.Log.d("PlayRoundVM", "Main golfer starting hole ($startingHoleNumber) strokes: $mainGolferStartingHoleStrokes")
+
+        // Check playing partner's starting hole strokes
+        val partnerStartingHoleStrokes = round.playingPartnerRound?.holeScores?.find { it.holeNumber == startingHoleNumber }?.strokes ?: 0
+        android.util.Log.d("PlayRoundVM", "Partner starting hole ($startingHoleNumber) strokes: $partnerStartingHoleStrokes")
+
+        // Prevent back navigation only if BOTH golfers have strokes > 0 on starting hole
+        val canNavigateBack = !(mainGolferStartingHoleStrokes > 0 && partnerStartingHoleStrokes > 0)
+        
+        android.util.Log.d("PlayRoundVM", "Back navigation allowed: $canNavigateBack (main: $mainGolferStartingHoleStrokes, partner: $partnerStartingHoleStrokes)")
         
         return canNavigateBack
     }
@@ -482,6 +486,11 @@ class PlayRoundViewModel @Inject constructor(
     }
 
     fun navigateToPreviousHole() {
+        if (!showBackButton.value) {
+            android.util.Log.d("PlayRoundVM", "Back navigation blocked - strokes exist on starting hole")
+            return
+        }
+        
         val game = localGame.value
         if (game != null) {
             val currentHole = _currentHoleNumber.value

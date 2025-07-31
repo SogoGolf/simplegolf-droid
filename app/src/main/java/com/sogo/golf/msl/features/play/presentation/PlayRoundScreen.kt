@@ -126,16 +126,18 @@ private fun Screen4Portrait(
                         modifier = Modifier
                             .weight(1f)
                     ) {
-                        IconButton(
-                            onClick = { playRoundViewModel.navigateToPreviousHole() },
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                contentDescription = "Previous Hole",
-                                tint = MSLColors.mslGunMetal,
-                                modifier = Modifier.size(32.dp)
-                            )
+                        if (showBackButton) {
+                            IconButton(
+                                onClick = { playRoundViewModel.navigateToPreviousHole() },
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                    contentDescription = "Previous Hole",
+                                    tint = MSLColors.mslGunMetal,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            }
                         }
                     }
 
@@ -280,7 +282,11 @@ private fun Screen4Portrait(
                 strokeIndex = strokeIndexes,
                 totalScore = 0, // TODO: Get from round data
                 onSwipeNext = { playRoundViewModel.navigateToNextHole() },
-                onSwipePrevious = { playRoundViewModel.navigateToPreviousHole() },
+                onSwipePrevious = { 
+                    if (showBackButton) {
+                        playRoundViewModel.navigateToPreviousHole()
+                    }
+                },
                 onStrokeButtonClick = { playRoundViewModel.onPartnerStrokeButtonClick() },
                 onPlusButtonClick = { playRoundViewModel.onPartnerPlusButtonClick() },
                 onMinusButtonClick = { playRoundViewModel.onPartnerMinusButtonClick() },
@@ -307,7 +313,11 @@ private fun Screen4Portrait(
                 strokeIndex = strokeIndexes,
                 totalScore = 0, // TODO: Get from round data
                 onSwipeNext = { playRoundViewModel.navigateToNextHole() },
-                onSwipePrevious = { playRoundViewModel.navigateToPreviousHole() },
+                onSwipePrevious = { 
+                    if (showBackButton) {
+                        playRoundViewModel.navigateToPreviousHole()
+                    }
+                },
                 onStrokeButtonClick = { playRoundViewModel.onMainGolferStrokeButtonClick() },
                 onPlusButtonClick = { playRoundViewModel.onMainGolferPlusButtonClick() },
                 onMinusButtonClick = { playRoundViewModel.onMainGolferMinusButtonClick() },
