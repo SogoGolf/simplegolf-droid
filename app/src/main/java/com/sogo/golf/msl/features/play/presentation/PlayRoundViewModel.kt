@@ -132,7 +132,7 @@ class PlayRoundViewModel @Inject constructor(
                 updateBackButtonVisibility(round)
                 
                 if (round != null) {
-                    restoreHoleStateOnAppStart(round)
+                    restoreCurrentHoleOnAppStart(round)
                 }
             }
         }
@@ -673,10 +673,6 @@ class PlayRoundViewModel @Inject constructor(
             updateHoleScoreUseCase(round, holeNumber, newStrokes, isMainGolfer)
             android.util.Log.d("PlayRoundVM", "✅ Hole score updated - Hole $holeNumber, Strokes: $newStrokes, Main golfer: $isMainGolfer")
             
-            if (newStrokes > 0) {
-                saveLastScoredHoleState(round.id, holeNumber)
-            }
-            
             loadCurrentRound()
             
         } catch (e: Exception) {
@@ -721,35 +717,17 @@ class PlayRoundViewModel @Inject constructor(
         }
     }
 
-    private fun saveLastScoredHoleState(roundId: String, holeNumber: Int) {
+    private fun restoreCurrentHoleOnAppStart(round: com.sogo.golf.msl.domain.model.Round) {
         viewModelScope.launch {
             try {
-                holeStatePreferences.saveLastScoredHole(roundId, holeNumber)
-            } catch (e: Exception) {
-                android.util.Log.e("PlayRoundVM", "Error saving last scored hole state", e)
-            }
-        }
-    }
-
-    private fun restoreHoleStateOnAppStart(round: com.sogo.golf.msl.domain.model.Round) {
-        viewModelScope.launch {
-            try {
-                val lastScoredHole = holeStatePreferences.getLastScoredHole(round.id)
-                val currentHole = holeStatePreferences.getCurrentHole(round.id)
+                val savedCurrentHole = holeStatePreferences.getCurrentHole(round.id)
                 
-                val targetHole = when {
-                    lastScoredHole != null -> {
-                        android.util.Log.d("PlayRoundVM", "🔄 App restart: Found last scored hole $lastScoredHole")
-                        lastScoredHole
-                    }
-                    currentHole != null -> {
-                        android.util.Log.d("PlayRoundVM", "🔄 App restart: Found current hole $currentHole")
-                        currentHole
-                    }
-                    else -> {
-                        android.util.Log.d("PlayRoundVM", "🔄 App restart: No hole state found, using starting hole")
-                        findStartingHole(round)
-                    }
+                val targetHole = savedCurrentHole ?: findStartingHole(round)
+                
+                if (savedCurrentHole != null) {
+                    android.util.Log.d("PlayRoundVM", "🔄 App restart: Found saved current hole $savedCurrentHole")
+                } else {
+                    android.util.Log.d("PlayRoundVM", "🔄 App restart: No saved hole state, using starting hole $targetHole")
                 }
                 
                 if (targetHole != _currentHoleNumber.value) {
@@ -758,7 +736,7 @@ class PlayRoundViewModel @Inject constructor(
                 }
                 
             } catch (e: Exception) {
-                android.util.Log.e("PlayRoundVM", "Error restoring hole state on app start", e)
+                android.util.Log.e("PlayRoundVM", "Error restoring current hole on app start", e)
             }
         }
     }
@@ -768,16 +746,16 @@ class PlayRoundViewModel @Inject constructor(
         return game?.startingHoleNumber ?: 1
     }
 
-    fun clearHoleStateForRound() {
+    fun clearCurrentHoleForRound() {
         viewModelScope.launch {
             try {
                 val round = currentRound.value
                 if (round != null) {
-                    holeStatePreferences.clearHoleState(round.id)
-                    android.util.Log.d("PlayRoundVM", "🗑️ Cleared hole state for round: ${round.id}")
+                    holeStatePreferences.clearCurrentHole(round.id)
+                    android.util.Log.d("PlayRoundVM", "🗑️ Cleared current hole for round: ${round.id}")
                 }
             } catch (e: Exception) {
-                android.util.Log.e("PlayRoundVM", "Error clearing hole state", e)
+                android.util.Log.e("PlayRoundVM", "Error clearing current hole", e)
             }
         }
     }
