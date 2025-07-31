@@ -19,6 +19,7 @@ import com.sogo.golf.msl.domain.usecase.marker.RemoveMarkerUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.usecase.round.GetActiveTodayRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.DeleteLocalAndRemoteRoundUseCase
+import com.sogo.golf.msl.domain.usecase.round.UpdateHoleScoreUseCase
 import com.sogo.golf.msl.shared.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +41,7 @@ class PlayRoundViewModel @Inject constructor(
     private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
     private val getActiveTodayRoundUseCase: GetActiveTodayRoundUseCase,
     private val deleteLocalAndRemoteRoundUseCase: DeleteLocalAndRemoteRoundUseCase,
+    private val updateHoleScoreUseCase: UpdateHoleScoreUseCase,
     private val mslRepository: MslRepository,
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val appLifecycleManager: AppLifecycleManager,
@@ -444,6 +446,7 @@ class PlayRoundViewModel @Inject constructor(
             if (currentHole < maxHole) {
                 _currentHoleNumber.value = currentHole + 1
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: ${currentHole + 1}")
+                triggerHoleNavigationUpdate()
             } else {
                 android.util.Log.d("PlayRoundVM", "Already at last hole: $maxHole")
             }
@@ -459,6 +462,7 @@ class PlayRoundViewModel @Inject constructor(
             if (currentHole > minHole) {
                 _currentHoleNumber.value = currentHole - 1
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: ${currentHole - 1}")
+                triggerHoleNavigationUpdate()
             } else {
                 android.util.Log.d("PlayRoundVM", "Already at first hole: $minHole")
             }
@@ -474,6 +478,7 @@ class PlayRoundViewModel @Inject constructor(
             if (holeNumber in minHole..maxHole) {
                 _currentHoleNumber.value = holeNumber
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $holeNumber")
+                triggerHoleNavigationUpdate()
             } else {
                 android.util.Log.w("PlayRoundVM", "Invalid hole number: $holeNumber (valid range: $minHole-$maxHole)")
             }
@@ -654,17 +659,37 @@ class PlayRoundViewModel @Inject constructor(
         isMainGolfer: Boolean
     ) {
         try {
-            // TODO: Implement database update logic
-            // This would involve updating the Round entity in Room database
-            // and potentially syncing with remote MongoDB API
+            updateHoleScoreUseCase(round, holeNumber, newStrokes, isMainGolfer)
+            android.util.Log.d("PlayRoundVM", "✅ Hole score updated - Hole $holeNumber, Strokes: $newStrokes, Main golfer: $isMainGolfer")
             
-            android.util.Log.d("PlayRoundVM", "TODO: Update database - Hole $holeNumber, Strokes: $newStrokes, Main golfer: $isMainGolfer")
-            
-            // For now, just reload the current round to refresh the UI
             loadCurrentRound()
             
         } catch (e: Exception) {
-            android.util.Log.e("PlayRoundVM", "Error updating round strokes in database", e)
+            android.util.Log.e("PlayRoundVM", "❌ Error updating round strokes in database", e)
+        }
+    }
+
+    private fun triggerHoleNavigationUpdate() {
+        viewModelScope.launch {
+            try {
+                val round = currentRound.value
+                if (round != null) {
+                    val currentHole = _currentHoleNumber.value
+                    val holeIndex = currentHole - 1
+                    
+                    val mainGolferStrokes = round.holeScores.getOrNull(holeIndex)?.strokes ?: 0
+                    val partnerStrokes = round.playingPartnerRound?.holeScores?.getOrNull(holeIndex)?.strokes ?: 0
+                    
+                    if (mainGolferStrokes > 0) {
+                        updateHoleScoreUseCase(round, currentHole, mainGolferStrokes, true)
+                    }
+                    if (partnerStrokes > 0) {
+                        updateHoleScoreUseCase(round, currentHole, partnerStrokes, false)
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "Error triggering hole navigation update", e)
+            }
         }
     }
 }

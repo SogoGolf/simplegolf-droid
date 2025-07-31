@@ -8,6 +8,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -30,4 +31,18 @@ interface SogoMongoApiService {
     @DELETE("rounds/{id}")
     suspend fun deleteRound(@Path("id") roundId: String): Response<Unit>
 
+    @PATCH("rounds/{roundId}/holes/{holeNumber}")
+    suspend fun updateHoleScore(
+        @Path("roundId") roundId: String,
+        @Path("holeNumber") holeNumber: Int,
+        @Body payload: HoleScoreUpdatePayload
+    ): Response<Unit>
+
 }
+
+data class HoleScoreUpdatePayload(
+    val strokes: Int,
+    val score: Int,
+    val playingPartnerStrokes: Int,
+    val playingPartnerScore: Int
+)

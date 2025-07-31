@@ -3,6 +3,7 @@ package com.sogo.golf.msl.data.repository.remote
 import android.util.Log
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.data.network.api.SogoMongoApiService
+import com.sogo.golf.msl.data.network.api.HoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.dto.mongodb.toDomainModel
 import com.sogo.golf.msl.data.network.dto.mongodb.toDto
 import com.sogo.golf.msl.data.repository.BaseRepository
@@ -106,6 +107,30 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 Log.e(TAG, "Failed to delete round: ${response.code()} - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to delete round: ${response.message()}")
+            }
+        }
+    }
+
+    override suspend fun updateHoleScore(
+        roundId: String,
+        holeNumber: Int,
+        strokes: Int,
+        score: Int,
+        playingPartnerStrokes: Int,
+        playingPartnerScore: Int
+    ): NetworkResult<Unit> {
+        return safeNetworkCall {
+            Log.d(TAG, "Updating hole score for round $roundId, hole $holeNumber")
+            
+            val payload = HoleScoreUpdatePayload(strokes, score, playingPartnerStrokes, playingPartnerScore)
+            val response = sogoMongoApiService.updateHoleScore(roundId, holeNumber, payload)
+            
+            if (response.isSuccessful) {
+                Log.d(TAG, "Successfully updated hole score")
+                Unit
+            } else {
+                Log.e(TAG, "Failed to update hole score: ${response.code()} - ${response.message()}")
+                throw Exception("Failed to update hole score: ${response.message()}")
             }
         }
     }
