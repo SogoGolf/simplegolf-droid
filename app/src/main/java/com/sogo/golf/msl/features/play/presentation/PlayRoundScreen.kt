@@ -72,6 +72,7 @@ private fun Screen4Portrait(
     val localGame by playRoundViewModel.localGame.collectAsState()
     val localCompetition by playRoundViewModel.localCompetition.collectAsState()
     val currentGolfer by playRoundViewModel.currentGolfer.collectAsState()
+    val currentRound by playRoundViewModel.currentRound.collectAsState()
     val showBackButton by playRoundViewModel.showBackButton.collectAsState()
 
     var showBackConfirmDialog by remember { mutableStateOf(false) }
@@ -219,6 +220,7 @@ private fun Screen4Portrait(
             val currentGolferValue = currentGolfer
             val localGameValue = localGame
             val localCompetitionValue = localCompetition
+            val currentRoundValue = currentRound
             val currentHoleNumber = 1 // TODO: Get from viewmodel
             
             // Extract main golfer data
@@ -255,6 +257,15 @@ private fun Screen4Portrait(
             val par = currentHole?.par ?: 5
             val distance = currentHole?.distance ?: 441
             val strokeIndexes = currentHole?.strokeIndexes?.joinToString("/") ?: "1/22/40"
+            
+            // Extract stroke data from Round object for current hole
+            val mainGolferStrokes = currentRoundValue?.holeScores?.find { 
+                it.holeNumber == currentHoleNumber 
+            }?.strokes ?: 0
+            
+            val partnerStrokes = currentRoundValue?.playingPartnerRound?.holeScores?.find { 
+                it.holeNumber == currentHoleNumber 
+            }?.strokes ?: 0
 
             // Top card - Playing Partner
             HoleCardTest(
@@ -263,8 +274,8 @@ private fun Screen4Portrait(
                 teeColor = teeColor,
                 competitionType = competitionType,
                 dailyHandicap = partnerDailyHandicap,
-                strokes = 3, // TODO: Get from round data
-                currentPoints = 2, // TODO: Calculate based on score
+                strokes = partnerStrokes,
+                currentPoints = 0,
                 par = par,
                 distance = distance,
                 strokeIndex = strokeIndexes,
@@ -285,8 +296,8 @@ private fun Screen4Portrait(
                 teeColor = teeColor,
                 competitionType = competitionType,
                 dailyHandicap = mainGolferDailyHandicap,
-                strokes = 3, // TODO: Get from round data
-                currentPoints = 2, // TODO: Calculate based on score
+                strokes = mainGolferStrokes,
+                currentPoints = 0,
                 par = par,
                 distance = distance,
                 strokeIndex = strokeIndexes,
