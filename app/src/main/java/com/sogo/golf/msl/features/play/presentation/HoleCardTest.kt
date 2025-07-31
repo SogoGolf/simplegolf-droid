@@ -2,6 +2,7 @@ package com.sogo.golf.msl.features.play.presentation
 
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -40,6 +41,9 @@ fun HoleCardTest(
     totalScore: Int = 0,
     onSwipeNext: () -> Unit = {},
     onSwipePrevious: () -> Unit = {},
+    onStrokeButtonClick: () -> Unit = {},
+    onPlusButtonClick: () -> Unit = {},
+    onMinusButtonClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -60,28 +64,21 @@ fun HoleCardTest(
                     detectHorizontalDragGestures(
                         onDragStart = { 
                             totalDragX = 0f
-                            android.util.Log.d("HoleCardTest", "✅ HORIZONTAL DRAG STARTED - Alternative gesture detection!")
                         },
                         onDragEnd = {
-                            android.util.Log.d("HoleCardTest", "✅ HORIZONTAL DRAG ENDED - totalDragX: $totalDragX, threshold: $swipeThreshold")
                             // Check if total horizontal swipe distance exceeds threshold
                             if (abs(totalDragX) > swipeThreshold) {
                                 if (totalDragX > 0) {
                                     // Left-to-right swipe: go to previous hole
-                                    android.util.Log.d("HoleCardTest", "🔄 HORIZONTAL SWIPE TO PREVIOUS HOLE")
                                     onSwipePrevious()
                                 } else {
                                     // Right-to-left swipe: go to next hole
-                                    android.util.Log.d("HoleCardTest", "🔄 HORIZONTAL SWIPE TO NEXT HOLE")
                                     onSwipeNext()
                                 }
-                            } else {
-                                android.util.Log.d("HoleCardTest", "❌ Horizontal swipe too small: ${abs(totalDragX)} < $swipeThreshold")
                             }
                         }
                     ) { change, dragAmount ->
                         totalDragX += dragAmount
-                        android.util.Log.d("HoleCardTest", "👆 HORIZONTAL DRAGGING: dragAmount=$dragAmount, totalDragX=$totalDragX")
                     }
                 },
             contentAlignment = Alignment.Center
@@ -139,7 +136,7 @@ fun HoleCardTest(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = { /*TODO*/ },
+                        onClick = onMinusButtonClick,
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
@@ -158,6 +155,7 @@ fun HoleCardTest(
                             .size(72.dp)
                             .clip(CircleShape)
                             .background(Color.White)
+                            .clickable { onStrokeButtonClick() }
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
@@ -175,7 +173,7 @@ fun HoleCardTest(
                     }
 
                     IconButton(
-                        onClick = { /*TODO*/ },
+                        onClick = onPlusButtonClick,
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)

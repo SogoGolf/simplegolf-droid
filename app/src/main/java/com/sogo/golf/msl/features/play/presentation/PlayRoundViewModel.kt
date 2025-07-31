@@ -495,4 +495,176 @@ class PlayRoundViewModel @Inject constructor(
             else -> startingHole + numberOfHoles - 1
         }
     }
+
+    // Stroke counting functions
+    fun onMainGolferStrokeButtonClick() {
+        updateMainGolferStrokes { currentStrokes, par ->
+            if (currentStrokes == 0) {
+                par // Set to par when strokes is 0
+            } else {
+                val maxStrokes = par * 5
+                minOf(currentStrokes + 1, maxStrokes) // Increment by 1, capped at 5 × par
+            }
+        }
+    }
+
+    fun onMainGolferPlusButtonClick() {
+        updateMainGolferStrokes { currentStrokes, par ->
+            val maxStrokes = par * 5
+            if (currentStrokes == 0) {
+                minOf(par + 1, maxStrokes) // Set to par + 1 when strokes is 0
+            } else {
+                minOf(currentStrokes + 1, maxStrokes) // Increment by 1, capped at 5 × par
+            }
+        }
+    }
+
+    fun onMainGolferMinusButtonClick() {
+        updateMainGolferStrokes { currentStrokes, _ ->
+            if (currentStrokes == 0) {
+                0 // No action when strokes is 0
+            } else {
+                currentStrokes - 1 // Decrement by 1
+            }
+        }
+    }
+
+    fun onPartnerStrokeButtonClick() {
+        updatePartnerStrokes { currentStrokes, par ->
+            if (currentStrokes == 0) {
+                par // Set to par when strokes is 0
+            } else {
+                val maxStrokes = par * 5
+                minOf(currentStrokes + 1, maxStrokes) // Increment by 1, capped at 5 × par
+            }
+        }
+    }
+
+    fun onPartnerPlusButtonClick() {
+        updatePartnerStrokes { currentStrokes, par ->
+            val maxStrokes = par * 5
+            if (currentStrokes == 0) {
+                minOf(par + 1, maxStrokes) // Set to par + 1 when strokes is 0
+            } else {
+                minOf(currentStrokes + 1, maxStrokes) // Increment by 1, capped at 5 × par
+            }
+        }
+    }
+
+    fun onPartnerMinusButtonClick() {
+        updatePartnerStrokes { currentStrokes, _ ->
+            if (currentStrokes == 0) {
+                0 // No action when strokes is 0
+            } else {
+                currentStrokes - 1 // Decrement by 1
+            }
+        }
+    }
+
+    private fun updateMainGolferStrokes(updateLogic: (currentStrokes: Int, par: Int) -> Int) {
+        viewModelScope.launch {
+            try {
+                val round = currentRound.value
+                val competition = localCompetition.value
+                val currentHole = currentHoleNumber.value
+                
+                if (round == null || competition == null) {
+                    android.util.Log.w("PlayRoundVM", "Cannot update strokes - missing round or competition data")
+                    return@launch
+                }
+
+                // Get par for current hole
+                val par = getParForHole(competition, currentHole) ?: 4 // Default to par 4
+                
+                // Get current strokes for this hole
+                val holeIndex = currentHole - 1 // Convert to 0-based index
+                val currentStrokes = if (holeIndex < round.holeScores.size) {
+                    round.holeScores[holeIndex].strokes
+                } else {
+                    0
+                }
+
+                // Calculate new strokes using the provided logic
+                val newStrokes = updateLogic(currentStrokes, par)
+                
+                android.util.Log.d("PlayRoundVM", "Main golfer hole $currentHole: $currentStrokes -> $newStrokes (par: $par)")
+                
+                // Update the round data and persist to database
+                updateRoundStrokesInDatabase(round, currentHole, newStrokes, isMainGolfer = true)
+                
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "Error updating main golfer strokes", e)
+            }
+        }
+    }
+
+    private fun updatePartnerStrokes(updateLogic: (currentStrokes: Int, par: Int) -> Int) {
+        viewModelScope.launch {
+            try {
+                val round = currentRound.value
+                val competition = localCompetition.value
+                val currentHole = currentHoleNumber.value
+                
+                if (round == null || competition == null) {
+                    android.util.Log.w("PlayRoundVM", "Cannot update strokes - missing round or competition data")
+                    return@launch
+                }
+
+                // Get par for current hole
+                val par = getParForHole(competition, currentHole) ?: 4 // Default to par 4
+                
+                // Get current strokes for this hole
+                val holeIndex = currentHole - 1 // Convert to 0-based index
+                val currentStrokes = if (round.playingPartnerRound != null && holeIndex < round.playingPartnerRound.holeScores.size) {
+                    round.playingPartnerRound.holeScores[holeIndex].strokes
+                } else {
+                    0
+                }
+
+                // Calculate new strokes using the provided logic
+                val newStrokes = updateLogic(currentStrokes, par)
+                
+                android.util.Log.d("PlayRoundVM", "Partner hole $currentHole: $currentStrokes -> $newStrokes (par: $par)")
+                
+                // Update the round data and persist to database
+                updateRoundStrokesInDatabase(round, currentHole, newStrokes, isMainGolfer = false)
+                
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "Error updating partner strokes", e)
+            }
+        }
+    }
+
+    private fun getParForHole(competition: com.sogo.golf.msl.domain.model.msl.MslCompetition, holeNumber: Int): Int? {
+        return try {
+            // Find the hole data in competition structure
+            competition.players.firstOrNull()?.holes?.find { hole ->
+                hole.holeNumber == holeNumber
+            }?.par
+        } catch (e: Exception) {
+            android.util.Log.w("PlayRoundVM", "Error getting par for hole $holeNumber", e)
+            null
+        }
+    }
+
+    private suspend fun updateRoundStrokesInDatabase(
+        round: com.sogo.golf.msl.domain.model.Round,
+        holeNumber: Int,
+        newStrokes: Int,
+        isMainGolfer: Boolean
+    ) {
+        try {
+            // TODO: Implement database update logic
+            // This would involve updating the Round entity in Room database
+            // and potentially syncing with remote MongoDB API
+            
+            android.util.Log.d("PlayRoundVM", "TODO: Update database - Hole $holeNumber, Strokes: $newStrokes, Main golfer: $isMainGolfer")
+            
+            // For now, just reload the current round to refresh the UI
+            loadCurrentRound()
+            
+        } catch (e: Exception) {
+            android.util.Log.e("PlayRoundVM", "Error updating round strokes in database", e)
+        }
+    }
 }

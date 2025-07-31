@@ -282,6 +282,9 @@ private fun Screen4Portrait(
                 totalScore = 0, // TODO: Get from round data
                 onSwipeNext = { playRoundViewModel.navigateToNextHole() },
                 onSwipePrevious = { playRoundViewModel.navigateToPreviousHole() },
+                onStrokeButtonClick = { playRoundViewModel.onPartnerStrokeButtonClick() },
+                onPlusButtonClick = { playRoundViewModel.onPartnerPlusButtonClick() },
+                onMinusButtonClick = { playRoundViewModel.onPartnerMinusButtonClick() },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up half the available space
@@ -306,6 +309,9 @@ private fun Screen4Portrait(
                 totalScore = 0, // TODO: Get from round data
                 onSwipeNext = { playRoundViewModel.navigateToNextHole() },
                 onSwipePrevious = { playRoundViewModel.navigateToPreviousHole() },
+                onStrokeButtonClick = { playRoundViewModel.onMainGolferStrokeButtonClick() },
+                onPlusButtonClick = { playRoundViewModel.onMainGolferPlusButtonClick() },
+                onMinusButtonClick = { playRoundViewModel.onMainGolferMinusButtonClick() },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up the other half
