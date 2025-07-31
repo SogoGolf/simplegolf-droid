@@ -28,7 +28,7 @@ fun HoleCardTest(
     teeColor: String = "Black",
     competitionType: String = "Stableford",
     dailyHandicap: Int = 10,
-    currentScore: Int = 3,
+    strokes: Int = 3,
     currentPoints: Int = 2,
     par: Int = 5,
     distance: Int = 441,
@@ -123,7 +123,7 @@ fun HoleCardTest(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = currentScore.toString(),
+                                text = strokes.toString(),
                                 color = Color.Black,
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold

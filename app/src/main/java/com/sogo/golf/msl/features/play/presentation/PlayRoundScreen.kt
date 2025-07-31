@@ -263,7 +263,7 @@ private fun Screen4Portrait(
                 teeColor = teeColor,
                 competitionType = competitionType,
                 dailyHandicap = partnerDailyHandicap,
-                currentScore = 3, // TODO: Get from round data
+                strokes = 3, // TODO: Get from round data
                 currentPoints = 2, // TODO: Calculate based on score
                 par = par,
                 distance = distance,
@@ -285,7 +285,7 @@ private fun Screen4Portrait(
                 teeColor = teeColor,
                 competitionType = competitionType,
                 dailyHandicap = mainGolferDailyHandicap,
-                currentScore = 3, // TODO: Get from round data
+                strokes = 3, // TODO: Get from round data
                 currentPoints = 2, // TODO: Calculate based on score
                 par = par,
                 distance = distance,
