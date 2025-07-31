@@ -3,7 +3,8 @@ package com.sogo.golf.msl.features.play.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -62,37 +64,41 @@ fun HoleCardTest(
                 .pointerInput(Unit) {
                     var totalDragX = 0f
                     var isDragging = false
-                    val tapThreshold = 20f // Small threshold to distinguish taps from swipes
                     
-                    detectHorizontalDragGestures(
-                        onDragStart = { 
-                            totalDragX = 0f
-                            isDragging = false
-                        },
-                        onDragEnd = {
-                            // Only handle swipe if we moved significantly
-                            if (isDragging && abs(totalDragX) > swipeThreshold) {
-                                if (totalDragX > 0) {
-                                    // Left-to-right swipe: go to previous hole
-                                    onSwipePrevious()
-                                } else {
-                                    // Right-to-left swipe: go to next hole
-                                    onSwipeNext()
-                                }
+                    awaitEachGesture {
+                        val down = awaitFirstDown(pass = PointerEventPass.Initial)
+                        totalDragX = 0f
+                        isDragging = false
+                        
+                        do {
+                            val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+                            val dragAmount = event.changes.firstOrNull()?.let { change ->
+                                val currentPosition = change.position
+                                val previousPosition = change.previousPosition
+                                currentPosition.x - previousPosition.x
+                            } ?: 0f
+                            
+                            totalDragX += dragAmount
+                            
+                            // Only consider it a drag if we've moved more than a small threshold
+                            if (abs(totalDragX) > 20f && !isDragging) {
+                                isDragging = true
+                                // Consume the event to prevent child clicks
+                                event.changes.forEach { it.consume() }
+                            } else if (isDragging) {
+                                // Continue consuming events during drag
+                                event.changes.forEach { it.consume() }
                             }
-                            isDragging = false
-                        }
-                    ) { change, dragAmount ->
-                        totalDragX += dragAmount
+                            
+                        } while (event.changes.any { it.pressed })
                         
-                        // Only start consuming events if we've moved beyond tap threshold
-                        if (!isDragging && abs(totalDragX) > tapThreshold) {
-                            isDragging = true
-                        }
-                        
-                        // Only consume the change if we're in dragging mode
-                        if (isDragging) {
-                            change.consume()
+                        // Handle swipe on release
+                        if (isDragging && abs(totalDragX) > swipeThreshold) {
+                            if (totalDragX > 0) {
+                                onSwipePrevious()
+                            } else {
+                                onSwipeNext()
+                            }
                         }
                     }
                 },
