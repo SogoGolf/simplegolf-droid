@@ -60,7 +60,7 @@ fun HoleCardTest(
             modifier = Modifier
                 .fillMaxSize()
                 .background(backgroundColor)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
                 .pointerInput(Unit) {
                     var totalDragX = 0f
                     var isDragging = false
@@ -102,7 +102,7 @@ fun HoleCardTest(
                         }
                     }
                 },
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.TopCenter
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -111,9 +111,9 @@ fun HoleCardTest(
                 // Header with name
                 Text(
                     text = golferName,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineMedium,
                     color = Color.White,
-                    fontWeight = FontWeight.Bold
+                    modifier = Modifier.padding(top = 5.dp)
                 )
 
                 // Tee type and handicap row
@@ -122,30 +122,27 @@ fun HoleCardTest(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(horizontalAlignment = Alignment.Start) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = teeColor,
                             color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.headlineSmall,
                         )
                         Text(
                             text = "Type: $competitionType",
                             color = Color.White,
-                            fontSize = 12.sp
                         )
                     }
-                    Column(horizontalAlignment = Alignment.End) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = dailyHandicap.toString(),
                             color = Color.White,
-                            fontSize = 18.sp,
+                            style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "Daily Handicap",
                             color = Color.White,
-                            fontSize = 12.sp
                         )
                     }
                 }
@@ -159,36 +156,38 @@ fun HoleCardTest(
                     IconButton(
                         onClick = onMinusButtonClick,
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(56.dp)
                             .clip(CircleShape)
                             .background(MSLColors.mslYellow)
                     ) {
-                        Icon(
-                            Icons.Default.ArrowDropDown,
-                            contentDescription = "Minus",
-                            tint = Color.Black
+                        Text(
+                            "-",
+                            color = Color.Black,
+                            style = MaterialTheme.typography.displaySmall,
                         )
                     }
 
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(72.dp)
+                            .size(80.dp)
                             .clip(CircleShape)
                             .background(Color.White)
                             .clickable { onStrokeButtonClick() }
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
                             Text(
                                 text = strokes.toString(),
                                 color = Color.Black,
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.displayMedium,
                             )
                             Text(
                                 text = "$currentPoints pts",
                                 color = Color.Gray,
-                                fontSize = 10.sp
+                                modifier = Modifier.offset(y = (-10).dp)
                             )
                         }
                     }
@@ -196,7 +195,7 @@ fun HoleCardTest(
                     IconButton(
                         onClick = onPlusButtonClick,
                         modifier = Modifier
-                            .size(48.dp)
+                            .size(56.dp)
                             .clip(CircleShape)
                             .background(MSLColors.mslYellow)
                     ) {
@@ -213,12 +212,12 @@ fun HoleCardTest(
                     onClick = { /*TODO*/ },
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(containerColor = MSLColors.mslYellow),
-                    modifier = Modifier.padding(vertical = 8.dp)
+//                    modifier = Modifier.padding(vertical = 8.dp)
                 ) {
                     Text(
                         text = "Pickup",
                         color = Color.Black,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
@@ -232,52 +231,44 @@ fun HoleCardTest(
                         Text(
                             text = par.toString(),
                             color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.titleLarge,
                         )
                         Text(
                             text = "Par",
                             color = Color.White,
-                            fontSize = 10.sp
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = distance.toString(),
                             color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.titleLarge,
                         )
                         Text(
                             text = "Meters",
                             color = Color.White,
-                            fontSize = 10.sp
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = strokeIndex,
                             color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.titleLarge,
                         )
                         Text(
                             text = "Index",
                             color = Color.White,
-                            fontSize = 10.sp
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = totalScore.toString(),
                             color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.titleLarge,
                         )
                         Text(
                             text = "Total",
                             color = Color.White,
-                            fontSize = 10.sp
                         )
                     }
                 }

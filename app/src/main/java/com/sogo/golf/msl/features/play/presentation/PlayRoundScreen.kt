@@ -41,6 +41,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.navigation.NavViewModel
 import com.sogo.golf.msl.ui.theme.MSLColors
+import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
+import com.sogo.golf.msl.ui.theme.MSLColors.mslGrey
 
 @Composable
 fun PlayRoundScreen(
@@ -117,15 +119,12 @@ private fun Screen4Portrait(
                     modifier = Modifier
                         .statusBarsPadding()
                         .fillMaxWidth(),
-//                        .padding(top = 5.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
-
-                    ) {
+                ) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
-//                            .background(Color.Red),
                     ) {
                         IconButton(
                             onClick = { playRoundViewModel.navigateToPreviousHole() },
@@ -270,7 +269,7 @@ private fun Screen4Portrait(
             // Top card - Playing Partner
             HoleCardTest(
                 golferName = partnerDisplayName,
-                backgroundColor = Color.Green,
+                backgroundColor = mslBlue,
                 teeColor = teeColor,
                 competitionType = competitionType,
                 dailyHandicap = partnerDailyHandicap,
@@ -297,7 +296,7 @@ private fun Screen4Portrait(
             // Bottom card - Main Golfer
             HoleCardTest(
                 golferName = mainGolferName,
-                backgroundColor = Color.Blue,
+                backgroundColor = mslGrey,
                 teeColor = teeColor,
                 competitionType = competitionType,
                 dailyHandicap = mainGolferDailyHandicap,
