@@ -6,6 +6,7 @@ import androidx.navigation.NavController
 import com.sogo.golf.msl.app.lifecycle.AppLifecycleManager
 import com.sogo.golf.msl.app.lifecycle.AppResumeAction
 import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
+import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
@@ -42,6 +43,7 @@ class PlayRoundViewModel @Inject constructor(
     private val getActiveTodayRoundUseCase: GetActiveTodayRoundUseCase,
     private val deleteLocalAndRemoteRoundUseCase: DeleteLocalAndRemoteRoundUseCase,
     private val updateHoleScoreUseCase: UpdateHoleScoreUseCase,
+    private val holeStatePreferences: HoleStatePreferences,
     private val mslRepository: MslRepository,
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val appLifecycleManager: AppLifecycleManager,
@@ -128,6 +130,10 @@ class PlayRoundViewModel @Inject constructor(
         viewModelScope.launch {
             currentRound.collect { round ->
                 updateBackButtonVisibility(round)
+                
+                if (round != null) {
+                    restoreHoleStateOnAppStart(round)
+                }
             }
         }
         
@@ -444,8 +450,10 @@ class PlayRoundViewModel @Inject constructor(
             val maxHole = getMaxHoleNumber(game)
             
             if (currentHole < maxHole) {
-                _currentHoleNumber.value = currentHole + 1
-                android.util.Log.d("PlayRoundVM", "Navigated to hole: ${currentHole + 1}")
+                val newHole = currentHole + 1
+                _currentHoleNumber.value = newHole
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole")
+                saveCurrentHoleState(newHole)
                 triggerHoleNavigationUpdate()
             } else {
                 android.util.Log.d("PlayRoundVM", "Already at last hole: $maxHole")
@@ -460,8 +468,10 @@ class PlayRoundViewModel @Inject constructor(
             val minHole = game.startingHoleNumber
             
             if (currentHole > minHole) {
-                _currentHoleNumber.value = currentHole - 1
-                android.util.Log.d("PlayRoundVM", "Navigated to hole: ${currentHole - 1}")
+                val newHole = currentHole - 1
+                _currentHoleNumber.value = newHole
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole")
+                saveCurrentHoleState(newHole)
                 triggerHoleNavigationUpdate()
             } else {
                 android.util.Log.d("PlayRoundVM", "Already at first hole: $minHole")
@@ -478,6 +488,7 @@ class PlayRoundViewModel @Inject constructor(
             if (holeNumber in minHole..maxHole) {
                 _currentHoleNumber.value = holeNumber
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $holeNumber")
+                saveCurrentHoleState(holeNumber)
                 triggerHoleNavigationUpdate()
             } else {
                 android.util.Log.w("PlayRoundVM", "Invalid hole number: $holeNumber (valid range: $minHole-$maxHole)")
@@ -662,6 +673,10 @@ class PlayRoundViewModel @Inject constructor(
             updateHoleScoreUseCase(round, holeNumber, newStrokes, isMainGolfer)
             android.util.Log.d("PlayRoundVM", "✅ Hole score updated - Hole $holeNumber, Strokes: $newStrokes, Main golfer: $isMainGolfer")
             
+            if (newStrokes > 0) {
+                saveLastScoredHoleState(round.id, holeNumber)
+            }
+            
             loadCurrentRound()
             
         } catch (e: Exception) {
@@ -689,6 +704,80 @@ class PlayRoundViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 android.util.Log.e("PlayRoundVM", "Error triggering hole navigation update", e)
+            }
+        }
+    }
+
+    private fun saveCurrentHoleState(holeNumber: Int) {
+        viewModelScope.launch {
+            try {
+                val round = currentRound.value
+                if (round != null) {
+                    holeStatePreferences.saveCurrentHole(round.id, holeNumber)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "Error saving current hole state", e)
+            }
+        }
+    }
+
+    private fun saveLastScoredHoleState(roundId: String, holeNumber: Int) {
+        viewModelScope.launch {
+            try {
+                holeStatePreferences.saveLastScoredHole(roundId, holeNumber)
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "Error saving last scored hole state", e)
+            }
+        }
+    }
+
+    private fun restoreHoleStateOnAppStart(round: com.sogo.golf.msl.domain.model.Round) {
+        viewModelScope.launch {
+            try {
+                val lastScoredHole = holeStatePreferences.getLastScoredHole(round.id)
+                val currentHole = holeStatePreferences.getCurrentHole(round.id)
+                
+                val targetHole = when {
+                    lastScoredHole != null -> {
+                        android.util.Log.d("PlayRoundVM", "🔄 App restart: Found last scored hole $lastScoredHole")
+                        lastScoredHole
+                    }
+                    currentHole != null -> {
+                        android.util.Log.d("PlayRoundVM", "🔄 App restart: Found current hole $currentHole")
+                        currentHole
+                    }
+                    else -> {
+                        android.util.Log.d("PlayRoundVM", "🔄 App restart: No hole state found, using starting hole")
+                        findStartingHole(round)
+                    }
+                }
+                
+                if (targetHole != _currentHoleNumber.value) {
+                    _currentHoleNumber.value = targetHole
+                    android.util.Log.d("PlayRoundVM", "✅ App restart: Navigated to hole $targetHole")
+                }
+                
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "Error restoring hole state on app start", e)
+            }
+        }
+    }
+
+    private fun findStartingHole(round: com.sogo.golf.msl.domain.model.Round): Int {
+        val game = localGame.value
+        return game?.startingHoleNumber ?: 1
+    }
+
+    fun clearHoleStateForRound() {
+        viewModelScope.launch {
+            try {
+                val round = currentRound.value
+                if (round != null) {
+                    holeStatePreferences.clearHoleState(round.id)
+                    android.util.Log.d("PlayRoundVM", "🗑️ Cleared hole state for round: ${round.id}")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "Error clearing hole state", e)
             }
         }
     }
