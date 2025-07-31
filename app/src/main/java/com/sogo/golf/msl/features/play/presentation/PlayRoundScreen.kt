@@ -215,26 +215,60 @@ private fun Screen4Portrait(
 
              Spacer(modifier = Modifier.height(5.dp))
 
-            // Extract golfer names from Room data
+            // Extract golfer data from Room database
             val currentGolferValue = currentGolfer
             val localGameValue = localGame
+            val localCompetitionValue = localCompetition
+            val currentHoleNumber = 1 // TODO: Get from viewmodel
             
+            // Extract main golfer data
             val mainGolferName = currentGolferValue?.let { golfer ->
                 "${golfer.firstName} ${golfer.surname}".trim()
             } ?: "Main Golfer"
-
-            val playingPartnerName = if (currentGolferValue != null && localGameValue != null) {
-                val partner = localGameValue.playingPartners.find { partner ->
+            
+            val mainGolferHandicap = currentGolferValue?.primary?.toInt() ?: 0
+            val mainGolferDailyHandicap = localGameValue?.dailyHandicap ?: 0
+            
+            // Extract playing partner data
+            val playingPartner = if (currentGolferValue != null && localGameValue != null) {
+                localGameValue.playingPartners.find { partner ->
                     partner.markedByGolfLinkNumber == currentGolferValue.golfLinkNo
                 }
-                partner?.let { "${it.firstName ?: ""} ${it.lastName ?: ""}".trim() }
             } else null
-            val partnerDisplayName = playingPartnerName?.takeIf { it.isNotBlank() } ?: "Playing Partner"
+            
+            val partnerDisplayName = playingPartner?.let { 
+                "${it.firstName ?: ""} ${it.lastName ?: ""}".trim() 
+            }?.takeIf { it.isNotBlank() } ?: "Playing Partner"
+            
+            val partnerDailyHandicap = playingPartner?.dailyHandicap ?: 0
+            
+            // Extract game data
+            val teeColor = localGameValue?.teeColourName ?: "Black"
+            
+            // Extract competition data
+            val competitionType = localCompetitionValue?.players?.firstOrNull()?.scoreType ?: "Stableford"
+            
+            // Extract hole data for current hole
+            val currentHole = localCompetitionValue?.players?.firstOrNull()?.holes?.find { 
+                it.holeNumber == currentHoleNumber 
+            }
+            val par = currentHole?.par ?: 5
+            val distance = currentHole?.distance ?: 441
+            val strokeIndexes = currentHole?.strokeIndexes?.joinToString("/") ?: "1/22/40"
 
             // Top card - Playing Partner
             HoleCardTest(
                 golferName = partnerDisplayName,
                 backgroundColor = Color.Green,
+                teeColor = teeColor,
+                competitionType = competitionType,
+                dailyHandicap = partnerDailyHandicap,
+                currentScore = 3, // TODO: Get from round data
+                currentPoints = 2, // TODO: Calculate based on score
+                par = par,
+                distance = distance,
+                strokeIndex = strokeIndexes,
+                totalScore = 0, // TODO: Get from round data
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up half the available space
@@ -248,6 +282,15 @@ private fun Screen4Portrait(
             HoleCardTest(
                 golferName = mainGolferName,
                 backgroundColor = Color.Blue,
+                teeColor = teeColor,
+                competitionType = competitionType,
+                dailyHandicap = mainGolferDailyHandicap,
+                currentScore = 3, // TODO: Get from round data
+                currentPoints = 2, // TODO: Calculate based on score
+                par = par,
+                distance = distance,
+                strokeIndex = strokeIndexes,
+                totalScore = 0, // TODO: Get from round data
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up the other half

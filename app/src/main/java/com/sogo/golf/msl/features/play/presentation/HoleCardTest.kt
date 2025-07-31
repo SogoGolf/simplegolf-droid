@@ -25,6 +25,15 @@ import com.sogo.golf.msl.ui.theme.MSLColors
 fun HoleCardTest(
     backgroundColor: Color = MSLColors.mslBlue,
     golferName: String = "Daniel Seymour",
+    teeColor: String = "Black",
+    competitionType: String = "Stableford",
+    dailyHandicap: Int = 10,
+    currentScore: Int = 3,
+    currentPoints: Int = 2,
+    par: Int = 5,
+    distance: Int = 441,
+    strokeIndex: String = "1/22/40",
+    totalScore: Int = 0,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -59,20 +68,20 @@ fun HoleCardTest(
                 ) {
                     Column(horizontalAlignment = Alignment.Start) {
                         Text(
-                            text = "Black",
+                            text = teeColor,
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Type: Stableford",
+                            text = "Type: $competitionType",
                             color = Color.White,
                             fontSize = 12.sp
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "10",
+                            text = dailyHandicap.toString(),
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -114,13 +123,13 @@ fun HoleCardTest(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "3",
+                                text = currentScore.toString(),
                                 color = Color.Black,
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "2 pts",
+                                text = "$currentPoints pts",
                                 color = Color.Gray,
                                 fontSize = 10.sp
                             )
@@ -164,7 +173,7 @@ fun HoleCardTest(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "5",
+                            text = par.toString(),
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -177,7 +186,7 @@ fun HoleCardTest(
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "441",
+                            text = distance.toString(),
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -190,7 +199,7 @@ fun HoleCardTest(
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "1/22/40",
+                            text = strokeIndex,
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -203,7 +212,7 @@ fun HoleCardTest(
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "0",
+                            text = totalScore.toString(),
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
