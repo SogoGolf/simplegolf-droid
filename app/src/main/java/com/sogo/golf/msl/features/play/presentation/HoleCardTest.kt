@@ -60,29 +60,22 @@ fun HoleCardTest(
                     detectDragGestures(
                         onDragStart = {
                             totalDragX = 0f
-                            android.util.Log.d("HoleCardTest", "Drag started")
                         },
                         onDragEnd = {
-                            android.util.Log.d("HoleCardTest", "Drag ended, totalDragX: $totalDragX, threshold: $swipeThreshold")
                             // Check if total horizontal swipe distance exceeds threshold
                             if (abs(totalDragX) > swipeThreshold) {
                                 if (totalDragX > 0) {
                                     // Left-to-right swipe: go to previous hole
-                                    android.util.Log.d("HoleCardTest", "Swiping to previous hole")
                                     onSwipePrevious()
                                 } else {
                                     // Right-to-left swipe: go to next hole
-                                    android.util.Log.d("HoleCardTest", "Swiping to next hole")
                                     onSwipeNext()
                                 }
-                            } else {
-                                android.util.Log.d("HoleCardTest", "Swipe distance too small: ${abs(totalDragX)} < $swipeThreshold")
                             }
                         }
                     ) { change, dragAmount ->
                         val (x, _) = dragAmount
                         totalDragX += x
-                        android.util.Log.d("HoleCardTest", "Dragging: x=$x, totalDragX=$totalDragX")
                     }
                 },
             contentAlignment = Alignment.Center
