@@ -126,7 +126,7 @@ private fun Screen4Portrait(
                     ) {
                         if (showBackButton) {
                             IconButton(
-                                onClick = { playRoundViewModel.navigateToPreviousHole() },
+                                onClick = { showBackConfirmDialog = true },
                                 modifier = Modifier.size(48.dp)
                             ) {
                                 Icon(
