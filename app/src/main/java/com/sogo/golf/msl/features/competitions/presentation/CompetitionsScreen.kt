@@ -147,7 +147,7 @@ fun CompetitionsScreen(
                             LazyColumn(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(Color.Red)
+//                                    .background(Color.Red)
                             ) {
                                 item {
                                     Box(
