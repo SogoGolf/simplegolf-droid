@@ -80,12 +80,7 @@ private fun Screen4Portrait(
 
     var showBackConfirmDialog by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = showBackButton) {
-        if (!showBackButton) {
-            android.util.Log.d("PlayRoundScreen", "Back navigation blocked - strokes exist on first hole")
-            return@BackHandler
-        }
-
+    BackHandler(enabled = !showBackButton) {
         // Show confirmation dialog before navigating back
         showBackConfirmDialog = true
     }
