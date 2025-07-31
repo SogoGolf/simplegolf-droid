@@ -22,7 +22,12 @@ import com.sogo.golf.msl.domain.usecase.round.GetActiveTodayRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.DeleteLocalAndRemoteRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.UpdateHoleScoreUseCase
 import com.sogo.golf.msl.domain.usecase.round.BulkSyncRoundUseCase
+import com.sogo.golf.msl.domain.usecase.scoring.CalcStablefordUseCase
+import com.sogo.golf.msl.domain.usecase.scoring.CalcParUseCase
+import com.sogo.golf.msl.domain.usecase.scoring.CalcStrokeUseCase
+import com.sogo.golf.msl.domain.model.HoleScoreForCalcs
 import com.sogo.golf.msl.data.network.NetworkStateMonitor
+import android.util.Log
 import com.sogo.golf.msl.data.network.NetworkState
 import com.sogo.golf.msl.shared.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,6 +52,9 @@ class PlayRoundViewModel @Inject constructor(
     private val deleteLocalAndRemoteRoundUseCase: DeleteLocalAndRemoteRoundUseCase,
     private val updateHoleScoreUseCase: UpdateHoleScoreUseCase,
     private val bulkSyncRoundUseCase: BulkSyncRoundUseCase,
+    private val calcStablefordUseCase: CalcStablefordUseCase,
+    private val calcParUseCase: CalcParUseCase,
+    private val calcStrokeUseCase: CalcStrokeUseCase,
     private val networkStateMonitor: NetworkStateMonitor,
     private val holeStatePreferences: HoleStatePreferences,
     private val mslRepository: MslRepository,
@@ -803,6 +811,37 @@ class PlayRoundViewModel @Inject constructor(
             } catch (e: Exception) {
                 android.util.Log.w("PlayRoundVM", "⚠️ Error during bulk sync trigger", e)
             }
+        }
+    }
+
+    fun calculateCurrentPoints(
+        strokes: Int,
+        par: Int,
+        index1: Int,
+        index2: Int,
+        index3: Int,
+        dailyHandicap: Double,
+        scoreType: String
+    ): Int {
+        return try {
+            val holeScoreForCalcs = HoleScoreForCalcs(
+                par = par,
+                index1 = index1,
+                index2 = index2,
+                index3 = index3
+            )
+
+            val score = when (scoreType.lowercase()) {
+                "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
+                "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap) ?: 0f
+                "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap)
+                else -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
+            }
+
+            score.toInt()
+        } catch (e: Exception) {
+            Log.e("PlayRoundVM", "Error calculating current points", e)
+            0
         }
     }
 }

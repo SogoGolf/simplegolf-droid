@@ -6,12 +6,24 @@ import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
+import com.sogo.golf.msl.domain.usecase.scoring.CalcStablefordUseCase
+import com.sogo.golf.msl.domain.usecase.scoring.CalcParUseCase
+import com.sogo.golf.msl.domain.usecase.scoring.CalcStrokeUseCase
+import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
+import com.sogo.golf.msl.domain.model.HoleScoreForCalcs
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 class UpdateHoleScoreUseCase @Inject constructor(
     private val roundLocalDbRepository: RoundLocalDbRepository,
     private val sogoMongoRepository: SogoMongoRepository,
-    private val networkChecker: NetworkChecker
+    private val networkChecker: NetworkChecker,
+    private val calcStablefordUseCase: CalcStablefordUseCase,
+    private val calcParUseCase: CalcParUseCase,
+    private val calcStrokeUseCase: CalcStrokeUseCase,
+    private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
+    private val getLocalGameUseCase: GetLocalGameUseCase
 ) {
     suspend operator fun invoke(
         round: Round,
@@ -64,14 +76,14 @@ class UpdateHoleScoreUseCase @Inject constructor(
         }
     }
 
-    private fun updateRoundHoleScores(round: Round, holeNumber: Int, newStrokes: Int, isMainGolfer: Boolean): Round {
+    private suspend fun updateRoundHoleScores(round: Round, holeNumber: Int, newStrokes: Int, isMainGolfer: Boolean): Round {
         val holeIndex = holeNumber - 1
         
         return if (isMainGolfer) {
             val updatedHoleScores = round.holeScores.toMutableList()
             if (holeIndex < updatedHoleScores.size) {
                 val currentHoleScore = updatedHoleScores[holeIndex]
-                val newScore = calculateStablefordScore(newStrokes, currentHoleScore.par)
+                val newScore = calculateScore(newStrokes, currentHoleScore, isMainGolfer = true)
                 updatedHoleScores[holeIndex] = currentHoleScore.copy(
                     strokes = newStrokes,
                     score = newScore
@@ -87,7 +99,7 @@ class UpdateHoleScoreUseCase @Inject constructor(
                 val updatedHoleScores = partnerRound.holeScores.toMutableList()
                 if (holeIndex < updatedHoleScores.size) {
                     val currentHoleScore = updatedHoleScores[holeIndex]
-                    val newScore = calculateStablefordScore(newStrokes, currentHoleScore.par)
+                    val newScore = calculateScore(newStrokes, currentHoleScore, isMainGolfer = false)
                     updatedHoleScores[holeIndex] = currentHoleScore.copy(
                         strokes = newStrokes,
                         score = newScore
@@ -103,14 +115,46 @@ class UpdateHoleScoreUseCase @Inject constructor(
         }
     }
 
-    private fun calculateStablefordScore(strokes: Int, par: Int): Float {
-        return when {
-            strokes == 0 -> 0f
-            strokes == par - 2 -> 4f
-            strokes == par - 1 -> 3f
-            strokes == par -> 2f
-            strokes == par + 1 -> 1f
-            else -> 0f
+    private suspend fun calculateScore(
+        strokes: Int, 
+        holeScore: com.sogo.golf.msl.domain.model.HoleScore,
+        isMainGolfer: Boolean
+    ): Float {
+        return try {
+            val competition = getLocalCompetitionUseCase().first()
+            val game = getLocalGameUseCase().first()
+            
+            if (competition == null || game == null) {
+                Log.w("UpdateHoleScore", "Missing competition or game data for score calculation")
+                return 0f
+            }
+
+            val scoreType = competition.players.firstOrNull()?.scoreType ?: "Stableford"
+            val dailyHandicap = if (isMainGolfer) {
+                game.dailyHandicap?.toDouble() ?: 0.0
+            } else {
+                game.playingPartners.firstOrNull()?.dailyHandicap?.toDouble() ?: 0.0
+            }
+
+            val holeScoreForCalcs = HoleScoreForCalcs(
+                par = holeScore.par,
+                index1 = holeScore.index1,
+                index2 = holeScore.index2,
+                index3 = holeScore.index3 ?: 0
+            )
+
+            when (scoreType.lowercase()) {
+                "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
+                "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap) ?: 0f
+                "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap)
+                else -> {
+                    Log.w("UpdateHoleScore", "Unknown score type: $scoreType, defaulting to Stableford")
+                    calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("UpdateHoleScore", "Error calculating score", e)
+            0f
         }
     }
 }

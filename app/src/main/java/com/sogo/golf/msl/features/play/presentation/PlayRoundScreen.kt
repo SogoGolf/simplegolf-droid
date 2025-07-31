@@ -276,6 +276,31 @@ private fun Screen4Portrait(
                 it.holeNumber == currentHoleNumber 
             }?.strokes ?: 0
 
+            // Calculate current points for display
+            val mainGolferCurrentPoints = if (mainGolferStrokes > 0 && currentHole != null) {
+                playRoundViewModel.calculateCurrentPoints(
+                    strokes = mainGolferStrokes,
+                    par = par,
+                    index1 = currentHole.strokeIndexes.getOrNull(0) ?: 0,
+                    index2 = currentHole.strokeIndexes.getOrNull(1) ?: 0,
+                    index3 = currentHole.strokeIndexes.getOrNull(2) ?: 0,
+                    dailyHandicap = mainGolferDailyHandicap.toDouble(),
+                    scoreType = competitionType
+                )
+            } else 0
+
+            val partnerCurrentPoints = if (partnerStrokes > 0 && currentHole != null) {
+                playRoundViewModel.calculateCurrentPoints(
+                    strokes = partnerStrokes,
+                    par = par,
+                    index1 = currentHole.strokeIndexes.getOrNull(0) ?: 0,
+                    index2 = currentHole.strokeIndexes.getOrNull(1) ?: 0,
+                    index3 = currentHole.strokeIndexes.getOrNull(2) ?: 0,
+                    dailyHandicap = partnerDailyHandicap.toDouble(),
+                    scoreType = competitionType
+                )
+            } else 0
+
             // Top card - Playing Partner
             HoleCardTest(
                 golferName = partnerDisplayName,
@@ -284,7 +309,7 @@ private fun Screen4Portrait(
                 competitionType = competitionType,
                 dailyHandicap = partnerDailyHandicap,
                 strokes = partnerStrokes,
-                currentPoints = 0,
+                currentPoints = partnerCurrentPoints,
                 par = par,
                 distance = distance,
                 strokeIndex = strokeIndexes,
@@ -315,7 +340,7 @@ private fun Screen4Portrait(
                 competitionType = competitionType,
                 dailyHandicap = mainGolferDailyHandicap,
                 strokes = mainGolferStrokes,
-                currentPoints = 0,
+                currentPoints = mainGolferCurrentPoints,
                 par = par,
                 distance = distance,
                 strokeIndex = strokeIndexes,
