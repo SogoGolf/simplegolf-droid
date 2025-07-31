@@ -80,9 +80,12 @@ private fun Screen4Portrait(
 
     var showBackConfirmDialog by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = !showBackButton) {
-        // Show confirmation dialog before navigating back
-        showBackConfirmDialog = true
+    BackHandler(enabled = true) {
+        if (showBackButton) {
+            // Show confirmation dialog before navigating back
+            showBackConfirmDialog = true
+        }
+        // If showBackButton is false, do nothing (completely block back navigation)
     }
 
     Scaffold(
