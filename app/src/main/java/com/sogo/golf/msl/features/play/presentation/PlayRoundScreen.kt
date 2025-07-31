@@ -73,6 +73,7 @@ private fun Screen4Portrait(
     val localCompetition by playRoundViewModel.localCompetition.collectAsState()
     val currentGolfer by playRoundViewModel.currentGolfer.collectAsState()
     val currentRound by playRoundViewModel.currentRound.collectAsState()
+    val currentHoleNumber by playRoundViewModel.currentHoleNumber.collectAsState()
     val showBackButton by playRoundViewModel.showBackButton.collectAsState()
 
     var showBackConfirmDialog by remember { mutableStateOf(false) }
@@ -127,12 +128,12 @@ private fun Screen4Portrait(
 //                            .background(Color.Red),
                     ) {
                         IconButton(
-                            onClick = {},
+                            onClick = { playRoundViewModel.navigateToPreviousHole() },
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                contentDescription = "Back",
+                                contentDescription = "Previous Hole",
                                 tint = MSLColors.mslGunMetal,
                                 modifier = Modifier.size(32.dp)
                             )
@@ -152,7 +153,7 @@ private fun Screen4Portrait(
                             modifier = Modifier
                         )
                         Text(
-                            " 12",
+                            " $currentHoleNumber",
                             fontSize = MaterialTheme.typography.headlineLarge.fontSize
                         )
                     }
@@ -175,12 +176,12 @@ private fun Screen4Portrait(
                         }
 
                         IconButton(
-                            onClick = {},
+                            onClick = { playRoundViewModel.navigateToNextHole() },
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = "Next",
+                                contentDescription = "Next Hole",
                                 tint = MSLColors.mslGunMetal,
                                 modifier = Modifier.size(32.dp)
                             )
@@ -221,7 +222,6 @@ private fun Screen4Portrait(
             val localGameValue = localGame
             val localCompetitionValue = localCompetition
             val currentRoundValue = currentRound
-            val currentHoleNumber = 1 // TODO: Get from viewmodel
             
             // Extract main golfer data
             val mainGolferName = currentGolferValue?.let { golfer ->
