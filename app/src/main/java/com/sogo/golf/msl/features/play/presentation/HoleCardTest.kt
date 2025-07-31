@@ -2,6 +2,7 @@ package com.sogo.golf.msl.features.play.presentation
 
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,11 +16,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sogo.golf.msl.ui.theme.MSLColors
+import kotlin.math.abs
 
 @Composable
 fun HoleCardTest(
@@ -34,10 +38,35 @@ fun HoleCardTest(
     distance: Int = 441,
     strokeIndex: String = "1/22/40",
     totalScore: Int = 0,
+    onSwipeNext: () -> Unit = {},
+    onSwipePrevious: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val density = LocalDensity.current
+    val swipeThreshold = with(density) { 100.dp.toPx() }
+    
     Card(
-        modifier = modifier,
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragEnd = {
+                        // Drag ended, no action needed
+                    }
+                ) { change, dragAmount ->
+                    val (x, _) = dragAmount
+                    
+                    // Check if horizontal swipe distance exceeds threshold
+                    if (abs(x) > swipeThreshold) {
+                        if (x > 0) {
+                            // Left-to-right swipe: go to previous hole
+                            onSwipePrevious()
+                        } else {
+                            // Right-to-left swipe: go to next hole
+                            onSwipeNext()
+                        }
+                    }
+                }
+            },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {

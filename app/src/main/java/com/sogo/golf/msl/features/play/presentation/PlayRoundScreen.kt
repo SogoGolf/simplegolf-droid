@@ -280,6 +280,8 @@ private fun Screen4Portrait(
                 distance = distance,
                 strokeIndex = strokeIndexes,
                 totalScore = 0, // TODO: Get from round data
+                onSwipeNext = { playRoundViewModel.navigateToNextHole() },
+                onSwipePrevious = { playRoundViewModel.navigateToPreviousHole() },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up half the available space
@@ -302,6 +304,8 @@ private fun Screen4Portrait(
                 distance = distance,
                 strokeIndex = strokeIndexes,
                 totalScore = 0, // TODO: Get from round data
+                onSwipeNext = { playRoundViewModel.navigateToNextHole() },
+                onSwipePrevious = { playRoundViewModel.navigateToPreviousHole() },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up the other half
