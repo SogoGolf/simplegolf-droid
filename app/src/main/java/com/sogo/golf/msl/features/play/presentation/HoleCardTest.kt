@@ -2,7 +2,7 @@ package com.sogo.golf.msl.features.play.presentation
 
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -57,32 +57,31 @@ fun HoleCardTest(
                 .padding(16.dp)
                 .pointerInput(Unit) {
                     var totalDragX = 0f
-                    detectDragGestures(
-                        onDragStart = {
+                    detectHorizontalDragGestures(
+                        onDragStart = { 
                             totalDragX = 0f
-                            android.util.Log.d("HoleCardTest", "✅ DRAG STARTED - Gesture detection working!")
+                            android.util.Log.d("HoleCardTest", "✅ HORIZONTAL DRAG STARTED - Alternative gesture detection!")
                         },
                         onDragEnd = {
-                            android.util.Log.d("HoleCardTest", "✅ DRAG ENDED - totalDragX: $totalDragX, threshold: $swipeThreshold")
+                            android.util.Log.d("HoleCardTest", "✅ HORIZONTAL DRAG ENDED - totalDragX: $totalDragX, threshold: $swipeThreshold")
                             // Check if total horizontal swipe distance exceeds threshold
                             if (abs(totalDragX) > swipeThreshold) {
                                 if (totalDragX > 0) {
                                     // Left-to-right swipe: go to previous hole
-                                    android.util.Log.d("HoleCardTest", "🔄 SWIPING TO PREVIOUS HOLE")
+                                    android.util.Log.d("HoleCardTest", "🔄 HORIZONTAL SWIPE TO PREVIOUS HOLE")
                                     onSwipePrevious()
                                 } else {
                                     // Right-to-left swipe: go to next hole
-                                    android.util.Log.d("HoleCardTest", "🔄 SWIPING TO NEXT HOLE")
+                                    android.util.Log.d("HoleCardTest", "🔄 HORIZONTAL SWIPE TO NEXT HOLE")
                                     onSwipeNext()
                                 }
                             } else {
-                                android.util.Log.d("HoleCardTest", "❌ Swipe too small: ${abs(totalDragX)} < $swipeThreshold")
+                                android.util.Log.d("HoleCardTest", "❌ Horizontal swipe too small: ${abs(totalDragX)} < $swipeThreshold")
                             }
                         }
                     ) { change, dragAmount ->
-                        val (x, _) = dragAmount
-                        totalDragX += x
-                        android.util.Log.d("HoleCardTest", "👆 DRAGGING: x=$x, totalDragX=$totalDragX")
+                        totalDragX += dragAmount
+                        android.util.Log.d("HoleCardTest", "👆 HORIZONTAL DRAGGING: dragAmount=$dragAmount, totalDragX=$totalDragX")
                     }
                 },
             contentAlignment = Alignment.Center
