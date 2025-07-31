@@ -70,7 +70,10 @@ private fun Screen4Portrait(
     val isRemovingMarker by playRoundViewModel.isRemovingMarker.collectAsState()
     val markerError by playRoundViewModel.markerError.collectAsState()
     val localGame by playRoundViewModel.localGame.collectAsState()
+    val localCompetition by playRoundViewModel.localCompetition.collectAsState()
     val currentGolfer by playRoundViewModel.currentGolfer.collectAsState()
+    val currentRound by playRoundViewModel.currentRound.collectAsState()
+    val currentHoleNumber by playRoundViewModel.currentHoleNumber.collectAsState()
     val showBackButton by playRoundViewModel.showBackButton.collectAsState()
 
     var showBackConfirmDialog by remember { mutableStateOf(false) }
@@ -125,12 +128,12 @@ private fun Screen4Portrait(
 //                            .background(Color.Red),
                     ) {
                         IconButton(
-                            onClick = {},
+                            onClick = { playRoundViewModel.navigateToPreviousHole() },
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                contentDescription = "Back",
+                                contentDescription = "Previous Hole",
                                 tint = MSLColors.mslGunMetal,
                                 modifier = Modifier.size(32.dp)
                             )
@@ -150,7 +153,7 @@ private fun Screen4Portrait(
                             modifier = Modifier
                         )
                         Text(
-                            " 12",
+                            " $currentHoleNumber",
                             fontSize = MaterialTheme.typography.headlineLarge.fontSize
                         )
                     }
@@ -173,12 +176,12 @@ private fun Screen4Portrait(
                         }
 
                         IconButton(
-                            onClick = {},
+                            onClick = { playRoundViewModel.navigateToNextHole() },
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = "Next",
+                                contentDescription = "Next Hole",
                                 tint = MSLColors.mslGunMetal,
                                 modifier = Modifier.size(32.dp)
                             )
@@ -214,9 +217,71 @@ private fun Screen4Portrait(
 
              Spacer(modifier = Modifier.height(5.dp))
 
+            // Extract golfer data from Room database
+            val currentGolferValue = currentGolfer
+            val localGameValue = localGame
+            val localCompetitionValue = localCompetition
+            val currentRoundValue = currentRound
+            
+            // Extract main golfer data
+            val mainGolferName = currentGolferValue?.let { golfer ->
+                "${golfer.firstName} ${golfer.surname}".trim()
+            } ?: "Main Golfer"
+            
+            val mainGolferHandicap = currentGolferValue?.primary?.toInt() ?: 0
+            val mainGolferDailyHandicap = localGameValue?.dailyHandicap ?: 0
+            
+            // Extract playing partner data
+            val playingPartner = if (currentGolferValue != null && localGameValue != null) {
+                localGameValue.playingPartners.find { partner ->
+                    partner.markedByGolfLinkNumber == currentGolferValue.golfLinkNo
+                }
+            } else null
+            
+            val partnerDisplayName = playingPartner?.let { 
+                "${it.firstName ?: ""} ${it.lastName ?: ""}".trim() 
+            }?.takeIf { it.isNotBlank() } ?: "Playing Partner"
+            
+            val partnerDailyHandicap = playingPartner?.dailyHandicap ?: 0
+            
+            // Extract game data
+            val teeColor = localGameValue?.teeColourName ?: "Black"
+            
+            // Extract competition data
+            val competitionType = localCompetitionValue?.players?.firstOrNull()?.scoreType ?: "Stableford"
+            
+            // Extract hole data for current hole
+            val currentHole = localCompetitionValue?.players?.firstOrNull()?.holes?.find { 
+                it.holeNumber == currentHoleNumber 
+            }
+            val par = currentHole?.par ?: 5
+            val distance = currentHole?.distance ?: 441
+            val strokeIndexes = currentHole?.strokeIndexes?.joinToString("/") ?: "1/22/40"
+            
+            // Extract stroke data from Round object for current hole
+            val mainGolferStrokes = currentRoundValue?.holeScores?.find { 
+                it.holeNumber == currentHoleNumber 
+            }?.strokes ?: 0
+            
+            val partnerStrokes = currentRoundValue?.playingPartnerRound?.holeScores?.find { 
+                it.holeNumber == currentHoleNumber 
+            }?.strokes ?: 0
+
+            // Top card - Playing Partner
             HoleCardTest(
-                golferName = "Daniel Seymour",
+                golferName = partnerDisplayName,
                 backgroundColor = Color.Green,
+                teeColor = teeColor,
+                competitionType = competitionType,
+                dailyHandicap = partnerDailyHandicap,
+                strokes = partnerStrokes,
+                currentPoints = 0,
+                par = par,
+                distance = distance,
+                strokeIndex = strokeIndexes,
+                totalScore = 0, // TODO: Get from round data
+                onSwipeNext = { playRoundViewModel.navigateToNextHole() },
+                onSwipePrevious = { playRoundViewModel.navigateToPreviousHole() },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up half the available space
@@ -226,10 +291,21 @@ private fun Screen4Portrait(
             // Gap between cards
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Bottom card - Playing Partner
+            // Bottom card - Main Golfer
             HoleCardTest(
-                golferName = "Playing Partner",
+                golferName = mainGolferName,
                 backgroundColor = Color.Blue,
+                teeColor = teeColor,
+                competitionType = competitionType,
+                dailyHandicap = mainGolferDailyHandicap,
+                strokes = mainGolferStrokes,
+                currentPoints = 0,
+                par = par,
+                distance = distance,
+                strokeIndex = strokeIndexes,
+                totalScore = 0, // TODO: Get from round data
+                onSwipeNext = { playRoundViewModel.navigateToNextHole() },
+                onSwipePrevious = { playRoundViewModel.navigateToPreviousHole() },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up the other half

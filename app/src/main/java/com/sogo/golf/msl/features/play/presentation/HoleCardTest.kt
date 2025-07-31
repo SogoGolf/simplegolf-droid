@@ -2,6 +2,7 @@ package com.sogo.golf.msl.features.play.presentation
 
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,18 +16,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sogo.golf.msl.ui.theme.MSLColors
+import kotlin.math.abs
 
 @Composable
 fun HoleCardTest(
     backgroundColor: Color = MSLColors.mslBlue,
     golferName: String = "Daniel Seymour",
+    teeColor: String = "Black",
+    competitionType: String = "Stableford",
+    dailyHandicap: Int = 10,
+    strokes: Int = 3,
+    currentPoints: Int = 2,
+    par: Int = 5,
+    distance: Int = 441,
+    strokeIndex: String = "1/22/40",
+    totalScore: Int = 0,
+    onSwipeNext: () -> Unit = {},
+    onSwipePrevious: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val density = LocalDensity.current
+    val swipeThreshold = with(density) { 100.dp.toPx() }
+    
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
@@ -36,7 +54,36 @@ fun HoleCardTest(
             modifier = Modifier
                 .fillMaxSize()
                 .background(backgroundColor)
-                .padding(16.dp),
+                .padding(16.dp)
+                .pointerInput(Unit) {
+                    var totalDragX = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { 
+                            totalDragX = 0f
+                            android.util.Log.d("HoleCardTest", "✅ HORIZONTAL DRAG STARTED - Alternative gesture detection!")
+                        },
+                        onDragEnd = {
+                            android.util.Log.d("HoleCardTest", "✅ HORIZONTAL DRAG ENDED - totalDragX: $totalDragX, threshold: $swipeThreshold")
+                            // Check if total horizontal swipe distance exceeds threshold
+                            if (abs(totalDragX) > swipeThreshold) {
+                                if (totalDragX > 0) {
+                                    // Left-to-right swipe: go to previous hole
+                                    android.util.Log.d("HoleCardTest", "🔄 HORIZONTAL SWIPE TO PREVIOUS HOLE")
+                                    onSwipePrevious()
+                                } else {
+                                    // Right-to-left swipe: go to next hole
+                                    android.util.Log.d("HoleCardTest", "🔄 HORIZONTAL SWIPE TO NEXT HOLE")
+                                    onSwipeNext()
+                                }
+                            } else {
+                                android.util.Log.d("HoleCardTest", "❌ Horizontal swipe too small: ${abs(totalDragX)} < $swipeThreshold")
+                            }
+                        }
+                    ) { change, dragAmount ->
+                        totalDragX += dragAmount
+                        android.util.Log.d("HoleCardTest", "👆 HORIZONTAL DRAGGING: dragAmount=$dragAmount, totalDragX=$totalDragX")
+                    }
+                },
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -59,20 +106,20 @@ fun HoleCardTest(
                 ) {
                     Column(horizontalAlignment = Alignment.Start) {
                         Text(
-                            text = "Black",
+                            text = teeColor,
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Type: Stableford",
+                            text = "Type: $competitionType",
                             color = Color.White,
                             fontSize = 12.sp
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "10",
+                            text = dailyHandicap.toString(),
                             color = Color.White,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -114,13 +161,13 @@ fun HoleCardTest(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "3",
+                                text = strokes.toString(),
                                 color = Color.Black,
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "2 pts",
+                                text = "$currentPoints pts",
                                 color = Color.Gray,
                                 fontSize = 10.sp
                             )
@@ -164,7 +211,7 @@ fun HoleCardTest(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "5",
+                            text = par.toString(),
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -177,7 +224,7 @@ fun HoleCardTest(
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "441",
+                            text = distance.toString(),
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -190,7 +237,7 @@ fun HoleCardTest(
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "1/22/40",
+                            text = strokeIndex,
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
@@ -203,7 +250,7 @@ fun HoleCardTest(
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "0",
+                            text = totalScore.toString(),
                             color = Color.White,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold

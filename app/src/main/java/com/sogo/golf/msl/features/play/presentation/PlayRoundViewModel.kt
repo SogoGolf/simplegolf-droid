@@ -13,6 +13,8 @@ import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
+import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
+import com.sogo.golf.msl.domain.model.msl.MslGame
 import com.sogo.golf.msl.domain.usecase.marker.RemoveMarkerUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.usecase.round.GetActiveTodayRoundUseCase
@@ -30,6 +32,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PlayRoundViewModel @Inject constructor(
     private val getLocalGameUseCase: GetLocalGameUseCase,
+    private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
     private val getMslGolferUseCase: GetMslGolferUseCase,
     private val removeMarkerUseCase: RemoveMarkerUseCase,
     private val fetchAndSaveGameUseCase: FetchAndSaveGameUseCase,
@@ -68,6 +71,14 @@ class PlayRoundViewModel @Inject constructor(
             initialValue = null
         )
 
+    // Get the local competition data
+    val localCompetition = getLocalCompetitionUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
     // Get the current golfer data
     val currentGolfer = getMslGolferUseCase()
         .stateIn(
@@ -79,6 +90,10 @@ class PlayRoundViewModel @Inject constructor(
     // Get the current active round data
     private val _currentRound = MutableStateFlow<com.sogo.golf.msl.domain.model.Round?>(null)
     val currentRound: StateFlow<com.sogo.golf.msl.domain.model.Round?> = _currentRound.asStateFlow()
+
+    // Current hole number for navigation
+    private val _currentHoleNumber = MutableStateFlow(1)
+    val currentHoleNumber: StateFlow<Int> = _currentHoleNumber.asStateFlow()
 
 
     init {
@@ -111,6 +126,18 @@ class PlayRoundViewModel @Inject constructor(
         viewModelScope.launch {
             currentRound.collect { round ->
                 updateBackButtonVisibility(round)
+            }
+        }
+        
+        // Initialize hole number based on game data
+        viewModelScope.launch {
+            localGame.collect { game ->
+                if (game != null && _currentHoleNumber.value == 1) {
+                    // Set starting hole number from game data
+                    val startingHole = game.startingHoleNumber
+                    _currentHoleNumber.value = startingHole
+                    android.util.Log.d("PlayRoundVM", "Set starting hole number to: $startingHole")
+                }
             }
         }
     }
@@ -404,6 +431,68 @@ class PlayRoundViewModel @Inject constructor(
     fun refreshBackButtonState() {
         viewModelScope.launch {
             loadCurrentRound()
+        }
+    }
+
+    // Hole navigation functions
+    fun navigateToNextHole() {
+        val game = localGame.value
+        if (game != null) {
+            val currentHole = _currentHoleNumber.value
+            val maxHole = getMaxHoleNumber(game)
+            
+            if (currentHole < maxHole) {
+                _currentHoleNumber.value = currentHole + 1
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: ${currentHole + 1}")
+            } else {
+                android.util.Log.d("PlayRoundVM", "Already at last hole: $maxHole")
+            }
+        }
+    }
+
+    fun navigateToPreviousHole() {
+        val game = localGame.value
+        if (game != null) {
+            val currentHole = _currentHoleNumber.value
+            val minHole = game.startingHoleNumber
+            
+            if (currentHole > minHole) {
+                _currentHoleNumber.value = currentHole - 1
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: ${currentHole - 1}")
+            } else {
+                android.util.Log.d("PlayRoundVM", "Already at first hole: $minHole")
+            }
+        }
+    }
+
+    fun navigateToHole(holeNumber: Int) {
+        val game = localGame.value
+        if (game != null) {
+            val minHole = game.startingHoleNumber
+            val maxHole = getMaxHoleNumber(game)
+            
+            if (holeNumber in minHole..maxHole) {
+                _currentHoleNumber.value = holeNumber
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: $holeNumber")
+            } else {
+                android.util.Log.w("PlayRoundVM", "Invalid hole number: $holeNumber (valid range: $minHole-$maxHole)")
+            }
+        }
+    }
+
+    private fun getMaxHoleNumber(game: MslGame): Int {
+        val startingHole = game.startingHoleNumber
+        val numberOfHoles = game.numberOfHoles ?: 18
+        
+        return when {
+            // 18-hole round starting from hole 1
+            startingHole == 1 && numberOfHoles == 18 -> 18
+            // 9-hole round starting from hole 1 (front nine)
+            startingHole == 1 && numberOfHoles == 9 -> 9
+            // 9-hole round starting from hole 10 (back nine)
+            startingHole == 10 && numberOfHoles == 9 -> 18
+            // Default fallback
+            else -> startingHole + numberOfHoles - 1
         }
     }
 }
