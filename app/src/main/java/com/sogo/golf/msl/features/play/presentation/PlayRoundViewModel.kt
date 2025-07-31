@@ -214,8 +214,8 @@ class PlayRoundViewModel @Inject constructor(
         val partnerFirstHoleStrokes = round.playingPartnerRound?.holeScores?.firstOrNull()?.strokes ?: 0
         android.util.Log.d("PlayRoundVM", "Partner first hole strokes: $partnerFirstHoleStrokes")
 
-        // Allow back navigation only if BOTH golfers have 0 strokes on first hole
-        val canNavigateBack = mainGolferFirstHoleStrokes == 0 && partnerFirstHoleStrokes == 0
+        // Prevent back navigation only if BOTH golfers have strokes > 0 on first hole
+        val canNavigateBack = !(mainGolferFirstHoleStrokes > 0 && partnerFirstHoleStrokes > 0)
         
         android.util.Log.d("PlayRoundVM", "Back navigation allowed: $canNavigateBack (main: $mainGolferFirstHoleStrokes, partner: $partnerFirstHoleStrokes)")
         
