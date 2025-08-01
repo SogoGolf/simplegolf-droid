@@ -585,16 +585,15 @@ class PlayingPartnerViewModel @Inject constructor(
 
     private fun createHoleScores(competitionData: MslCompetition?, specificPlayer: MslPlayer? = null): List<HoleScore> {
         val playerToUse = specificPlayer ?: competitionData?.players?.firstOrNull()
-        val numberOfHoles = playerToUse?.holes?.count() ?: 0
-        return (1..numberOfHoles).map { holeNumber ->
-            val holeData = playerToUse?.holes?.find { it.holeNumber == holeNumber }
+        val holes = playerToUse?.holes ?: emptyList()
+        return holes.map { holeData ->
             HoleScore(
-                holeNumber = holeNumber,
-                par = holeData?.par ?: 0,
-                index1 = holeData?.strokeIndexes?.getOrNull(0) ?: 0,
-                index2 = holeData?.strokeIndexes?.getOrNull(1) ?: 0,
-                index3 = holeData?.strokeIndexes?.getOrNull(2) ?: 0,
-                meters = holeData?.distance ?: 0,
+                holeNumber = holeData.holeNumber,
+                par = holeData.par,
+                index1 = holeData.strokeIndexes.getOrNull(0) ?: 0,
+                index2 = holeData.strokeIndexes.getOrNull(1) ?: 0,
+                index3 = holeData.strokeIndexes.getOrNull(2) ?: 0,
+                meters = holeData.distance,
                 strokes = 0,
                 score = 0f,
             )
