@@ -882,7 +882,31 @@ class PlayRoundViewModel @Inject constructor(
             _abandonError.value = null
 
             try {
-                // First, delete the current round if it exists
+                // First, remove marker from playing partner (following removeMarkerAndNavigateBack pattern)
+                val partnerGolfLinkNumber = getPartnerMarkedByMe()
+                android.util.Log.d("PlayRoundVM", "Partner golf link number: $partnerGolfLinkNumber")
+                
+                if (partnerGolfLinkNumber != null) {
+                    android.util.Log.d("PlayRoundVM", "Removing marker from playing partner: $partnerGolfLinkNumber")
+                    when (val markerResult = removeMarkerUseCase(partnerGolfLinkNumber)) {
+                        is NetworkResult.Success -> {
+                            android.util.Log.d("PlayRoundVM", "✅ Marker removed successfully")
+                        }
+                        is NetworkResult.Error -> {
+                            android.util.Log.e("PlayRoundVM", "❌ Failed to remove marker: ${markerResult.error.toUserMessage()}")
+                            _isAbandoningRound.value = false
+                            _abandonError.value = "Failed to remove marker: ${markerResult.error.toUserMessage()}"
+                            return@launch
+                        }
+                        is NetworkResult.Loading -> {
+                            android.util.Log.w("PlayRoundVM", "Unexpected loading state during marker removal")
+                        }
+                    }
+                } else {
+                    android.util.Log.d("PlayRoundVM", "No marker to remove, proceeding to round deletion")
+                }
+
+                // Second, delete the current round if it exists
                 val currentRound = _currentRound.value
                 if (currentRound != null) {
                     android.util.Log.d("PlayRoundVM", "Deleting current round: ${currentRound.id}")
@@ -903,7 +927,7 @@ class PlayRoundViewModel @Inject constructor(
                     }
                 }
 
-                // Then reset all stale data for comprehensive state clearing
+                // Finally, reset all stale data for comprehensive state clearing
                 android.util.Log.d("PlayRoundVM", "Resetting stale data...")
                 when (val resetResult = resetStaleDataUseCase()) {
                     is Result -> {
