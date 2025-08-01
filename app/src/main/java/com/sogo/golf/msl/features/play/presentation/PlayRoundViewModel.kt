@@ -703,8 +703,8 @@ class PlayRoundViewModel @Inject constructor(
                 val par = getParForHole(competition, currentHole) ?: 4 // Default to par 4
                 
                 // Get current strokes for this hole
-                val holeIndex = currentHole - 1 // Convert to 0-based index
-                val currentHoleScore = if (holeIndex < round.holeScores.size) {
+                val holeIndex = getHoleIndex(currentHole)
+                val currentHoleScore = if (holeIndex >= 0 && holeIndex < round.holeScores.size) {
                     round.holeScores[holeIndex]
                 } else {
                     null
@@ -742,8 +742,8 @@ class PlayRoundViewModel @Inject constructor(
                 val par = getParForHole(competition, currentHole) ?: 4 // Default to par 4
                 
                 // Get current strokes for this hole
-                val holeIndex = currentHole - 1 // Convert to 0-based index
-                val currentHoleScore = if (round.playingPartnerRound != null && holeIndex < round.playingPartnerRound.holeScores.size) {
+                val holeIndex = getHoleIndex(currentHole)
+                val currentHoleScore = if (round.playingPartnerRound != null && holeIndex >= 0 && holeIndex < round.playingPartnerRound.holeScores.size) {
                     round.playingPartnerRound.holeScores[holeIndex]
                 } else {
                     null
@@ -800,10 +800,14 @@ class PlayRoundViewModel @Inject constructor(
                 val round = currentRound.value
                 if (round != null) {
                     val currentHole = _currentHoleNumber.value
-                    val holeIndex = currentHole - 1
+                    val holeIndex = getHoleIndex(currentHole)
                     
-                    val mainGolferStrokes = round.holeScores.getOrNull(holeIndex)?.strokes ?: 0
-                    val partnerStrokes = round.playingPartnerRound?.holeScores?.getOrNull(holeIndex)?.strokes ?: 0
+                    val mainGolferStrokes = if (holeIndex >= 0 && holeIndex < round.holeScores.size) {
+                        round.holeScores[holeIndex]?.strokes ?: 0
+                    } else 0
+                    val partnerStrokes = if (round.playingPartnerRound != null && holeIndex >= 0 && holeIndex < round.playingPartnerRound.holeScores.size) {
+                        round.playingPartnerRound.holeScores[holeIndex]?.strokes ?: 0
+                    } else 0
                     
                     if (mainGolferStrokes > 0) {
                         updateHoleScoreUseCase(round, currentHole, mainGolferStrokes, true)
@@ -859,6 +863,12 @@ class PlayRoundViewModel @Inject constructor(
     private fun findStartingHole(round: com.sogo.golf.msl.domain.model.Round): Int {
         val game = localGame.value
         return game?.startingHoleNumber ?: 1
+    }
+
+    private fun getHoleIndex(holeNumber: Int): Int {
+        val game = localGame.value
+        val startingHole = game?.startingHoleNumber ?: 1
+        return holeNumber - startingHole
     }
 
     fun clearCurrentHoleForRound() {

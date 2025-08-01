@@ -74,11 +74,11 @@ class UpdatePickupUseCase @Inject constructor(
         isMainGolfer: Boolean,
         newStrokes: Int
     ): Round {
-        val holeIndex = holeNumber - 1
+        val holeIndex = getHoleIndex(holeNumber)
         
         return if (isMainGolfer) {
             val updatedHoleScores = round.holeScores.toMutableList()
-            if (holeIndex < updatedHoleScores.size) {
+            if (holeIndex >= 0 && holeIndex < updatedHoleScores.size) {
                 val currentHoleScore = updatedHoleScores[holeIndex]
                 val newPickupState = !(currentHoleScore.isBallPickedUp ?: false)
                 val finalStrokes = if (newPickupState) newStrokes else currentHoleScore.strokes
@@ -97,7 +97,7 @@ class UpdatePickupUseCase @Inject constructor(
             val partnerRound = round.playingPartnerRound
             if (partnerRound != null) {
                 val updatedPartnerHoleScores = partnerRound.holeScores.toMutableList()
-                if (holeIndex < updatedPartnerHoleScores.size) {
+                if (holeIndex >= 0 && holeIndex < updatedPartnerHoleScores.size) {
                     val currentHoleScore = updatedPartnerHoleScores[holeIndex]
                     val newPickupState = !(currentHoleScore.isBallPickedUp ?: false)
                     val finalStrokes = if (newPickupState) newStrokes else currentHoleScore.strokes
@@ -172,5 +172,11 @@ class UpdatePickupUseCase @Inject constructor(
             Log.e("UpdatePickup", "Error calculating score", e)
             0f
         }
+    }
+
+    private suspend fun getHoleIndex(holeNumber: Int): Int {
+        val game = getLocalGameUseCase().first()
+        val startingHole = game?.startingHoleNumber ?: 1
+        return holeNumber - startingHole
     }
 }
