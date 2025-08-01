@@ -168,10 +168,11 @@ class PlayRoundViewModel @Inject constructor(
         viewModelScope.launch {
             localGame.collect { game ->
                 if (game != null) {
+                    // Set starting hole number from game data
                     val startingHole = game.startingHoleNumber
                     if (_currentHoleNumber.value != startingHole) {
                         _currentHoleNumber.value = startingHole
-                        android.util.Log.d("PlayRoundVM", "🏌️ Set starting hole number to: $startingHole from game data")
+                        android.util.Log.d("PlayRoundVM", "🏌️ Set starting hole number to: $startingHole")
                     }
                 }
             }
@@ -833,18 +834,14 @@ class PlayRoundViewModel @Inject constructor(
             try {
                 val savedCurrentHole = holeStatePreferences.getCurrentHole(round.id)
                 
-                val targetHole = if (savedCurrentHole != null) {
+                if (savedCurrentHole != null) {
                     android.util.Log.d("PlayRoundVM", "🔄 App restart: Found saved current hole $savedCurrentHole")
-                    savedCurrentHole
+                    _currentHoleNumber.value = savedCurrentHole
+                    android.util.Log.d("PlayRoundVM", "✅ App restart: Restored saved hole $savedCurrentHole")
                 } else {
-                    val startingHole = findStartingHole(round)
-                    android.util.Log.d("PlayRoundVM", "🔄 App restart: No saved hole state, using starting hole $startingHole")
-                    startingHole
+                    android.util.Log.d("PlayRoundVM", "🔄 App restart: No saved hole state, keeping current hole ${_currentHoleNumber.value}")
                 }
                 
-                // Always set the target hole to ensure proper initialization
-                _currentHoleNumber.value = targetHole
-                android.util.Log.d("PlayRoundVM", "✅ App restart: Set current hole to $targetHole")
                 updateBackButtonVisibility(round)
                 
             } catch (e: Exception) {
@@ -855,7 +852,9 @@ class PlayRoundViewModel @Inject constructor(
 
     private fun findStartingHole(round: com.sogo.golf.msl.domain.model.Round): Int {
         val game = localGame.value
-        return game?.startingHoleNumber ?: 1
+        val startingHole = game?.startingHoleNumber ?: 1
+        android.util.Log.d("PlayRoundVM", "🔍 findStartingHole: game=${game != null}, startingHole=$startingHole")
+        return startingHole
     }
 
     fun clearCurrentHoleForRound() {
