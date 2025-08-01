@@ -82,8 +82,15 @@ private fun Screen4Portrait(
 
     BackHandler(enabled = true) {
         if (showBackButton) {
-            // Show confirmation dialog before navigating back
-            showBackConfirmDialog = true
+            // Check if we're on the starting hole (same logic as header back button)
+            val startingHoleNumber = localGame?.startingHoleNumber ?: 1
+            if (currentHoleNumber == startingHoleNumber) {
+                // On starting hole - show confirmation dialog
+                showBackConfirmDialog = true
+            } else {
+                // Not on starting hole - navigate normally
+                playRoundViewModel.navigateToPreviousHole()
+            }
         }
         // If showBackButton is false, do nothing (completely block back navigation)
     }
@@ -130,10 +137,10 @@ private fun Screen4Portrait(
                                     // Check if we're on the starting hole
                                     val startingHoleNumber = localGame?.startingHoleNumber ?: 1
                                     if (currentHoleNumber == startingHoleNumber) {
-                                        // On first hole - show confirmation dialog
+                                        // On starting hole - show confirmation dialog
                                         showBackConfirmDialog = true
                                     } else {
-                                        // Not on first hole - navigate normally
+                                        // Not on starting hole - navigate normally
                                         playRoundViewModel.navigateToPreviousHole()
                                     }
                                 },
@@ -249,7 +256,7 @@ private fun Screen4Portrait(
             
             val partnerDisplayName = playingPartner?.let { 
                 "${it.firstName ?: ""} ${it.lastName ?: ""}".trim() 
-            }?.takeIf { it.isNotBlank() } ?: "Playing Partner"
+            }?.takeIf { it.isNotBlank() } ?: "--"
             
             val partnerDailyHandicap = playingPartner?.dailyHandicap ?: 0
             
@@ -514,10 +521,18 @@ private fun Screen4Portrait(
         // Keep loading states
         if (isRemovingMarker) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.7f)),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Text("Removing marker...", color = Color.White)
+                }
             }
         }
     }

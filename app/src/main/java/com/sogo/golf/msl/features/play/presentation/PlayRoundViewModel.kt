@@ -214,9 +214,21 @@ class PlayRoundViewModel @Inject constructor(
             return true
         }
 
-        // Get the starting hole number from game data
+        // Get the starting hole number and current hole number from game data
         val game = localGame.value
         val startingHoleNumber = game?.startingHoleNumber ?: 1
+        val currentHole = _currentHoleNumber.value
+        
+        android.util.Log.d("PlayRoundVM", "Current hole: $currentHole, Starting hole: $startingHoleNumber")
+        
+        // If we're not on the starting hole, allow back navigation
+        if (currentHole != startingHoleNumber) {
+            android.util.Log.d("PlayRoundVM", "Not on starting hole - allowing back navigation")
+            return true
+        }
+        
+        // If we're on the starting hole, check strokes as before
+        android.util.Log.d("PlayRoundVM", "On starting hole - checking strokes")
         
         // Check main golfer's starting hole strokes
         val mainGolferStartingHoleStrokes = round.holeScores.find { it.holeNumber == startingHoleNumber }?.strokes ?: 0
@@ -487,6 +499,7 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole")
                 saveCurrentHoleState(newHole)
                 triggerHoleNavigationUpdate()
+                updateBackButtonVisibility(currentRound.value)
             } else {
                 android.util.Log.d("PlayRoundVM", "Already at last hole: $maxHole")
             }
@@ -510,6 +523,7 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole")
                 saveCurrentHoleState(newHole)
                 triggerHoleNavigationUpdate()
+                updateBackButtonVisibility(currentRound.value)
             } else {
                 android.util.Log.d("PlayRoundVM", "Already at first hole: $minHole")
             }
@@ -527,6 +541,7 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $holeNumber")
                 saveCurrentHoleState(holeNumber)
                 triggerHoleNavigationUpdate()
+                updateBackButtonVisibility(currentRound.value)
             } else {
                 android.util.Log.w("PlayRoundVM", "Invalid hole number: $holeNumber (valid range: $minHole-$maxHole)")
             }
@@ -770,6 +785,7 @@ class PlayRoundViewModel @Inject constructor(
                 if (targetHole != _currentHoleNumber.value) {
                     _currentHoleNumber.value = targetHole
                     android.util.Log.d("PlayRoundVM", "✅ App restart: Navigated to hole $targetHole")
+                    updateBackButtonVisibility(round)
                 }
                 
             } catch (e: Exception) {
