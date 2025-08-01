@@ -156,15 +156,16 @@ fun HoleCardTest(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
-                        onClick = onMinusButtonClick,
+                        onClick = if (isBallPickedUp) { {} } else onMinusButtonClick,
+                        enabled = !isBallPickedUp,
                         modifier = Modifier
                             .size(56.dp)
                             .clip(CircleShape)
-                            .background(MSLColors.mslYellow)
+                            .background(MSLColors.mslYellow.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
                     ) {
                         Text(
                             "-",
-                            color = Color.Black,
+                            color = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
                             style = MaterialTheme.typography.displaySmall,
                         )
                     }
@@ -174,8 +175,10 @@ fun HoleCardTest(
                         modifier = Modifier
                             .size(80.dp)
                             .clip(CircleShape)
-                            .background(Color.White)
-                            .clickable { onStrokeButtonClick() }
+                            .background(Color.White.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
+                            .clickable(enabled = !isBallPickedUp) { 
+                                if (!isBallPickedUp) onStrokeButtonClick() 
+                            }
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -183,28 +186,29 @@ fun HoleCardTest(
                         ) {
                             Text(
                                 text = strokes.toString(),
-                                color = Color.Black,
+                                color = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
                                 style = MaterialTheme.typography.displayMedium,
                             )
                             Text(
                                 text = "$currentPoints pts",
-                                color = Color.Gray,
+                                color = Color.Gray.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
                                 modifier = Modifier.offset(y = (-10).dp)
                             )
                         }
                     }
 
                     IconButton(
-                        onClick = onPlusButtonClick,
+                        onClick = if (isBallPickedUp) { {} } else onPlusButtonClick,
+                        enabled = !isBallPickedUp,
                         modifier = Modifier
                             .size(56.dp)
                             .clip(CircleShape)
-                            .background(MSLColors.mslYellow)
+                            .background(MSLColors.mslYellow.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
                     ) {
                         Icon(
                             Icons.Default.Add,
                             contentDescription = "Plus",
-                            tint = Color.Black
+                            tint = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f)
                         )
                     }
                 }

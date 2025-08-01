@@ -654,7 +654,7 @@ class PlayRoundViewModel @Inject constructor(
                 // Get par for current hole
                 val par = getParForHole(competition, currentHole) ?: 4 // Default to par 4
                 
-                // Get current strokes and pickup state for this hole
+                // Get current strokes for this hole
                 val holeIndex = currentHole - 1 // Convert to 0-based index
                 val currentHoleScore = if (holeIndex < round.holeScores.size) {
                     round.holeScores[holeIndex]
@@ -663,46 +663,6 @@ class PlayRoundViewModel @Inject constructor(
                 }
                 
                 val currentStrokes = currentHoleScore?.strokes ?: 0
-                val isPickedUp = currentHoleScore?.isBallPickedUp ?: false
-                
-                // If ball is picked up, reset pickup state first
-                if (isPickedUp) {
-                    android.util.Log.d("PlayRoundVM", "Main golfer - Ball was picked up, resetting pickup state before stroke update")
-                    
-                    val game = localGame.value ?: return@launch
-                    val holeData = competition.players.firstOrNull()?.holes?.find { 
-                        it.holeNumber == currentHole 
-                    } ?: return@launch
-                    
-                    val dailyHandicap = game.dailyHandicap?.toDouble() ?: 0.0
-                    
-                    android.util.Log.d("PlayRoundVM", "About to reset pickup state - awaiting updatePickupUseCase")
-                    
-                    // Reset pickup state to false - await the async operation
-                    updatePickupUseCase(
-                        round = round,
-                        holeNumber = currentHole,
-                        isMainGolfer = true,
-                        dailyHandicap = dailyHandicap,
-                        par = holeData.par,
-                        index1 = holeData.strokeIndexes.getOrNull(0) ?: 0,
-                        index2 = holeData.strokeIndexes.getOrNull(1) ?: 0,
-                        index3 = holeData.strokeIndexes.getOrNull(2)
-                    )
-                    
-                    android.util.Log.d("PlayRoundVM", "Pickup state reset completed - reloading round data")
-                    
-                    // Reload round to get updated state - only after pickup update completes
-                    loadCurrentRound()
-                    
-                    android.util.Log.d("PlayRoundVM", "Round data reloaded - syncing to remote")
-                    
-                    // Sync pickup reset to remote
-                    val updatedRound = currentRound.value
-                    if (updatedRound != null) {
-                        updatePickupUseCase.syncToRemote(updatedRound)
-                    }
-                }
 
                 // Calculate new strokes using the provided logic
                 val newStrokes = updateLogic(currentStrokes, par)
@@ -733,7 +693,7 @@ class PlayRoundViewModel @Inject constructor(
                 // Get par for current hole
                 val par = getParForHole(competition, currentHole) ?: 4 // Default to par 4
                 
-                // Get current strokes and pickup state for this hole
+                // Get current strokes for this hole
                 val holeIndex = currentHole - 1 // Convert to 0-based index
                 val currentHoleScore = if (round.playingPartnerRound != null && holeIndex < round.playingPartnerRound.holeScores.size) {
                     round.playingPartnerRound.holeScores[holeIndex]
@@ -742,48 +702,6 @@ class PlayRoundViewModel @Inject constructor(
                 }
                 
                 val currentStrokes = currentHoleScore?.strokes ?: 0
-                val isPickedUp = currentHoleScore?.isBallPickedUp ?: false
-                
-                // If ball is picked up, reset pickup state first
-                if (isPickedUp) {
-                    android.util.Log.d("PlayRoundVM", "Partner - Ball was picked up, resetting pickup state before stroke update")
-                    
-                    val game = localGame.value ?: return@launch
-                    val holeData = competition.players.firstOrNull()?.holes?.find { 
-                        it.holeNumber == currentHole 
-                    } ?: return@launch
-                    
-                    val dailyHandicap = game.playingPartners.find { partner ->
-                        partner.markedByGolfLinkNumber == currentGolfer.value?.golfLinkNo
-                    }?.dailyHandicap?.toDouble() ?: 0.0
-                    
-                    android.util.Log.d("PlayRoundVM", "About to reset partner pickup state - awaiting updatePickupUseCase")
-                    
-                    // Reset pickup state to false - await the async operation
-                    updatePickupUseCase(
-                        round = round,
-                        holeNumber = currentHole,
-                        isMainGolfer = false,
-                        dailyHandicap = dailyHandicap,
-                        par = holeData.par,
-                        index1 = holeData.strokeIndexes.getOrNull(0) ?: 0,
-                        index2 = holeData.strokeIndexes.getOrNull(1) ?: 0,
-                        index3 = holeData.strokeIndexes.getOrNull(2)
-                    )
-                    
-                    android.util.Log.d("PlayRoundVM", "Partner pickup state reset completed - reloading round data")
-                    
-                    // Reload round to get updated state - only after pickup update completes
-                    loadCurrentRound()
-                    
-                    android.util.Log.d("PlayRoundVM", "Partner round data reloaded - syncing to remote")
-                    
-                    // Sync pickup reset to remote
-                    val updatedRound = currentRound.value
-                    if (updatedRound != null) {
-                        updatePickupUseCase.syncToRemote(updatedRound)
-                    }
-                }
 
                 // Calculate new strokes using the provided logic
                 val newStrokes = updateLogic(currentStrokes, par)
@@ -1073,15 +991,9 @@ class PlayRoundViewModel @Inject constructor(
                     }?.dailyHandicap?.toDouble() ?: 0.0
                 }
                 
-                val currentPickupState = if (isMainGolfer) {
-                    round.holeScores.find { it.holeNumber == currentHole }?.isBallPickedUp ?: false
-                } else {
-                    round.playingPartnerRound?.holeScores?.find { it.holeNumber == currentHole }?.isBallPickedUp ?: false
-                }
+                android.util.Log.d("PlayRoundVM", "Pickup button clicked - updating local state immediately")
                 
-                android.util.Log.d("PlayRoundVM", "Pickup - Hole: $currentHole, Par: ${holeData.par}, Daily handicap: $dailyHandicap")
-                android.util.Log.d("PlayRoundVM", "Current pickup state from Room: $currentPickupState (${if (isMainGolfer) "Main Golfer" else "Partner"})")
-                
+                // Update pickup state locally first (local-first approach)
                 updatePickupUseCase(
                     round = round,
                     holeNumber = currentHole,
@@ -1093,8 +1005,10 @@ class PlayRoundViewModel @Inject constructor(
                     index3 = holeData.strokeIndexes.getOrNull(2)
                 )
                 
+                // Reload round to update UI immediately
                 loadCurrentRound()
                 
+                // Sync to remote in background (don't block UI)
                 val updatedRound = currentRound.value
                 if (updatedRound != null) {
                     updatePickupUseCase.syncToRemote(updatedRound)
