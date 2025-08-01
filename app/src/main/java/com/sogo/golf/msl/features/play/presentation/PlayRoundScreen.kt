@@ -202,7 +202,7 @@ private fun Screen4Portrait(
                         }
 
                         IconButton(
-                            onClick = { playRoundViewModel.navigateToNextHole() },
+                            onClick = { playRoundViewModel.navigateToNextHole(navController) },
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
@@ -340,7 +340,7 @@ private fun Screen4Portrait(
                 distance = distance,
                 strokeIndex = strokeIndexes,
                 totalScore = currentRoundValue?.playingPartnerRound?.holeScores?.sumOf { it.score.toInt() } ?: 0,
-                onSwipeNext = { playRoundViewModel.navigateToNextHole() },
+                onSwipeNext = { playRoundViewModel.navigateToNextHole(navController) },
                 onSwipePrevious = { 
                     if (showBackButton) {
                         playRoundViewModel.navigateToPreviousHole()
@@ -373,7 +373,7 @@ private fun Screen4Portrait(
                 distance = distance,
                 strokeIndex = strokeIndexes,
                 totalScore = currentRoundValue?.holeScores?.sumOf { it.score.toInt() } ?: 0,
-                onSwipeNext = { playRoundViewModel.navigateToNextHole() },
+                onSwipeNext = { playRoundViewModel.navigateToNextHole(navController) },
                 onSwipePrevious = { 
                     if (showBackButton) {
                         playRoundViewModel.navigateToPreviousHole()

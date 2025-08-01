@@ -501,7 +501,7 @@ class PlayRoundViewModel @Inject constructor(
     }
 
     // Hole navigation functions
-    fun navigateToNextHole() {
+    fun navigateToNextHole(navController: NavController? = null) {
         val game = localGame.value
         if (game != null) {
             val currentHole = _currentHoleNumber.value
@@ -515,7 +515,14 @@ class PlayRoundViewModel @Inject constructor(
                 triggerHoleNavigationUpdate()
                 updateBackButtonVisibility(currentRound.value)
             } else {
-                android.util.Log.d("PlayRoundVM", "Already at last hole: $maxHole")
+                android.util.Log.d("PlayRoundVM", "On last hole: $maxHole - checking completion status")
+                if (areAllHolesCompleted()) {
+                    android.util.Log.d("PlayRoundVM", "All holes completed - navigating to review screen")
+                    navController?.navigate("reviewscreen")
+                } else {
+                    android.util.Log.d("PlayRoundVM", "Not all holes completed - showing go to hole dialog")
+                    showGoToHoleDialog()
+                }
             }
         }
     }
@@ -576,6 +583,43 @@ class PlayRoundViewModel @Inject constructor(
             // Default fallback
             else -> startingHole + numberOfHoles - 1
         }
+    }
+
+    private fun areAllHolesCompleted(): Boolean {
+        val round = currentRound.value
+        val game = localGame.value
+        
+        if (round == null || game == null) {
+            android.util.Log.d("PlayRoundVM", "Missing round or game data - considering incomplete")
+            return false
+        }
+        
+        val startingHole = game.startingHoleNumber
+        val maxHole = getMaxHoleNumber(game)
+        
+        android.util.Log.d("PlayRoundVM", "Checking completion for holes $startingHole to $maxHole")
+        
+        // Check all holes from starting hole to max hole
+        for (holeNumber in startingHole..maxHole) {
+            // Check main golfer strokes
+            val mainGolferHole = round.holeScores.find { it.holeNumber == holeNumber }
+            val mainGolferStrokes = mainGolferHole?.strokes ?: 0
+            
+            // Check partner strokes
+            val partnerHole = round.playingPartnerRound?.holeScores?.find { it.holeNumber == holeNumber }
+            val partnerStrokes = partnerHole?.strokes ?: 0
+            
+            android.util.Log.d("PlayRoundVM", "Hole $holeNumber: main=$mainGolferStrokes, partner=$partnerStrokes")
+            
+            // If either golfer has 0 strokes, round is not complete
+            if (mainGolferStrokes <= 0 || partnerStrokes <= 0) {
+                android.util.Log.d("PlayRoundVM", "Hole $holeNumber incomplete - main: $mainGolferStrokes, partner: $partnerStrokes")
+                return false
+            }
+        }
+        
+        android.util.Log.d("PlayRoundVM", "All holes completed!")
+        return true
     }
 
     // Stroke counting functions
