@@ -167,11 +167,13 @@ class PlayRoundViewModel @Inject constructor(
         // Initialize hole number based on game data
         viewModelScope.launch {
             localGame.collect { game ->
-                if (game != null && _currentHoleNumber.value == 1) {
+                if (game != null) {
                     // Set starting hole number from game data
                     val startingHole = game.startingHoleNumber
-                    _currentHoleNumber.value = startingHole
-                    android.util.Log.d("PlayRoundVM", "Set starting hole number to: $startingHole")
+                    if (_currentHoleNumber.value != startingHole) {
+                        _currentHoleNumber.value = startingHole
+                        android.util.Log.d("PlayRoundVM", "🏌️ Set starting hole number to: $startingHole")
+                    }
                 }
             }
         }
