@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -164,16 +165,37 @@ class PlayRoundViewModel @Inject constructor(
             }
         }
         
-        // Initialize hole number based on game data
+        // Initialize hole number based on game data - ensure competition data is available
         viewModelScope.launch {
-            localGame.collect { game ->
-                if (game != null) {
-                    // Set starting hole number from game data
+            combine(localGame, localCompetition) { game, competition ->
+                Pair(game, competition)
+            }.collect { (game, competition) ->
+                if (game != null && competition != null) {
+                    // Set starting hole number from game data only when both are available
                     val startingHole = game.startingHoleNumber
                     if (_currentHoleNumber.value != startingHole) {
                         _currentHoleNumber.value = startingHole
-                        android.util.Log.d("PlayRoundVM", "🏌️ Set starting hole number to: $startingHole")
+                        android.util.Log.d("PlayRoundVM", "🏌️ Set starting hole number to: $startingHole (competition data available)")
                     }
+                } else {
+                    android.util.Log.d("PlayRoundVM", "🏌️ Waiting for data - game: ${game != null}, competition: ${competition != null}")
+                }
+            }
+        }
+        
+        // Debug competition data loading
+        viewModelScope.launch {
+            localCompetition.collect { competition ->
+                android.util.Log.d("PlayRoundVM", "🏌️ Competition data updated: ${competition != null}")
+                if (competition != null) {
+                    val holes = competition.players.firstOrNull()?.holes
+                    android.util.Log.d("PlayRoundVM", "  - Competition has ${holes?.size ?: 0} holes")
+                    holes?.forEach { hole ->
+                        android.util.Log.d("PlayRoundVM", "    - Hole ${hole.holeNumber}: par=${hole.par}, distance=${hole.distance}")
+                    }
+                    android.util.Log.d("PlayRoundVM", "  - Current hole number: ${_currentHoleNumber.value}")
+                } else {
+                    android.util.Log.w("PlayRoundVM", "  - Competition data is null, current hole: ${_currentHoleNumber.value}")
                 }
             }
         }
