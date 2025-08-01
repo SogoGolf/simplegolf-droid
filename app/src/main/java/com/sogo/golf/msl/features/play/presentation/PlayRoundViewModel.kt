@@ -574,13 +574,9 @@ class PlayRoundViewModel @Inject constructor(
         val numberOfHoles = game.numberOfHoles ?: 18
         
         return when {
-            // 18-hole round starting from hole 1
             startingHole == 1 && numberOfHoles == 18 -> 18
-            // 9-hole round starting from hole 1 (front nine)
             startingHole == 1 && numberOfHoles == 9 -> 9
-            // 9-hole round starting from hole 10 (back nine)
             startingHole == 10 && numberOfHoles == 9 -> 18
-            // Default fallback
             else -> startingHole + numberOfHoles - 1
         }
     }
