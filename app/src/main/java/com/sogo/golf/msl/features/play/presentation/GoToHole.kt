@@ -1,6 +1,7 @@
 package com.sogo.golf.msl.features.play.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -53,6 +54,7 @@ fun GoToHole(
         modifier = Modifier
             .size(60.dp)
             .clip(CircleShape)
+            .border(1.dp, Color.Gray, CircleShape)
             .clickable { onHoleClick(holeNumber) },
         contentAlignment = Alignment.Center
     ) {
