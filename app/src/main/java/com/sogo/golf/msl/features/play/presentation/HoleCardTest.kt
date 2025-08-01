@@ -46,6 +46,8 @@ fun HoleCardTest(
     onStrokeButtonClick: () -> Unit = {},
     onPlusButtonClick: () -> Unit = {},
     onMinusButtonClick: () -> Unit = {},
+    isBallPickedUp: Boolean = false,
+    onPickupButtonClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -209,14 +211,15 @@ fun HoleCardTest(
 
                 // Pickup button
                 Button(
-                    onClick = { /*TODO*/ },
+                    onClick = onPickupButtonClick,
                     shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(containerColor = MSLColors.mslYellow),
-//                    modifier = Modifier.padding(vertical = 8.dp)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isBallPickedUp) Color.Red else MSLColors.mslYellow
+                    )
                 ) {
                     Text(
                         text = "Pickup",
-                        color = Color.Black,
+                        color = if (isBallPickedUp) Color.White else Color.Black,
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )

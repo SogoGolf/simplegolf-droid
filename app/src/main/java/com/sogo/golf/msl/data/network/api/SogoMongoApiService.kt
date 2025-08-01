@@ -3,6 +3,7 @@ package com.sogo.golf.msl.data.network.api
 
 import com.sogo.golf.msl.data.network.dto.mongodb.FeeDto
 import com.sogo.golf.msl.data.network.dto.mongodb.RoundDto
+import com.sogo.golf.msl.data.network.dto.mongodb.HoleScoreDto
 import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
 import retrofit2.Response
 import retrofit2.http.Body
@@ -30,6 +31,12 @@ interface SogoMongoApiService {
     
     @DELETE("rounds/{id}")
     suspend fun deleteRound(@Path("id") roundId: String): Response<Unit>
+
+    @PATCH("rounds/{id}")
+    suspend fun updateRound(
+        @Path("id") roundId: String,
+        @Body payload: RoundUpdatePayload
+    ): Response<Unit>
 
     @PATCH("rounds/{roundId}/holes/{holeNumber}")
     suspend fun updateHoleScore(
@@ -62,4 +69,8 @@ data class HoleScoreData(
     val holeNumber: Int,
     val strokes: Int,
     val score: Int
+)
+
+data class RoundUpdatePayload(
+    val holeScores: List<HoleScoreDto>? = null
 )

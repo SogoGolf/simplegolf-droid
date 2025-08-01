@@ -6,6 +6,7 @@ import com.sogo.golf.msl.data.network.api.SogoMongoApiService
 import com.sogo.golf.msl.data.network.api.HoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.api.HoleScoreData
 import com.sogo.golf.msl.data.network.api.BulkHoleScoreUpdatePayload
+import com.sogo.golf.msl.data.network.api.RoundUpdatePayload
 import com.sogo.golf.msl.data.network.dto.mongodb.toDomainModel
 import com.sogo.golf.msl.data.network.dto.mongodb.toDto
 import com.sogo.golf.msl.data.repository.BaseRepository
@@ -173,6 +174,24 @@ class SogoMongoRepositoryImpl @Inject constructor(
             } else {
                 Log.e(TAG, "Failed to bulk update hole scores: ${response.code()} - ${response.message()}")
                 throw Exception("Failed to bulk update hole scores: ${response.message()}")
+            }
+        }
+    }
+    
+    override suspend fun updateRound(roundId: String, round: Round): NetworkResult<Unit> {
+        return safeNetworkCall {
+            Log.d(TAG, "Updating round in SOGO Mongo API: $roundId")
+            
+            val holeScoresDto = round.holeScores.map { it.toDto() }
+            val payload = RoundUpdatePayload(holeScores = holeScoresDto)
+            val response = sogoMongoApiService.updateRound(roundId, payload)
+            
+            if (response.isSuccessful) {
+                Log.d(TAG, "Successfully updated round: $roundId")
+                Unit
+            } else {
+                Log.e(TAG, "Failed to update round: ${response.code()} - ${response.message()}")
+                throw Exception("Failed to update round: ${response.message()}")
             }
         }
     }

@@ -125,7 +125,10 @@ data class HoleScoreDto(
     val index3: Int? = null,
     
     @SerializedName("meters")
-    val meters: Int = 0
+    val meters: Int = 0,
+    
+    @SerializedName("isBallPickedUp")
+    val isBallPickedUp: Boolean? = false
 )
 
 data class PlayingPartnerRoundDto(
@@ -243,7 +246,8 @@ fun HoleScore.toDto(): HoleScoreDto {
         index1 = index1,
         index2 = index2,
         index3 = index3,
-        meters = meters
+        meters = meters,
+        isBallPickedUp = isBallPickedUp
     )
 }
 

@@ -286,6 +286,23 @@ private fun Screen4Portrait(
                 it.holeNumber == currentHoleNumber 
             }?.strokes ?: 0
 
+            // Extract pickup states for current hole
+            val mainGolferPickedUp = currentRoundValue?.holeScores?.find { 
+                it.holeNumber == currentHoleNumber 
+            }?.isBallPickedUp ?: false
+            
+            val partnerPickedUp = currentRoundValue?.playingPartnerRound?.holeScores?.find { 
+                it.holeNumber == currentHoleNumber 
+            }?.isBallPickedUp ?: false
+
+            val mainGolferPickedUp = currentRoundValue?.holeScores?.find { 
+                it.holeNumber == currentHoleNumber 
+            }?.isBallPickedUp ?: false
+            
+            val partnerPickedUp = currentRoundValue?.playingPartnerRound?.holeScores?.find { 
+                it.holeNumber == currentHoleNumber 
+            }?.isBallPickedUp ?: false
+
             // Calculate current points for display
             val mainGolferCurrentPoints = if (mainGolferStrokes > 0 && currentHole != null) {
                 playRoundViewModel.calculateCurrentPoints(
@@ -333,6 +350,8 @@ private fun Screen4Portrait(
                 onStrokeButtonClick = { playRoundViewModel.onPartnerStrokeButtonClick() },
                 onPlusButtonClick = { playRoundViewModel.onPartnerPlusButtonClick() },
                 onMinusButtonClick = { playRoundViewModel.onPartnerMinusButtonClick() },
+                isBallPickedUp = partnerPickedUp,
+                onPickupButtonClick = { playRoundViewModel.onPartnerPickupButtonClick() },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up half the available space
@@ -364,6 +383,8 @@ private fun Screen4Portrait(
                 onStrokeButtonClick = { playRoundViewModel.onMainGolferStrokeButtonClick() },
                 onPlusButtonClick = { playRoundViewModel.onMainGolferPlusButtonClick() },
                 onMinusButtonClick = { playRoundViewModel.onMainGolferMinusButtonClick() },
+                isBallPickedUp = mainGolferPickedUp,
+                onPickupButtonClick = { playRoundViewModel.onMainGolferPickupButtonClick() },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up the other half

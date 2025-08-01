@@ -24,4 +24,6 @@ interface SogoMongoRepository {
         roundId: String,
         round: Round
     ): NetworkResult<Unit>
+    
+    suspend fun updateRound(roundId: String, round: Round): NetworkResult<Unit>
 }

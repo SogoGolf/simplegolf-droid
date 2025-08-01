@@ -3,6 +3,8 @@ package com.sogo.golf.msl.features.play.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import com.sogo.golf.msl.app.lifecycle.AppLifecycleManager
 import com.sogo.golf.msl.app.lifecycle.AppResumeAction
 import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
@@ -13,6 +15,7 @@ import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
+import com.sogo.golf.msl.domain.usecase.round.UpdatePickupUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
@@ -63,6 +66,7 @@ class PlayRoundViewModel @Inject constructor(
     private val appLifecycleManager: AppLifecycleManager,
     private val gameDataTimestampPreferences: GameDataTimestampPreferences,
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
+    private val updatePickupUseCase: UpdatePickupUseCase,
 ) : ViewModel() {
 
     private val _deleteMarkerEnabled = MutableStateFlow(false)
@@ -950,6 +954,68 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.e("PlayRoundVM", "❌ Unexpected error during round abandonment", e)
                 _isAbandoningRound.value = false
                 _abandonError.value = "Unexpected error: ${e.message ?: "Unknown error"}"
+            }
+        }
+    }
+
+    private var pickupSyncJob: Job? = null
+    
+    fun onMainGolferPickupButtonClick() {
+        android.util.Log.d("PlayRoundVM", "=== Main golfer pickup button clicked ===")
+        handlePickupButtonClick(isMainGolfer = true)
+    }
+    
+    fun onPartnerPickupButtonClick() {
+        android.util.Log.d("PlayRoundVM", "=== Partner pickup button clicked ===")
+        handlePickupButtonClick(isMainGolfer = false)
+    }
+    
+    private fun handlePickupButtonClick(isMainGolfer: Boolean) {
+        viewModelScope.launch {
+            try {
+                val round = currentRound.value ?: return@launch
+                val competition = localCompetition.value ?: return@launch
+                val game = localGame.value ?: return@launch
+                val currentHole = _currentHoleNumber.value
+                
+                val holeData = competition.players.firstOrNull()?.holes?.find { 
+                    it.holeNumber == currentHole 
+                } ?: return@launch
+                
+                val dailyHandicap = if (isMainGolfer) {
+                    game.dailyHandicap?.toDouble() ?: 0.0
+                } else {
+                    game.playingPartners.find { partner ->
+                        partner.markedByGolfLinkNumber == currentGolfer.value?.golfLinkNo
+                    }?.dailyHandicap?.toDouble() ?: 0.0
+                }
+                
+                android.util.Log.d("PlayRoundVM", "Pickup - Hole: $currentHole, Par: ${holeData.par}, Daily handicap: $dailyHandicap")
+                
+                updatePickupUseCase(
+                    round = round,
+                    holeNumber = currentHole,
+                    isMainGolfer = isMainGolfer,
+                    dailyHandicap = dailyHandicap,
+                    par = holeData.par,
+                    index1 = holeData.strokeIndexes.getOrNull(0) ?: 0,
+                    index2 = holeData.strokeIndexes.getOrNull(1) ?: 0,
+                    index3 = holeData.strokeIndexes.getOrNull(2)
+                )
+                
+                loadCurrentRound()
+                
+                pickupSyncJob?.cancel()
+                pickupSyncJob = viewModelScope.launch {
+                    delay(2000)
+                    val updatedRound = currentRound.value
+                    if (updatedRound != null) {
+                        updatePickupUseCase.syncToRemote(updatedRound)
+                    }
+                }
+                
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "Error handling pickup button click", e)
             }
         }
     }
