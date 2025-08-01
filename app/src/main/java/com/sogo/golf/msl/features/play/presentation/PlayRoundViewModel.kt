@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -164,14 +165,37 @@ class PlayRoundViewModel @Inject constructor(
             }
         }
         
-        // Initialize hole number based on game data
+        // Initialize hole number based on game data - ensure competition data is available
         viewModelScope.launch {
-            localGame.collect { game ->
-                if (game != null && _currentHoleNumber.value == 1) {
-                    // Set starting hole number from game data
+            combine(localGame, localCompetition) { game, competition ->
+                Pair(game, competition)
+            }.collect { (game, competition) ->
+                if (game != null && competition != null) {
+                    // Set starting hole number from game data only when both are available
                     val startingHole = game.startingHoleNumber
-                    _currentHoleNumber.value = startingHole
-                    android.util.Log.d("PlayRoundVM", "Set starting hole number to: $startingHole")
+                    if (_currentHoleNumber.value != startingHole) {
+                        _currentHoleNumber.value = startingHole
+                        android.util.Log.d("PlayRoundVM", "🏌️ Set starting hole number to: $startingHole (competition data available)")
+                    }
+                } else {
+                    android.util.Log.d("PlayRoundVM", "🏌️ Waiting for data - game: ${game != null}, competition: ${competition != null}")
+                }
+            }
+        }
+        
+        // Debug competition data loading
+        viewModelScope.launch {
+            localCompetition.collect { competition ->
+                android.util.Log.d("PlayRoundVM", "🏌️ Competition data updated: ${competition != null}")
+                if (competition != null) {
+                    val holes = competition.players.firstOrNull()?.holes
+                    android.util.Log.d("PlayRoundVM", "  - Competition has ${holes?.size ?: 0} holes")
+                    holes?.forEach { hole ->
+                        android.util.Log.d("PlayRoundVM", "    - Hole ${hole.holeNumber}: par=${hole.par}, distance=${hole.distance}")
+                    }
+                    android.util.Log.d("PlayRoundVM", "  - Current hole number: ${_currentHoleNumber.value}")
+                } else {
+                    android.util.Log.w("PlayRoundVM", "  - Competition data is null, current hole: ${_currentHoleNumber.value}")
                 }
             }
         }
@@ -574,13 +598,9 @@ class PlayRoundViewModel @Inject constructor(
         val numberOfHoles = game.numberOfHoles ?: 18
         
         return when {
-            // 18-hole round starting from hole 1
             startingHole == 1 && numberOfHoles == 18 -> 18
-            // 9-hole round starting from hole 1 (front nine)
             startingHole == 1 && numberOfHoles == 9 -> 9
-            // 9-hole round starting from hole 10 (back nine)
             startingHole == 10 && numberOfHoles == 9 -> 18
-            // Default fallback
             else -> startingHole + numberOfHoles - 1
         }
     }
@@ -836,19 +856,15 @@ class PlayRoundViewModel @Inject constructor(
             try {
                 val savedCurrentHole = holeStatePreferences.getCurrentHole(round.id)
                 
-                val targetHole = savedCurrentHole ?: findStartingHole(round)
-                
                 if (savedCurrentHole != null) {
                     android.util.Log.d("PlayRoundVM", "🔄 App restart: Found saved current hole $savedCurrentHole")
+                    _currentHoleNumber.value = savedCurrentHole
+                    android.util.Log.d("PlayRoundVM", "✅ App restart: Restored saved hole $savedCurrentHole")
                 } else {
-                    android.util.Log.d("PlayRoundVM", "🔄 App restart: No saved hole state, using starting hole $targetHole")
+                    android.util.Log.d("PlayRoundVM", "🔄 App restart: No saved hole state, keeping current hole ${_currentHoleNumber.value}")
                 }
                 
-                if (targetHole != _currentHoleNumber.value) {
-                    _currentHoleNumber.value = targetHole
-                    android.util.Log.d("PlayRoundVM", "✅ App restart: Navigated to hole $targetHole")
-                    updateBackButtonVisibility(round)
-                }
+                updateBackButtonVisibility(round)
                 
             } catch (e: Exception) {
                 android.util.Log.e("PlayRoundVM", "Error restoring current hole on app start", e)
@@ -858,7 +874,9 @@ class PlayRoundViewModel @Inject constructor(
 
     private fun findStartingHole(round: com.sogo.golf.msl.domain.model.Round): Int {
         val game = localGame.value
-        return game?.startingHoleNumber ?: 1
+        val startingHole = game?.startingHoleNumber ?: 1
+        android.util.Log.d("PlayRoundVM", "🔍 findStartingHole: game=${game != null}, startingHole=$startingHole")
+        return startingHole
     }
 
     fun clearCurrentHoleForRound() {

@@ -277,9 +277,23 @@ private fun Screen4Portrait(
             val competitionType = localCompetitionValue?.players?.firstOrNull()?.scoreType ?: "Stableford"
             
             // Extract hole data for current hole
+            android.util.Log.d("PlayRoundScreen", "🔍 Looking for hole data: currentHoleNumber=$currentHoleNumber")
+            android.util.Log.d("PlayRoundScreen", "🔍 Competition data: ${localCompetitionValue != null}")
+            localCompetitionValue?.players?.firstOrNull()?.holes?.forEach { hole ->
+                android.util.Log.d("PlayRoundScreen", "  - Available hole: ${hole.holeNumber} (alias: ${hole.holeAlias})")
+            }
+            
             val currentHole = localCompetitionValue?.players?.firstOrNull()?.holes?.find { 
                 it.holeNumber == currentHoleNumber 
             }
+            
+            android.util.Log.d("PlayRoundScreen", "🔍 Found hole data: ${currentHole != null}")
+            if (currentHole != null) {
+                android.util.Log.d("PlayRoundScreen", "  - Hole ${currentHole.holeNumber}: par=${currentHole.par}, distance=${currentHole.distance}")
+            } else {
+                android.util.Log.w("PlayRoundScreen", "⚠️ Using fallback values for hole $currentHoleNumber")
+            }
+            
             val par = currentHole?.par ?: 5
             val distance = currentHole?.distance ?: 441
             val strokeIndexes = currentHole?.strokeIndexes?.joinToString("/") ?: "1/22/40"
