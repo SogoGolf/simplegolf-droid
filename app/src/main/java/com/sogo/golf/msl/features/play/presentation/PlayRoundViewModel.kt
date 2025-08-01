@@ -90,6 +90,10 @@ class PlayRoundViewModel @Inject constructor(
     private val _showBackButton = MutableStateFlow(true)
     val showBackButton: StateFlow<Boolean> = _showBackButton.asStateFlow()
 
+    // GoToHole dialog state
+    private val _showGoToHoleDialog = MutableStateFlow(false)
+    val showGoToHoleDialog: StateFlow<Boolean> = _showGoToHoleDialog.asStateFlow()
+
     // Get the local game data
     val localGame = getLocalGameUseCase()
         .stateIn(
@@ -1018,5 +1022,13 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.e("PlayRoundVM", "Error handling pickup button click", e)
             }
         }
+    }
+
+    fun hideGoToHoleDialog() {
+        _showGoToHoleDialog.value = false
+    }
+
+    fun showGoToHoleDialog() {
+        _showGoToHoleDialog.value = true
     }
 }

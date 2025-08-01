@@ -2,6 +2,7 @@ package com.sogo.golf.msl.features.play.presentation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -77,6 +78,7 @@ private fun Screen4Portrait(
     val currentRound by playRoundViewModel.currentRound.collectAsState()
     val currentHoleNumber by playRoundViewModel.currentHoleNumber.collectAsState()
     val showBackButton by playRoundViewModel.showBackButton.collectAsState()
+    val showDialog by playRoundViewModel.showGoToHoleDialog.collectAsState()
     val isAbandoningRound by playRoundViewModel.isAbandoningRound.collectAsState()
     val abandonError by playRoundViewModel.abandonError.collectAsState()
 
@@ -169,11 +171,16 @@ private fun Screen4Portrait(
                         Text(
                             "HOLE",
                             fontSize = MaterialTheme.typography.headlineLarge.fontSize,
-                            modifier = Modifier
+                            modifier = Modifier.clickable {
+                                playRoundViewModel.showGoToHoleDialog()
+                            }
                         )
                         Text(
                             " $currentHoleNumber",
-                            fontSize = MaterialTheme.typography.headlineLarge.fontSize
+                            fontSize = MaterialTheme.typography.headlineLarge.fontSize,
+                            modifier = Modifier.clickable {
+                                playRoundViewModel.showGoToHoleDialog()
+                            }
                         )
                     }
 
@@ -609,6 +616,21 @@ private fun Screen4Portrait(
                     )
                     Text("Abandoning round...", color = Color.White)
                 }
+            }
+        }
+
+        currentRound?.let { round ->
+            if (showDialog && round.holeScores.isNotEmpty() && round.playingPartnerRound?.holeScores?.isNotEmpty() == true) {
+                GoToHoleAlertDialog(
+                    holeScores = round.holeScores,
+                    holeScoresPlayingPartner = round.playingPartnerRound.holeScores,
+                showDialog = showDialog,
+                onDismiss = { playRoundViewModel.hideGoToHoleDialog() },
+                onConfirm = { holeNumber ->
+                    playRoundViewModel.hideGoToHoleDialog()
+                    playRoundViewModel.navigateToHole(holeNumber)
+                }
+            )
             }
         }
     }
