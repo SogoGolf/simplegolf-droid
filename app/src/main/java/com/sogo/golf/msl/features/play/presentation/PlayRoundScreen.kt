@@ -256,7 +256,7 @@ private fun Screen4Portrait(
             
             val partnerDisplayName = playingPartner?.let { 
                 "${it.firstName ?: ""} ${it.lastName ?: ""}".trim() 
-            }?.takeIf { it.isNotBlank() } ?: "Playing Partner"
+            }?.takeIf { it.isNotBlank() } ?: "--"
             
             val partnerDailyHandicap = playingPartner?.dailyHandicap ?: 0
             
