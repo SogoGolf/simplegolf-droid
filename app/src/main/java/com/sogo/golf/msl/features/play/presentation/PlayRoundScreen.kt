@@ -313,7 +313,7 @@ private fun Screen4Portrait(
                 par = par,
                 distance = distance,
                 strokeIndex = strokeIndexes,
-                totalScore = 0, // TODO: Get from round data
+                totalScore = currentRoundValue?.playingPartnerRound?.holeScores?.sumOf { it.score.toInt() } ?: 0,
                 onSwipeNext = { playRoundViewModel.navigateToNextHole() },
                 onSwipePrevious = { 
                     if (showBackButton) {
@@ -344,7 +344,7 @@ private fun Screen4Portrait(
                 par = par,
                 distance = distance,
                 strokeIndex = strokeIndexes,
-                totalScore = 0, // TODO: Get from round data
+                totalScore = currentRoundValue?.holeScores?.sumOf { it.score.toInt() } ?: 0,
                 onSwipeNext = { playRoundViewModel.navigateToNextHole() },
                 onSwipePrevious = { 
                     if (showBackButton) {
