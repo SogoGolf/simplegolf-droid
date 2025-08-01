@@ -588,9 +588,9 @@ class PlayRoundViewModel @Inject constructor(
     }
 
     fun onMainGolferMinusButtonClick() {
-        updateMainGolferStrokes { currentStrokes, _ ->
+        updateMainGolferStrokes { currentStrokes, par ->
             if (currentStrokes == 0) {
-                0 // No action when strokes is 0
+                par - 1 // Set to par - 1 when strokes is 0
             } else {
                 currentStrokes - 1 // Decrement by 1
             }
@@ -620,9 +620,9 @@ class PlayRoundViewModel @Inject constructor(
     }
 
     fun onPartnerMinusButtonClick() {
-        updatePartnerStrokes { currentStrokes, _ ->
+        updatePartnerStrokes { currentStrokes, par ->
             if (currentStrokes == 0) {
-                0 // No action when strokes is 0
+                par - 1 // Set to par - 1 when strokes is 0
             } else {
                 currentStrokes - 1 // Decrement by 1
             }
