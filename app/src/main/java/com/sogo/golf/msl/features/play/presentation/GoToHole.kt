@@ -52,7 +52,7 @@ fun GoToHole(
 
     Box(
         modifier = Modifier
-            .size(60.dp)
+            .size(70.dp)
             .clip(CircleShape)
             .border(1.dp, Color.Gray, CircleShape)
             .clickable { onHoleClick(holeNumber) },
