@@ -130,10 +130,10 @@ private fun Screen4Portrait(
                                     // Check if we're on the starting hole
                                     val startingHoleNumber = localGame?.startingHoleNumber ?: 1
                                     if (currentHoleNumber == startingHoleNumber) {
-                                        // On first hole - show confirmation dialog
+                                        // On starting hole - show confirmation dialog
                                         showBackConfirmDialog = true
                                     } else {
-                                        // Not on first hole - navigate normally
+                                        // Not on starting hole - navigate normally
                                         playRoundViewModel.navigateToPreviousHole()
                                     }
                                 },

@@ -214,9 +214,21 @@ class PlayRoundViewModel @Inject constructor(
             return true
         }
 
-        // Get the starting hole number from game data
+        // Get the starting hole number and current hole number from game data
         val game = localGame.value
         val startingHoleNumber = game?.startingHoleNumber ?: 1
+        val currentHole = _currentHoleNumber.value
+        
+        android.util.Log.d("PlayRoundVM", "Current hole: $currentHole, Starting hole: $startingHoleNumber")
+        
+        // If we're not on the starting hole, allow back navigation
+        if (currentHole != startingHoleNumber) {
+            android.util.Log.d("PlayRoundVM", "Not on starting hole - allowing back navigation")
+            return true
+        }
+        
+        // If we're on the starting hole, check strokes as before
+        android.util.Log.d("PlayRoundVM", "On starting hole - checking strokes")
         
         // Check main golfer's starting hole strokes
         val mainGolferStartingHoleStrokes = round.holeScores.find { it.holeNumber == startingHoleNumber }?.strokes ?: 0
