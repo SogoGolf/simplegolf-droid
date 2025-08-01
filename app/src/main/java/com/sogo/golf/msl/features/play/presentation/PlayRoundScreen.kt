@@ -82,8 +82,15 @@ private fun Screen4Portrait(
 
     BackHandler(enabled = true) {
         if (showBackButton) {
-            // Show confirmation dialog before navigating back
-            showBackConfirmDialog = true
+            // Check if we're on the starting hole (same logic as header back button)
+            val startingHoleNumber = localGame?.startingHoleNumber ?: 1
+            if (currentHoleNumber == startingHoleNumber) {
+                // On starting hole - show confirmation dialog
+                showBackConfirmDialog = true
+            } else {
+                // Not on starting hole - navigate normally
+                playRoundViewModel.navigateToPreviousHole()
+            }
         }
         // If showBackButton is false, do nothing (completely block back navigation)
     }
