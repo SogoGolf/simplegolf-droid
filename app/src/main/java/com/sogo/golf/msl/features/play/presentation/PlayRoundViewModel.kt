@@ -164,18 +164,14 @@ class PlayRoundViewModel @Inject constructor(
             }
         }
         
-        // Initialize hole number based on game data - this should happen after round restoration
+        // Initialize hole number based on game data
         viewModelScope.launch {
             localGame.collect { game ->
                 if (game != null) {
-                    // Only set starting hole if no round has been restored yet
-                    val currentRound = _currentRound.value
-                    if (currentRound == null) {
-                        val startingHole = game.startingHoleNumber
-                        if (_currentHoleNumber.value != startingHole) {
-                            _currentHoleNumber.value = startingHole
-                            android.util.Log.d("PlayRoundVM", "🏌️ Set starting hole number to: $startingHole (no round restored)")
-                        }
+                    val startingHole = game.startingHoleNumber
+                    if (_currentHoleNumber.value != startingHole) {
+                        _currentHoleNumber.value = startingHole
+                        android.util.Log.d("PlayRoundVM", "🏌️ Set starting hole number to: $startingHole from game data")
                     }
                 }
             }
