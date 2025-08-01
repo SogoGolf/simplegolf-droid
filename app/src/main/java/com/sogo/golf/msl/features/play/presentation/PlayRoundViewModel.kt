@@ -3,8 +3,6 @@ package com.sogo.golf.msl.features.play.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import com.sogo.golf.msl.app.lifecycle.AppLifecycleManager
 import com.sogo.golf.msl.app.lifecycle.AppResumeAction
 import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
@@ -958,7 +956,6 @@ class PlayRoundViewModel @Inject constructor(
         }
     }
 
-    private var pickupSyncJob: Job? = null
     
     fun onMainGolferPickupButtonClick() {
         android.util.Log.d("PlayRoundVM", "=== Main golfer pickup button clicked ===")
@@ -990,7 +987,14 @@ class PlayRoundViewModel @Inject constructor(
                     }?.dailyHandicap?.toDouble() ?: 0.0
                 }
                 
+                val currentPickupState = if (isMainGolfer) {
+                    round.holeScores.find { it.holeNumber == currentHole }?.isBallPickedUp ?: false
+                } else {
+                    round.playingPartnerRound?.holeScores?.find { it.holeNumber == currentHole }?.isBallPickedUp ?: false
+                }
+                
                 android.util.Log.d("PlayRoundVM", "Pickup - Hole: $currentHole, Par: ${holeData.par}, Daily handicap: $dailyHandicap")
+                android.util.Log.d("PlayRoundVM", "Current pickup state from Room: $currentPickupState (${if (isMainGolfer) "Main Golfer" else "Partner"})")
                 
                 updatePickupUseCase(
                     round = round,
@@ -1005,13 +1009,9 @@ class PlayRoundViewModel @Inject constructor(
                 
                 loadCurrentRound()
                 
-                pickupSyncJob?.cancel()
-                pickupSyncJob = viewModelScope.launch {
-                    delay(2000)
-                    val updatedRound = currentRound.value
-                    if (updatedRound != null) {
-                        updatePickupUseCase.syncToRemote(updatedRound)
-                    }
+                val updatedRound = currentRound.value
+                if (updatedRound != null) {
+                    updatePickupUseCase.syncToRemote(updatedRound)
                 }
                 
             } catch (e: Exception) {

@@ -295,14 +295,6 @@ private fun Screen4Portrait(
                 it.holeNumber == currentHoleNumber 
             }?.isBallPickedUp ?: false
 
-            val mainGolferPickedUp = currentRoundValue?.holeScores?.find { 
-                it.holeNumber == currentHoleNumber 
-            }?.isBallPickedUp ?: false
-            
-            val partnerPickedUp = currentRoundValue?.playingPartnerRound?.holeScores?.find { 
-                it.holeNumber == currentHoleNumber 
-            }?.isBallPickedUp ?: false
-
             // Calculate current points for display
             val mainGolferCurrentPoints = if (mainGolferStrokes > 0 && currentHole != null) {
                 playRoundViewModel.calculateCurrentPoints(

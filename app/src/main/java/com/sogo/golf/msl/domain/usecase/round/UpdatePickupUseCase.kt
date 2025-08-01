@@ -46,11 +46,13 @@ class UpdatePickupUseCase @Inject constructor(
     
     suspend fun syncToRemote(round: Round) {
         try {
-            Log.d("UpdatePickup", "Syncing pickup state to remote API")
+            Log.d("UpdatePickup", "Syncing pickup state to remote API for round: ${round.id}")
+            Log.d("UpdatePickup", "Hole scores count: ${round.holeScores.size}")
+            Log.d("UpdatePickup", "Partner hole scores count: ${round.playingPartnerRound?.holeScores?.size ?: 0}")
             sogoMongoRepository.updateRound(round.id, round)
-            Log.d("UpdatePickup", "✅ Pickup state synced to remote")
+            Log.d("UpdatePickup", "✅ Pickup state synced to remote successfully")
         } catch (e: Exception) {
-            Log.w("UpdatePickup", "⚠️ Failed to sync pickup state to remote (silent failure)", e)
+            Log.e("UpdatePickup", "❌ Failed to sync pickup state to remote: ${e.message}", e)
         }
     }
     
@@ -65,9 +67,11 @@ class UpdatePickupUseCase @Inject constructor(
         return if (isMainGolfer) {
             val updatedHoleScores = round.holeScores.toMutableList()
             if (holeIndex < updatedHoleScores.size) {
-                updatedHoleScores[holeIndex] = updatedHoleScores[holeIndex].copy(
-                    isBallPickedUp = true,
-                    strokes = newStrokes
+                val currentHoleScore = updatedHoleScores[holeIndex]
+                val newPickupState = !(currentHoleScore.isBallPickedUp ?: false)
+                updatedHoleScores[holeIndex] = currentHoleScore.copy(
+                    isBallPickedUp = newPickupState,
+                    strokes = if (newPickupState) newStrokes else currentHoleScore.strokes
                 )
             }
             round.copy(holeScores = updatedHoleScores)
@@ -76,9 +80,11 @@ class UpdatePickupUseCase @Inject constructor(
             if (partnerRound != null) {
                 val updatedPartnerHoleScores = partnerRound.holeScores.toMutableList()
                 if (holeIndex < updatedPartnerHoleScores.size) {
-                    updatedPartnerHoleScores[holeIndex] = updatedPartnerHoleScores[holeIndex].copy(
-                        isBallPickedUp = true,
-                        strokes = newStrokes
+                    val currentHoleScore = updatedPartnerHoleScores[holeIndex]
+                    val newPickupState = !(currentHoleScore.isBallPickedUp ?: false)
+                    updatedPartnerHoleScores[holeIndex] = currentHoleScore.copy(
+                        isBallPickedUp = newPickupState,
+                        strokes = if (newPickupState) newStrokes else currentHoleScore.strokes
                     )
                 }
                 round.copy(
