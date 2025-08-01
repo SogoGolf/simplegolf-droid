@@ -676,7 +676,9 @@ class PlayRoundViewModel @Inject constructor(
                     
                     val dailyHandicap = game.dailyHandicap?.toDouble() ?: 0.0
                     
-                    // Reset pickup state to false
+                    android.util.Log.d("PlayRoundVM", "About to reset pickup state - awaiting updatePickupUseCase")
+                    
+                    // Reset pickup state to false - await the async operation
                     updatePickupUseCase(
                         round = round,
                         holeNumber = currentHole,
@@ -688,8 +690,12 @@ class PlayRoundViewModel @Inject constructor(
                         index3 = holeData.strokeIndexes.getOrNull(2)
                     )
                     
-                    // Reload round to get updated state
+                    android.util.Log.d("PlayRoundVM", "Pickup state reset completed - reloading round data")
+                    
+                    // Reload round to get updated state - only after pickup update completes
                     loadCurrentRound()
+                    
+                    android.util.Log.d("PlayRoundVM", "Round data reloaded - syncing to remote")
                     
                     // Sync pickup reset to remote
                     val updatedRound = currentRound.value
@@ -751,7 +757,9 @@ class PlayRoundViewModel @Inject constructor(
                         partner.markedByGolfLinkNumber == currentGolfer.value?.golfLinkNo
                     }?.dailyHandicap?.toDouble() ?: 0.0
                     
-                    // Reset pickup state to false
+                    android.util.Log.d("PlayRoundVM", "About to reset partner pickup state - awaiting updatePickupUseCase")
+                    
+                    // Reset pickup state to false - await the async operation
                     updatePickupUseCase(
                         round = round,
                         holeNumber = currentHole,
@@ -763,8 +771,12 @@ class PlayRoundViewModel @Inject constructor(
                         index3 = holeData.strokeIndexes.getOrNull(2)
                     )
                     
-                    // Reload round to get updated state
+                    android.util.Log.d("PlayRoundVM", "Partner pickup state reset completed - reloading round data")
+                    
+                    // Reload round to get updated state - only after pickup update completes
                     loadCurrentRound()
+                    
+                    android.util.Log.d("PlayRoundVM", "Partner round data reloaded - syncing to remote")
                     
                     // Sync pickup reset to remote
                     val updatedRound = currentRound.value
