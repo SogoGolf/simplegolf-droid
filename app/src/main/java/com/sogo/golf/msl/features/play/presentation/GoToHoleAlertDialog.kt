@@ -74,19 +74,6 @@ fun GoToHoleAlertDialog(
                             )
                         }
                     }
-
-                    Button(
-                        onClick = onDismiss,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Gray
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = "Cancel",
-                            color = Color.White
-                        )
-                    }
                 }
             }
         }

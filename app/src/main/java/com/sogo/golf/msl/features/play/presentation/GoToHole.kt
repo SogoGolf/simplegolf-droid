@@ -51,7 +51,7 @@ fun GoToHole(
 
     Box(
         modifier = Modifier
-            .size(60.dp)
+            .size(70.dp)
             .clip(CircleShape)
             .clickable { onHoleClick(holeNumber) },
         contentAlignment = Alignment.Center
