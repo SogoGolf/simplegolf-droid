@@ -499,6 +499,7 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole")
                 saveCurrentHoleState(newHole)
                 triggerHoleNavigationUpdate()
+                updateBackButtonVisibility(currentRound.value)
             } else {
                 android.util.Log.d("PlayRoundVM", "Already at last hole: $maxHole")
             }
@@ -522,6 +523,7 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole")
                 saveCurrentHoleState(newHole)
                 triggerHoleNavigationUpdate()
+                updateBackButtonVisibility(currentRound.value)
             } else {
                 android.util.Log.d("PlayRoundVM", "Already at first hole: $minHole")
             }
@@ -539,6 +541,7 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $holeNumber")
                 saveCurrentHoleState(holeNumber)
                 triggerHoleNavigationUpdate()
+                updateBackButtonVisibility(currentRound.value)
             } else {
                 android.util.Log.w("PlayRoundVM", "Invalid hole number: $holeNumber (valid range: $minHole-$maxHole)")
             }
@@ -782,6 +785,7 @@ class PlayRoundViewModel @Inject constructor(
                 if (targetHole != _currentHoleNumber.value) {
                     _currentHoleNumber.value = targetHole
                     android.util.Log.d("PlayRoundVM", "✅ App restart: Navigated to hole $targetHole")
+                    updateBackButtonVisibility(round)
                 }
                 
             } catch (e: Exception) {
