@@ -77,8 +77,11 @@ private fun Screen4Portrait(
     val currentRound by playRoundViewModel.currentRound.collectAsState()
     val currentHoleNumber by playRoundViewModel.currentHoleNumber.collectAsState()
     val showBackButton by playRoundViewModel.showBackButton.collectAsState()
+    val isAbandoningRound by playRoundViewModel.isAbandoningRound.collectAsState()
+    val abandonError by playRoundViewModel.abandonError.collectAsState()
 
     var showBackConfirmDialog by remember { mutableStateOf(false) }
+    var showAbandonDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = true) {
         if (showBackButton) {
@@ -181,7 +184,7 @@ private fun Screen4Portrait(
                     ) {
 
                         IconButton(
-                            onClick = {},
+                            onClick = { showAbandonDialog = true },
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
@@ -518,6 +521,48 @@ private fun Screen4Portrait(
             )
         }
 
+        // Abandon round confirmation dialog
+        if (showAbandonDialog) {
+            AlertDialog(
+                onDismissRequest = { showAbandonDialog = false },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showAbandonDialog = false
+                            playRoundViewModel.abandonRound(navController)
+                        }
+                    ) {
+                        Text("Yes")
+                    }
+                },
+                dismissButton = {
+                    Button(
+                        onClick = { showAbandonDialog = false }
+                    ) {
+                        Text("No")
+                    }
+                },
+                title = { Text("Abandon Round") },
+                text = {
+                    Text("Do you want to abandon your round? This will delete all your progress and you'll need to start over.")
+                }
+            )
+        }
+
+        // Abandon error dialog
+        abandonError?.let { error ->
+            AlertDialog(
+                onDismissRequest = { playRoundViewModel.clearAbandonError() },
+                confirmButton = {
+                    Button(onClick = { playRoundViewModel.clearAbandonError() }) {
+                        Text("OK")
+                    }
+                },
+                title = { Text("Abandon Round Error") },
+                text = { Text(error) }
+            )
+        }
+
         // Keep loading states
         if (isRemovingMarker) {
             Box(
@@ -532,6 +577,24 @@ private fun Screen4Portrait(
                         modifier = Modifier.size(48.dp)
                     )
                     Text("Removing marker...", color = Color.White)
+                }
+            }
+        }
+
+        // Abandon loading state
+        if (isAbandoningRound) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Text("Abandoning round...", color = Color.White)
                 }
             }
         }

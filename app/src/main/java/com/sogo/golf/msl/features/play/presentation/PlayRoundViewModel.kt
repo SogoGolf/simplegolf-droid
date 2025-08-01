@@ -12,6 +12,7 @@ import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
@@ -61,6 +62,7 @@ class PlayRoundViewModel @Inject constructor(
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val appLifecycleManager: AppLifecycleManager,
     private val gameDataTimestampPreferences: GameDataTimestampPreferences,
+    private val resetStaleDataUseCase: ResetStaleDataUseCase,
 ) : ViewModel() {
 
     private val _deleteMarkerEnabled = MutableStateFlow(false)
@@ -71,6 +73,12 @@ class PlayRoundViewModel @Inject constructor(
 
     private val _markerError = MutableStateFlow<String?>(null)
     val markerError: StateFlow<String?> = _markerError.asStateFlow()
+
+    private val _isAbandoningRound = MutableStateFlow(false)
+    val isAbandoningRound: StateFlow<Boolean> = _isAbandoningRound.asStateFlow()
+
+    private val _abandonError = MutableStateFlow<String?>(null)
+    val abandonError: StateFlow<String?> = _abandonError.asStateFlow()
 
     // 🔧 NEW: Debug message state
     private val _debugMessage = MutableStateFlow("")
@@ -858,6 +866,67 @@ class PlayRoundViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.e("PlayRoundVM", "Error calculating current points", e)
             0
+        }
+    }
+
+    fun clearAbandonError() {
+        _abandonError.value = null
+    }
+
+    fun abandonRound(navController: NavController) {
+        android.util.Log.d("PlayRoundVM", "=== abandonRound called ===")
+
+        viewModelScope.launch {
+            android.util.Log.d("PlayRoundVM", "Starting round abandonment process")
+            _isAbandoningRound.value = true
+            _abandonError.value = null
+
+            try {
+                // First, delete the current round if it exists
+                val currentRound = _currentRound.value
+                if (currentRound != null) {
+                    android.util.Log.d("PlayRoundVM", "Deleting current round: ${currentRound.id}")
+                    when (val deleteResult = deleteLocalAndRemoteRoundUseCase(currentRound.id)) {
+                        is NetworkResult.Success -> {
+                            android.util.Log.d("PlayRoundVM", "✅ Round deleted successfully")
+                        }
+                        is NetworkResult.Error -> {
+                            android.util.Log.e("PlayRoundVM", "❌ Failed to delete round: ${deleteResult.error.toUserMessage()}")
+                            _isAbandoningRound.value = false
+                            _abandonError.value = "Failed to delete round: ${deleteResult.error.toUserMessage()}"
+                            return@launch
+                        }
+                        is NetworkResult.Loading -> {
+                            // This shouldn't happen in this context, but handle it gracefully
+                            android.util.Log.w("PlayRoundVM", "Unexpected loading state during round deletion")
+                        }
+                    }
+                }
+
+                // Then reset all stale data for comprehensive state clearing
+                android.util.Log.d("PlayRoundVM", "Resetting stale data...")
+                when (val resetResult = resetStaleDataUseCase()) {
+                    is Result -> {
+                        if (resetResult.isSuccess) {
+                            android.util.Log.d("PlayRoundVM", "✅ Round abandoned successfully")
+                            _isAbandoningRound.value = false
+
+                            android.util.Log.d("PlayRoundVM", "Navigating to home screen")
+                            navController.navigate("homescreen") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        } else {
+                            android.util.Log.e("PlayRoundVM", "❌ Failed to reset stale data: ${resetResult.exceptionOrNull()}")
+                            _isAbandoningRound.value = false
+                            _abandonError.value = "Failed to reset data: ${resetResult.exceptionOrNull()?.message ?: "Unknown error"}"
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "❌ Unexpected error during round abandonment", e)
+                _isAbandoningRound.value = false
+                _abandonError.value = "Unexpected error: ${e.message ?: "Unknown error"}"
+            }
         }
     }
 }
