@@ -4,6 +4,7 @@ package com.sogo.golf.msl.data.network.api
 import com.sogo.golf.msl.data.network.dto.mongodb.FeeDto
 import com.sogo.golf.msl.data.network.dto.mongodb.RoundDto
 import com.sogo.golf.msl.data.network.dto.mongodb.HoleScoreDto
+import com.sogo.golf.msl.data.network.dto.mongodb.PlayingPartnerRoundDto
 import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
 import retrofit2.Response
 import retrofit2.http.Body
@@ -72,5 +73,6 @@ data class HoleScoreData(
 )
 
 data class RoundUpdatePayload(
-    val holeScores: List<HoleScoreDto>? = null
+    val holeScores: List<HoleScoreDto>? = null,
+    val playingPartnerRound: PlayingPartnerRoundDto? = null
 )

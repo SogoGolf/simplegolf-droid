@@ -181,9 +181,13 @@ class SogoMongoRepositoryImpl @Inject constructor(
     override suspend fun updateRound(roundId: String, round: Round): NetworkResult<Unit> {
         return safeNetworkCall {
             Log.d(TAG, "Updating round in SOGO Mongo API: $roundId")
+            Log.d(TAG, "Main golfer hole scores: ${round.holeScores.size}")
+            Log.d(TAG, "Partner round data: ${if (round.playingPartnerRound != null) "included" else "null"}")
+            Log.d(TAG, "Partner hole scores: ${round.playingPartnerRound?.holeScores?.size ?: 0}")
             
             val holeScoresDto = round.holeScores.map { it.toDto() }
-            val payload = RoundUpdatePayload(holeScores = holeScoresDto)
+            val partnerRoundDto = round.playingPartnerRound?.toDto()
+            val payload = RoundUpdatePayload(holeScores = holeScoresDto, playingPartnerRound = partnerRoundDto)
             val response = sogoMongoApiService.updateRound(roundId, payload)
             
             if (response.isSuccessful) {
