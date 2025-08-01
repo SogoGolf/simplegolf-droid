@@ -121,6 +121,10 @@ class UpdateHoleScoreUseCase @Inject constructor(
         isMainGolfer: Boolean
     ): Float {
         return try {
+            if (strokes == 0) {
+                return 0f
+            }
+            
             val competition = getLocalCompetitionUseCase().first()
             val game = getLocalGameUseCase().first()
             
