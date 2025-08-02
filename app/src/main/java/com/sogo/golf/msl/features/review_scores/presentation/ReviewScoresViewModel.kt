@@ -2,6 +2,7 @@ package com.sogo.golf.msl.features.review_scores.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.sogo.golf.msl.common.Resource
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.msl.v2.HolePayload
@@ -10,7 +11,12 @@ import com.sogo.golf.msl.domain.model.msl.v2.ScoresPayload
 import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.round.GetRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.SubmitRoundUseCase
+import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
+import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,14 +26,16 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class ReviewScoresViewModel @Inject constructor(
+@HiltViewModel(assistedFactory = ReviewScoresViewModel.Factory::class)
+class ReviewScoresViewModel @AssistedInject constructor(
     private val getRoundUseCase: GetRoundUseCase,
     private val roundRepository: RoundLocalDbRepository,
     private val submitRoundUseCase: SubmitRoundUseCase,
-    private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase
+    private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
+    private val resetStaleDataUseCase: ResetStaleDataUseCase,
+    private val holeStatePreferences: HoleStatePreferences,
+    @Assisted private val navController: NavController
 ) : ViewModel() {
 
     companion object {
@@ -167,6 +175,24 @@ class ReviewScoresViewModel @Inject constructor(
                             )
                             
                             android.util.Log.d(TAG, "Round submitted successfully: ${currentRound.id}")
+                            
+                            viewModelScope.launch {
+                                try {
+                                    android.util.Log.d(TAG, "Starting post-submission cleanup")
+                                    
+                                    holeStatePreferences.clearCurrentHole(currentRound.id)
+                                    
+                                    resetStaleDataUseCase()
+                                    
+                                    android.util.Log.d(TAG, "Navigating to home screen after successful submission")
+                                    navController.navigate("homescreen") {
+                                        popUpTo(0) { inclusive = true }
+                                        launchSingleTop = true
+                                    }
+                                } catch (e: Exception) {
+                                    android.util.Log.e(TAG, "Error during post-submission cleanup", e)
+                                }
+                            }
                         }
                         is Resource.Error -> {
                             _roundSubmitState.value = _roundSubmitState.value.copy(
@@ -289,6 +315,11 @@ class ReviewScoresViewModel @Inject constructor(
             successMessage = null
         )
         _roundSubmitState.value = RoundSubmitState()
+    }
+
+    @AssistedFactory
+    interface Factory {
+        fun create(navController: NavController): ReviewScoresViewModel
     }
 }
 
