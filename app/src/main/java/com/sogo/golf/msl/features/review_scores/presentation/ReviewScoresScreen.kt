@@ -52,6 +52,7 @@ private fun ReviewScoresPortrait(
     val viewModel: ReviewScoresViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsState()
     val playerSignatures by viewModel.playerSignatures.collectAsState()
+    val roundSubmitState by viewModel.roundSubmitState.collectAsState()
     
     var showSignatureDialog by remember { mutableStateOf(false) }
     var currentSignaturePlayerId by remember { mutableStateOf("") }
@@ -236,6 +237,29 @@ private fun ReviewScoresPortrait(
                                 )
                             }
                         }
+                    }
+                }
+            }
+            
+            // Loading overlay during MSL submission
+            if (roundSubmitState.isSending) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.7f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Submitting scores...",
+                            color = Color.White,
+                            fontSize = 16.sp
+                        )
                     }
                 }
             }
