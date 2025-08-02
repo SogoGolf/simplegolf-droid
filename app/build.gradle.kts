@@ -154,6 +154,9 @@ dependencies {
     //Images
     implementation(libs.coil.compose)
 
+    //Signatures
+    implementation(libs.signature.pad)
+
     //Firebase (excluding Analytics)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
