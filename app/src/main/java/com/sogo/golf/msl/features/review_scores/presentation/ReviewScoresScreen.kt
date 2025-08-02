@@ -258,7 +258,7 @@ private fun ReviewScoresPortrait(
         AlertDialog(
             onDismissRequest = { showSubmitDialog = false },
             title = { Text("Submit Scores") },
-            text = { Text("Are you sure you want to submit these scores? This action cannot be undone.") },
+            text = { Text("Are you sure you want to submit ${uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""}'s score?") },
             confirmButton = {
                 Button(
                     onClick = {
