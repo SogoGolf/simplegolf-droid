@@ -352,7 +352,7 @@ private fun Screen4PortraitDebug(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
-                    onClick = { navController.navigate("reviewscreen") },
+                    onClick = { navController.navigate("reviewscreen/sample-round-id") },
                     enabled = !isRemovingMarker
                 ) {
                     Text("Go to ReviewScores")

@@ -149,9 +149,10 @@ class MainActivity : ComponentActivity() {
                             SetUnspecifiedOrientation()
                             PlayRoundScreen(navController, viewModel)
                         }
-                        composable("reviewscreen") {
+                        composable("reviewscreen/{roundId}") { backStackEntry ->
                             SetUnspecifiedOrientation()
-                            ReviewScoresScreen(navController, viewModel)
+                            val roundId = backStackEntry.arguments?.getString("roundId") ?: ""
+                            ReviewScoresScreen(navController, viewModel, roundId)
                         }
                         composable("webauth") {
                             SetPortraitOrientation()

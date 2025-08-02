@@ -518,7 +518,8 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "On last hole: $maxHole - checking completion status")
                 if (areAllHolesCompleted()) {
                     android.util.Log.d("PlayRoundVM", "All holes completed - navigating to review screen")
-                    navController?.navigate("reviewscreen")
+                    val currentRoundId = currentRound.value?.id ?: ""
+                    navController?.navigate("reviewscreen/$currentRoundId")
                 } else {
                     android.util.Log.d("PlayRoundVM", "Not all holes completed - showing go to hole dialog")
                     showGoToHoleDialog()
