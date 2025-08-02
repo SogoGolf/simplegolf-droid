@@ -12,6 +12,7 @@ import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
+import com.sogo.golf.msl.data.local.preferences.RoundPreferences
 import com.revenuecat.purchases.models.StoreTransaction
 import android.util.Log
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,7 +41,8 @@ class CompetitionViewModel @Inject constructor(
     private val fetchAndSaveSogoGolferUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase,
     private val getMslClubAndTenantIdsUseCase: com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase,
     private val updateTokenBalanceUseCase: UpdateTokenBalanceUseCase,
-    private val createTransactionUseCase: CreateTransactionUseCase
+    private val createTransactionUseCase: CreateTransactionUseCase,
+    private val roundPreferences: RoundPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompetitionUiState())
@@ -284,6 +286,23 @@ class CompetitionViewModel @Inject constructor(
     private val _includeRound = MutableStateFlow(true)
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
 
+    init {
+        // Load SharedPreferences value immediately to avoid race condition
+        viewModelScope.launch {
+            val savedValue = roundPreferences.getIncludeRoundOnSogo()
+            android.util.Log.d("CompetitionVM", "🔄 Initializing _includeRound from SharedPreferences: $savedValue")
+            _includeRound.value = savedValue
+            android.util.Log.d("CompetitionVM", "✅ _includeRound initialized with value: ${_includeRound.value}")
+        }
+        
+        // Monitor _includeRound changes
+        viewModelScope.launch {
+            _includeRound.collect { value ->
+                android.util.Log.d("CompetitionVM", "🔄 _includeRound StateFlow changed to: $value")
+            }
+        }
+    }
+
     // ✅ NEW: Token cost calculation as StateFlow
     val tokenCost = combine(
         localGame,
@@ -301,7 +320,7 @@ class CompetitionViewModel @Inject constructor(
         }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = 0.0
     )
 
@@ -324,7 +343,12 @@ class CompetitionViewModel @Inject constructor(
 
     // ✅ NEW: Update include round state
     fun setIncludeRound(include: Boolean) {
+        android.util.Log.d("CompetitionVM", "🔄 Setting _includeRound to: $include")
         _includeRound.value = include
+        viewModelScope.launch {
+            roundPreferences.setIncludeRoundOnSogo(include)
+            android.util.Log.d("CompetitionVM", "✅ Saved includeRound to SharedPreferences: $include")
+        }
     }
 
     // ✅ NEW: Check if user has sufficient tokens

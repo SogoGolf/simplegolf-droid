@@ -27,6 +27,8 @@ interface SogoMongoRepository {
     
     suspend fun updateRound(roundId: String, round: Round): NetworkResult<Unit>
     
+    suspend fun updateRoundTransactionId(roundId: String, transactionId: String): NetworkResult<Unit>
+    
     suspend fun updateRoundSubmissionStatus(roundId: String, isSubmitted: Boolean): NetworkResult<Unit>
     suspend fun updateGolferTokenBalance(golflinkNo: String, newBalance: Int): NetworkResult<SogoGolfer>
     suspend fun createTransaction(

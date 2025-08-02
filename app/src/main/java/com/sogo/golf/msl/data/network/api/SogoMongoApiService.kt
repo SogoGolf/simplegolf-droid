@@ -107,7 +107,8 @@ data class HoleScoreData(
 data class RoundUpdatePayload(
     val holeScores: List<HoleScoreDto>? = null,
     val playingPartnerRound: PlayingPartnerRoundDto? = null,
-    val isSubmitted: Boolean? = null
+    val isSubmitted: Boolean? = null,
+    val transactionId: String? = null
 )
 
 data class RoundSubmissionUpdatePayload(

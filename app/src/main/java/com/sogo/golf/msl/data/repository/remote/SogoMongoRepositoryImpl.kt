@@ -208,6 +208,25 @@ class SogoMongoRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateRoundTransactionId(roundId: String, transactionId: String): NetworkResult<Unit> {
+        return safeNetworkCall {
+            Log.d(TAG, "Updating round transactionId in SOGO Mongo API: $roundId")
+            Log.d(TAG, "Setting transactionId to: $transactionId")
+            
+            val payload = RoundUpdatePayload(transactionId = transactionId)
+            val response = sogoMongoApiService.updateRound(roundId, payload)
+            
+            if (response.isSuccessful) {
+                Log.d(TAG, "Successfully updated round transactionId: $roundId")
+                Unit
+            } else {
+                Log.e(TAG, "Failed to update round transactionId: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to update round transactionId: ${response.message()}")
+            }
+        }
+    }
+
     override suspend fun updateRoundSubmissionStatus(roundId: String, isSubmitted: Boolean): NetworkResult<Unit> {
         return safeNetworkCall {
             Log.d(TAG, "🔄 Updating round submission status in SOGO Mongo API: $roundId")

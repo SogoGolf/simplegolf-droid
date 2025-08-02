@@ -13,6 +13,7 @@ import com.sogo.golf.msl.domain.usecase.round.GetRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.SubmitRoundUseCase
 import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
+import com.sogo.golf.msl.data.local.preferences.RoundPreferences
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
 import dagger.assisted.Assisted
@@ -37,6 +38,7 @@ class ReviewScoresViewModel @AssistedInject constructor(
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
     private val holeStatePreferences: HoleStatePreferences,
     private val sogoMongoRepository: SogoMongoRepository,
+    private val roundPreferences: RoundPreferences,
     @Assisted private val navController: NavController
 ) : ViewModel() {
 
@@ -200,6 +202,10 @@ class ReviewScoresViewModel @AssistedInject constructor(
                                     holeStatePreferences.clearCurrentHole(currentRound.id)
                                     
                                     resetStaleDataUseCase()
+                                    
+                                    // Reset includeRound preference to true for next round
+                                    roundPreferences.setIncludeRoundOnSogo(true)
+                                    android.util.Log.d(TAG, "✅ Reset includeRound preference to true for next round")
                                     
                                     android.util.Log.d(TAG, "Post-submission cleanup completed - waiting for user to dismiss dialog")
                                 } catch (e: Exception) {
