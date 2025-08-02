@@ -12,6 +12,7 @@ import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
+import com.sogo.golf.msl.data.local.preferences.RoundPreferences
 import com.revenuecat.purchases.models.StoreTransaction
 import android.util.Log
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,7 +41,8 @@ class CompetitionViewModel @Inject constructor(
     private val fetchAndSaveSogoGolferUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase,
     private val getMslClubAndTenantIdsUseCase: com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase,
     private val updateTokenBalanceUseCase: UpdateTokenBalanceUseCase,
-    private val createTransactionUseCase: CreateTransactionUseCase
+    private val createTransactionUseCase: CreateTransactionUseCase,
+    private val roundPreferences: RoundPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompetitionUiState())
@@ -284,6 +286,12 @@ class CompetitionViewModel @Inject constructor(
     private val _includeRound = MutableStateFlow(true)
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            _includeRound.value = roundPreferences.getIncludeRoundOnSogo()
+        }
+    }
+
     // ✅ NEW: Token cost calculation as StateFlow
     val tokenCost = combine(
         localGame,
@@ -325,6 +333,9 @@ class CompetitionViewModel @Inject constructor(
     // ✅ NEW: Update include round state
     fun setIncludeRound(include: Boolean) {
         _includeRound.value = include
+        viewModelScope.launch {
+            roundPreferences.setIncludeRoundOnSogo(include)
+        }
     }
 
     // ✅ NEW: Check if user has sufficient tokens

@@ -7,6 +7,8 @@ import com.sogo.golf.msl.data.local.preferences.ClubPreferences
 import com.sogo.golf.msl.data.local.preferences.ClubPreferencesImpl
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferencesImpl
+import com.sogo.golf.msl.data.local.preferences.RoundPreferences
+import com.sogo.golf.msl.data.local.preferences.RoundPreferencesImpl
 import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
 import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferencesImpl
 import com.sogo.golf.msl.data.repository.AuthRepositoryImpl
@@ -80,6 +82,11 @@ abstract class DataModule {
     abstract fun bindHoleStatePreferences(
         holeStatePreferencesImpl: HoleStatePreferencesImpl
     ): HoleStatePreferences
+
+    @Binds
+    abstract fun bindRoundPreferences(
+        roundPreferencesImpl: RoundPreferencesImpl
+    ): RoundPreferences
 
     @Binds
     abstract fun bindFeeLocalDbRepository(

@@ -46,6 +46,7 @@ import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
 import com.sogo.golf.msl.domain.repository.SogoGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
+import com.sogo.golf.msl.data.local.preferences.RoundPreferences
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import kotlinx.coroutines.launch
 
@@ -69,7 +70,8 @@ class PlayingPartnerViewModel @Inject constructor(
     private val createTransactionUseCase: CreateTransactionUseCase,
     private val updateTokenBalanceUseCase: UpdateTokenBalanceUseCase,
     private val sogoGolferRepository: SogoGolferLocalDbRepository,
-    private val sogoMongoRepository: SogoMongoRepository
+    private val sogoMongoRepository: SogoMongoRepository,
+    private val roundPreferences: RoundPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -143,6 +145,12 @@ class PlayingPartnerViewModel @Inject constructor(
     //todo: isnt this stored in state ?
     private val _includeRound = MutableStateFlow(true)
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _includeRound.value = roundPreferences.getIncludeRoundOnSogo()
+        }
+    }
 
     // Token cost calculation based on game holes and fees
     val tokenCost = combine(
@@ -232,6 +240,9 @@ class PlayingPartnerViewModel @Inject constructor(
 
     fun setIncludeRound(include: Boolean) {
         _includeRound.value = include
+        viewModelScope.launch {
+            roundPreferences.setIncludeRoundOnSogo(include)
+        }
     }
 
     // Method to select a playing partner
