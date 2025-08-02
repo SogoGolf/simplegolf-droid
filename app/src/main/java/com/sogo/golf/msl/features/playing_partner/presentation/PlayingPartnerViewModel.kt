@@ -611,9 +611,17 @@ class PlayingPartnerViewModel @Inject constructor(
                                         if (transactionResult.isSuccess) {
                                             android.util.Log.d("PlayingPartnerVM", "✅ Transaction created successfully: $transactionId")
                                             
-                                            // Update round with transaction ID to prevent duplicate charges
-                                            syncedRound = syncedRound.copy(transactionId = transactionId)
-                                            android.util.Log.d("PlayingPartnerVM", "✅ Round updated with transactionId: $transactionId")
+                                            // Update round with transaction ID via PATCH API to prevent duplicate charges
+                                            when (val updateResult = sogoMongoRepository.updateRoundTransactionId(round.id, transactionId)) {
+                                                is NetworkResult.Success -> {
+                                                    android.util.Log.d("PlayingPartnerVM", "✅ Round transactionId updated via PATCH API: $transactionId")
+                                                    syncedRound = syncedRound.copy(transactionId = transactionId)
+                                                }
+                                                is NetworkResult.Error -> {
+                                                    android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to update round transactionId via PATCH: ${updateResult.error}")
+                                                }
+                                                is NetworkResult.Loading -> { /* Ignore */ }
+                                            }
                                         } else {
                                             android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to create transaction: ${transactionResult.exceptionOrNull()?.message}")
                                         }
