@@ -161,6 +161,23 @@ class PlayingPartnerViewModel @Inject constructor(
                 android.util.Log.d("PlayingPartnerVM", "🔄 _includeRound StateFlow changed to: $value")
             }
         }
+        
+        // Monitor localGame changes
+        viewModelScope.launch {
+            localGame.collect { game ->
+                android.util.Log.d("PlayingPartnerVM", "🎮 localGame StateFlow changed to: ${game?.let { "holes=${it.numberOfHoles}" } ?: "null"}")
+            }
+        }
+        
+        // Monitor mslFees changes
+        viewModelScope.launch {
+            mslFees.collect { fees ->
+                android.util.Log.d("PlayingPartnerVM", "💰 mslFees StateFlow changed: ${fees.size} fees")
+                fees.forEachIndexed { index, fee ->
+                    android.util.Log.d("PlayingPartnerVM", "  Fee $index: ${fee.numberHoles} holes = ${fee.cost} tokens")
+                }
+            }
+        }
     }
 
     // Token cost calculation based on game holes and fees
@@ -170,31 +187,51 @@ class PlayingPartnerViewModel @Inject constructor(
         _includeRound
     ) { game, fees, include ->
         android.util.Log.d("PlayingPartnerVM", "🔄 TokenCost calculation triggered")
-        android.util.Log.d("PlayingPartnerVM", "  - include: $include")
+        android.util.Log.d("PlayingPartnerVM", "  - include: $include (type: ${include::class.simpleName})")
         android.util.Log.d("PlayingPartnerVM", "  - game: ${game?.let { "holes=${it.numberOfHoles}" } ?: "null"}")
         android.util.Log.d("PlayingPartnerVM", "  - fees count: ${fees.size}")
+        
+        // Debug each fee in detail
         if (fees.isNotEmpty()) {
             fees.forEachIndexed { index, fee ->
-                android.util.Log.d("PlayingPartnerVM", "    Fee $index: ${fee.numberHoles} holes = ${fee.cost} tokens")
+                android.util.Log.d("PlayingPartnerVM", "    Fee $index: ${fee.numberHoles} holes = ${fee.cost} tokens (entityName: ${fee.entityName})")
             }
+        } else {
+            android.util.Log.w("PlayingPartnerVM", "⚠️ No fees available - this will cause tokenCost to be 0")
         }
         
+        // Step-by-step debugging
         if (!include) {
-            android.util.Log.d("PlayingPartnerVM", "💰 TokenCost = 0.0 (include round disabled)")
+            android.util.Log.d("PlayingPartnerVM", "💰 TokenCost = 0.0 (include round disabled - _includeRound is false)")
             0.0
         } else {
-            val cost = game?.numberOfHoles?.let { holes ->
+            android.util.Log.d("PlayingPartnerVM", "✅ Include round is enabled, calculating cost...")
+            
+            if (game == null) {
+                android.util.Log.w("PlayingPartnerVM", "⚠️ Game is null - tokenCost will be 0")
+                0.0
+            } else if (game.numberOfHoles == null) {
+                android.util.Log.w("PlayingPartnerVM", "⚠️ Game.numberOfHoles is null - tokenCost will be 0")
+                0.0
+            } else {
+                val holes = game.numberOfHoles
+                android.util.Log.d("PlayingPartnerVM", "🔍 Looking for fee matching $holes holes...")
+                
                 val matchingFee = fees.find { fee ->
+                    android.util.Log.d("PlayingPartnerVM", "  Comparing fee.numberHoles=${fee.numberHoles} with game.numberOfHoles=$holes")
                     fee.numberHoles == holes
                 }
-                android.util.Log.d("PlayingPartnerVM", "🔍 Looking for fee with $holes holes, found: ${matchingFee?.cost}")
-                matchingFee?.cost ?: 0.0
-            } ?: run {
-                android.util.Log.d("PlayingPartnerVM", "⚠️ Game is null or has no numberOfHoles")
-                0.0
+                
+                if (matchingFee != null) {
+                    android.util.Log.d("PlayingPartnerVM", "✅ Found matching fee: ${matchingFee.cost} tokens for $holes holes")
+                    matchingFee.cost ?: 0.0
+                } else {
+                    android.util.Log.w("PlayingPartnerVM", "⚠️ No matching fee found for $holes holes - tokenCost will be 0")
+                    0.0
+                }
             }
-            android.util.Log.d("PlayingPartnerVM", "💰 TokenCost = $cost")
-            cost
+        }.also { finalCost ->
+            android.util.Log.d("PlayingPartnerVM", "💰 FINAL TokenCost = $finalCost")
         }
     }.stateIn(
         scope = viewModelScope,
