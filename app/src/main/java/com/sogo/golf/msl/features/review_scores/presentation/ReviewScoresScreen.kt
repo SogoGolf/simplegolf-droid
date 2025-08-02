@@ -9,11 +9,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.features.play.presentation.ScorecardScreen
@@ -79,7 +81,11 @@ private fun ReviewScoresPortrait(
         topBar = {
             PostRoundHeader(
                 title = "Review Scores",
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { 
+                    if (!uiState.isSubmitting) {
+                        navController.popBackStack() 
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -142,10 +148,12 @@ private fun ReviewScoresPortrait(
 
                                     signatureBase64 = playerSignatures[uiState.round!!.playingPartnerRound!!.golferId ?: ""],
                                     onSignatureClick = {
-                                        currentSignaturePlayerId = uiState.round!!.playingPartnerRound!!.golferId ?: ""
-                                        currentSignaturePlayerFirstName = uiState.round!!.golferFirstName ?: ""
-                                        currentSignaturePlayerLastName = uiState.round!!.golferLastName ?: ""
-                                        showSignatureDialog = true
+                                        if (!uiState.isSubmitting) {
+                                            currentSignaturePlayerId = uiState.round!!.playingPartnerRound!!.golferId ?: ""
+                                            currentSignaturePlayerFirstName = uiState.round!!.golferFirstName ?: ""
+                                            currentSignaturePlayerLastName = uiState.round!!.golferLastName ?: ""
+                                            showSignatureDialog = true
+                                        }
                                     },
                                     backgroundColor = MSLColors.mslBlue,
                                     signerName = "${uiState.round!!.golferFirstName ?: ""} ${uiState.round!!.golferLastName ?: ""}".trim(),
@@ -165,18 +173,20 @@ private fun ReviewScoresPortrait(
 
                                 signatureBase64 = playerSignatures[uiState.round!!.golferId ?: ""],
                                 onSignatureClick = {
-                                    currentSignaturePlayerId = uiState.round!!.golferId ?: ""
-                                    currentSignaturePlayerFirstName = if (uiState.round!!.playingPartnerRound != null) {
-                                        uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""
-                                    } else {
-                                        uiState.round!!.golferFirstName ?: ""
+                                    if (!uiState.isSubmitting) {
+                                        currentSignaturePlayerId = uiState.round!!.golferId ?: ""
+                                        currentSignaturePlayerFirstName = if (uiState.round!!.playingPartnerRound != null) {
+                                            uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""
+                                        } else {
+                                            uiState.round!!.golferFirstName ?: ""
+                                        }
+                                        currentSignaturePlayerLastName = if (uiState.round!!.playingPartnerRound != null) {
+                                            uiState.round!!.playingPartnerRound!!.golferLastName ?: ""
+                                        } else {
+                                            uiState.round!!.golferLastName ?: ""
+                                        }
+                                        showSignatureDialog = true
                                     }
-                                    currentSignaturePlayerLastName = if (uiState.round!!.playingPartnerRound != null) {
-                                        uiState.round!!.playingPartnerRound!!.golferLastName ?: ""
-                                    } else {
-                                        uiState.round!!.golferLastName ?: ""
-                                    }
-                                    showSignatureDialog = true
                                 },
                                 backgroundColor = MSLColors.mslGrey,
                                 signerName = if (uiState.round!!.playingPartnerRound != null) {
@@ -241,10 +251,52 @@ private fun ReviewScoresPortrait(
                     }
                 }
             }
+            
+            // Full-screen blocking overlay during submission
+            if (uiState.isSubmitting) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.7f))
+                        .zIndex(1000f)
+                        .pointerInput(Unit) {
+                            // Consume all touch events to block interaction
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        modifier = Modifier.padding(32.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp),
+                                color = MSLColors.mslBlue
+                            )
+                            Text(
+                                text = "Submitting Round...",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Text(
+                                text = "Please wait, do not tap the screen",
+                                fontSize = 14.sp,
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 
-    if (showSignatureDialog) {
+    if (showSignatureDialog && !uiState.isSubmitting) {
         SignatureDialog(
             firstName = currentSignaturePlayerFirstName,
             lastName = currentSignaturePlayerLastName,
@@ -256,7 +308,7 @@ private fun ReviewScoresPortrait(
         )
     }
 
-    if (showSubmitDialog) {
+    if (showSubmitDialog && !uiState.isSubmitting) {
         AlertDialog(
             onDismissRequest = { showSubmitDialog = false },
             title = { Text("Submit Scores") },
@@ -279,7 +331,7 @@ private fun ReviewScoresPortrait(
         )
     }
 
-    if (showSuccessDialog) {
+    if (showSuccessDialog && !uiState.isSubmitting) {
         AlertDialog(
             onDismissRequest = { 
                 showSuccessDialog = false
@@ -298,7 +350,7 @@ private fun ReviewScoresPortrait(
         )
     }
 
-    if (showSignatureErrorDialog) {
+    if (showSignatureErrorDialog && !uiState.isSubmitting) {
         AlertDialog(
             onDismissRequest = { showSignatureErrorDialog = false },
             title = { Text("Signatures Required") },
