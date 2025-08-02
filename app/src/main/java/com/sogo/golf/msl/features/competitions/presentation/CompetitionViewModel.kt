@@ -10,6 +10,8 @@ import com.sogo.golf.msl.domain.usecase.fees.GetFeesUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
+import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
+import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.revenuecat.purchases.models.StoreTransaction
 import android.util.Log
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +39,8 @@ class CompetitionViewModel @Inject constructor(
     private val fetchAndSaveCompetitionUseCase: com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase,
     private val fetchAndSaveSogoGolferUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase,
     private val getMslClubAndTenantIdsUseCase: com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase,
+    private val updateTokenBalanceUseCase: UpdateTokenBalanceUseCase,
+    private val createTransactionUseCase: CreateTransactionUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompetitionUiState())
@@ -408,28 +412,40 @@ class CompetitionViewModel @Inject constructor(
     ) {
         setPurchaseTokensState(isInProgress = true)
 
-        try {
-            val currentGolfer = sogoGolfer.value
-            if (currentGolfer?.golfLinkNo != null) {
-                Log.d("CompetitionViewModel", "Refreshing golfer data after purchase")
-                val result = fetchAndSaveSogoGolferUseCase(currentGolfer.golfLinkNo)
-                when (result) {
-                    is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
-                        Log.d("CompetitionViewModel", "Successfully updated token balance to ${result.data.tokenBalance}")
+        val currentBalance = sogoGolfer.value?.tokenBalance ?: 0
+
+        val updateResult = updateTokenBalanceUseCase(currentBalance, storeTransaction, sogoGolfer.value)
+        updateResult.fold(
+            onSuccess = { updatedGolfer ->
+                val newBalance = updatedGolfer.tokenBalance
+                Log.d("PaywallDialog", "Successfully updated token balance to $newBalance")
+
+                val transactionResult = createTransactionUseCase(
+                    tokens = updatedGolfer.tokenBalance - currentBalance,
+                    entityIdVal = updatedGolfer.entityId,
+                    transId = storeTransaction.orderId ?: "",
+                    sogoGolfer = updatedGolfer,
+                    transactionTypeVal = "PURCHASE",
+                    debitCreditTypeVal = "CREDIT",
+                    commentVal = "Purchase tokens",
+                    statusVal = "completed"
+                )
+                transactionResult.fold(
+                    onSuccess = {
+                        Log.d("PaywallDialog", "Transaction record created successfully.")
+                        onNavigateToNext()
+                    },
+                    onFailure = { txError ->
+                        Log.e("PaywallDialog", "Failed to create transaction record", txError)
                         onNavigateToNext()
                     }
-                    is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
-                        Log.e("CompetitionViewModel", "Failed to refresh golfer data: ${result.error}")
-                    }
-                    is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
-                        Log.d("CompetitionViewModel", "Loading golfer data...")
-                    }
-                }
+                )
+            },
+            onFailure = { updateError ->
+                Log.e("PaywallDialog", "Failed to update token balance", updateError)
             }
-        } catch (e: Exception) {
-            Log.e("CompetitionViewModel", "Error updating token balance", e)
-        } finally {
-            setPurchaseTokensState(isInProgress = false)
-        }
+        )
+
+        setPurchaseTokensState(isInProgress = false)
     }
 }

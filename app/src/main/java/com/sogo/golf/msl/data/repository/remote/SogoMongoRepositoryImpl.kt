@@ -8,10 +8,13 @@ import com.sogo.golf.msl.data.network.api.HoleScoreData
 import com.sogo.golf.msl.data.network.api.BulkHoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.api.RoundUpdatePayload
 import com.sogo.golf.msl.data.network.api.RoundSubmissionUpdatePayload
+import com.sogo.golf.msl.data.network.api.TokenBalanceUpdatePayload
+import com.sogo.golf.msl.data.network.api.TransactionDto
 import com.sogo.golf.msl.data.network.dto.mongodb.toDomainModel
 import com.sogo.golf.msl.data.network.dto.mongodb.toDto
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.model.NetworkResult
+import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.mongodb.Fee
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
@@ -235,6 +238,58 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 Log.e(TAG, "❌ Response error body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to update round submission status: ${response.message()}")
             }
+        }
+    }
+
+    override suspend fun updateGolferTokenBalance(golflinkNo: String, newBalance: Int): NetworkResult<SogoGolfer> {
+        return try {
+            val response = sogoMongoApiService.updateGolferTokenBalance(
+                golflinkNo,
+                TokenBalanceUpdatePayload(newBalance)
+            )
+            if (response.isSuccessful) {
+                response.body()?.let { dto ->
+                    NetworkResult.Success(dto.toDomainModel())
+                } ?: NetworkResult.Error(NetworkError.Unknown("Empty response body"))
+            } else {
+                NetworkResult.Error(NetworkError.ServerError)
+            }
+        } catch (e: Exception) {
+            NetworkResult.Error(NetworkError.Unknown(e.message ?: "Network error"))
+        }
+    }
+
+    override suspend fun createTransaction(
+        entityId: String?,
+        transactionId: String,
+        golferId: String?,
+        golferEmail: String?,
+        amount: Int,
+        transactionType: String,
+        debitCreditType: String,
+        comment: String,
+        status: String
+    ): NetworkResult<Unit> {
+        return try {
+            val transactionDto = TransactionDto(
+                entityId = entityId,
+                transactionId = transactionId,
+                golferId = golferId,
+                golferEmail = golferEmail,
+                amount = amount,
+                transactionType = transactionType,
+                debitCreditType = debitCreditType,
+                comment = comment,
+                status = status
+            )
+            val response = sogoMongoApiService.createTransaction(transactionDto)
+            if (response.isSuccessful) {
+                NetworkResult.Success(Unit)
+            } else {
+                NetworkResult.Error(NetworkError.ServerError)
+            }
+        } catch (e: Exception) {
+            NetworkResult.Error(NetworkError.Unknown(e.message ?: "Network error"))
         }
     }
 }

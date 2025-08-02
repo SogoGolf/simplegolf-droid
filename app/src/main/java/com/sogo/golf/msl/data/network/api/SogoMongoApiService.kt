@@ -58,7 +58,33 @@ interface SogoMongoApiService {
         @Body payload: BulkHoleScoreUpdatePayload
     ): Response<Unit>
 
+    @PATCH("golfers/{golflinkNo}/tokenBalance")
+    suspend fun updateGolferTokenBalance(
+        @Path("golflinkNo") golflinkNo: String,
+        @Body payload: TokenBalanceUpdatePayload
+    ): Response<SogoGolferDto>
+
+    @POST("transactions")
+    suspend fun createTransaction(
+        @Body transactionDto: TransactionDto
+    ): Response<TransactionDto>
 }
+
+data class TokenBalanceUpdatePayload(
+    val tokenBalance: Int
+)
+
+data class TransactionDto(
+    val entityId: String?,
+    val transactionId: String,
+    val golferId: String?,
+    val golferEmail: String?,
+    val amount: Int,
+    val transactionType: String,
+    val debitCreditType: String,
+    val comment: String,
+    val status: String
+)
 
 data class HoleScoreUpdatePayload(
     val strokes: Int,
