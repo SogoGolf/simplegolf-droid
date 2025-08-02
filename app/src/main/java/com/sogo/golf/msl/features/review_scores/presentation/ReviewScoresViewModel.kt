@@ -14,6 +14,7 @@ import com.sogo.golf.msl.domain.usecase.round.SubmitRoundUseCase
 import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -35,6 +36,7 @@ class ReviewScoresViewModel @AssistedInject constructor(
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
     private val holeStatePreferences: HoleStatePreferences,
+    private val sogoMongoRepository: SogoMongoRepository,
     @Assisted private val navController: NavController
 ) : ViewModel() {
 
@@ -179,6 +181,20 @@ class ReviewScoresViewModel @AssistedInject constructor(
                             viewModelScope.launch {
                                 try {
                                     android.util.Log.d(TAG, "Starting post-submission cleanup")
+                                    
+                                    // Update MongoDB round with isSubmitted = true
+                                    android.util.Log.d(TAG, "Updating MongoDB round with isSubmitted = true")
+                                    when (val mongoResult = sogoMongoRepository.updateRound(currentRound.id, updatedRound)) {
+                                        is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
+                                            android.util.Log.d(TAG, "✅ Successfully updated MongoDB round")
+                                        }
+                                        is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
+                                            android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round: ${mongoResult.error.toUserMessage()}")
+                                        }
+                                        is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
+                                            android.util.Log.d(TAG, "MongoDB round update in progress...")
+                                        }
+                                    }
                                     
                                     holeStatePreferences.clearCurrentHole(currentRound.id)
                                     
