@@ -49,7 +49,9 @@ private fun ReviewScoresPortrait(
     navViewModel: NavViewModel,
     roundId: String
 ) {
-    val viewModel: ReviewScoresViewModel = hiltViewModel()
+    val viewModel: ReviewScoresViewModel = hiltViewModel<ReviewScoresViewModel, ReviewScoresViewModel.Factory> { factory ->
+        factory.create(navController)
+    }
     val uiState by viewModel.uiState.collectAsState()
     val playerSignatures by viewModel.playerSignatures.collectAsState()
     val roundSubmitState by viewModel.roundSubmitState.collectAsState()
@@ -305,7 +307,6 @@ private fun ReviewScoresPortrait(
         AlertDialog(
             onDismissRequest = { 
                 showSuccessDialog = false
-                navController.popBackStack()
             },
             title = { Text("Success") },
             text = { Text("Scores have been submitted successfully!") },
@@ -313,7 +314,6 @@ private fun ReviewScoresPortrait(
                 Button(
                     onClick = {
                         showSuccessDialog = false
-                        navController.popBackStack()
                     }
                 ) {
                     Text("OK")

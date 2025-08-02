@@ -7,6 +7,7 @@ import com.sogo.golf.msl.data.network.api.HoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.api.HoleScoreData
 import com.sogo.golf.msl.data.network.api.BulkHoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.api.RoundUpdatePayload
+import com.sogo.golf.msl.data.network.api.RoundSubmissionUpdatePayload
 import com.sogo.golf.msl.data.network.dto.mongodb.toDomainModel
 import com.sogo.golf.msl.data.network.dto.mongodb.toDto
 import com.sogo.golf.msl.data.repository.BaseRepository
@@ -187,7 +188,10 @@ class SogoMongoRepositoryImpl @Inject constructor(
             
             val holeScoresDto = round.holeScores.map { it.toDto() }
             val partnerRoundDto = round.playingPartnerRound?.toDto()
-            val payload = RoundUpdatePayload(holeScores = holeScoresDto, playingPartnerRound = partnerRoundDto)
+            val payload = RoundUpdatePayload(
+                holeScores = holeScoresDto, 
+                playingPartnerRound = partnerRoundDto
+            )
             val response = sogoMongoApiService.updateRound(roundId, payload)
             
             if (response.isSuccessful) {
@@ -195,7 +199,41 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 Unit
             } else {
                 Log.e(TAG, "Failed to update round: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to update round: ${response.message()}")
+            }
+        }
+    }
+
+    override suspend fun updateRoundSubmissionStatus(roundId: String, isSubmitted: Boolean): NetworkResult<Unit> {
+        return safeNetworkCall {
+            Log.d(TAG, "🔄 Updating round submission status in SOGO Mongo API: $roundId")
+            Log.d(TAG, "🔄 Setting isSubmitted to: $isSubmitted")
+            
+            // Get current UTC time in ISO format (compatible with API level 24)
+            val currentUtcTime = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.US).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }.format(java.util.Date())
+            Log.d(TAG, "🔄 Setting submittedTime to: $currentUtcTime")
+            
+            val payload = RoundSubmissionUpdatePayload(
+                isSubmitted = isSubmitted,
+                submittedTime = currentUtcTime
+            )
+            Log.d(TAG, "🔄 Sending minimal payload: {\"isSubmitted\": $isSubmitted, \"submittedTime\": \"$currentUtcTime\"}")
+            
+            val response = sogoMongoApiService.updateRoundSubmissionStatus(roundId, payload)
+            
+            if (response.isSuccessful) {
+                Log.d(TAG, "✅ Successfully updated round submission status: $roundId")
+                Log.d(TAG, "✅ Response code: ${response.code()}")
+                Unit
+            } else {
+                Log.e(TAG, "❌ Failed to update round submission status: $roundId")
+                Log.e(TAG, "❌ Response code: ${response.code()}")
+                Log.e(TAG, "❌ Response message: ${response.message()}")
+                Log.e(TAG, "❌ Response error body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to update round submission status: ${response.message()}")
             }
         }
     }
