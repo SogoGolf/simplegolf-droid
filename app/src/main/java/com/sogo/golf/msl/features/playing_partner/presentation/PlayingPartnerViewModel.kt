@@ -42,6 +42,10 @@ import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.round.CreateRoundUseCase
+import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
+import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
+import com.sogo.golf.msl.domain.repository.SogoGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import kotlinx.coroutines.launch
 
@@ -61,7 +65,11 @@ class PlayingPartnerViewModel @Inject constructor(
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
     private val roundRepository: RoundLocalDbRepository,
-    private val createRoundUseCase: CreateRoundUseCase
+    private val createRoundUseCase: CreateRoundUseCase,
+    private val createTransactionUseCase: CreateTransactionUseCase,
+    private val updateTokenBalanceUseCase: UpdateTokenBalanceUseCase,
+    private val sogoGolferRepository: SogoGolferLocalDbRepository,
+    private val sogoMongoRepository: SogoMongoRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -490,7 +498,58 @@ class PlayingPartnerViewModel @Inject constructor(
                 when (val createRoundResult = createRoundUseCase(round)) {
                     is NetworkResult.Success -> {
                         android.util.Log.d("PlayingPartnerVM", "✅ Round synced to MongoDB successfully")
-                        val syncedRound = round.copy(isSynced = true)
+                        var syncedRound = round.copy(isSynced = true)
+                        
+                        // Step 5a: Handle token deduction and transaction creation if include round is enabled
+                        if (round.mslMetaData?.isIncludeRoundOnSogo == true && round.transactionId == null) {
+                            val currentTokenCost = tokenCost.value.toInt()
+                            if (currentTokenCost > 0) {
+                                android.util.Log.d("PlayingPartnerVM", "🔄 Step 5a: Processing token deduction for round inclusion (cost: $currentTokenCost)")
+                                
+                                val transactionId = ObjectIdUtils.generateObjectId()
+                                
+                                // Deduct tokens from MongoDB and update local database
+                                val newBalance = sogoGolferData.tokenBalance - currentTokenCost
+                                when (val updateResult = sogoMongoRepository.updateGolferTokenBalance(sogoGolferData.golfLinkNo, newBalance)) {
+                                    is NetworkResult.Success -> {
+                                        android.util.Log.d("PlayingPartnerVM", "✅ Token balance updated successfully: $newBalance")
+                                        
+                                        // Update local Room database with new token balance
+                                        sogoGolferRepository.saveSogoGolfer(updateResult.data)
+                                        
+                                        // Create transaction record
+                                        val transactionResult = createTransactionUseCase(
+                                            tokens = currentTokenCost,
+                                            entityIdVal = sogoGolferData.entityId,
+                                            transId = transactionId,
+                                            sogoGolfer = sogoGolferData,
+                                            transactionTypeVal = "play_round",
+                                            debitCreditTypeVal = "debit",
+                                            commentVal = "Play round fee",
+                                            statusVal = "completed"
+                                        )
+                                        
+                                        if (transactionResult.isSuccess) {
+                                            android.util.Log.d("PlayingPartnerVM", "✅ Transaction created successfully: $transactionId")
+                                            
+                                            // Update round with transaction ID to prevent duplicate charges
+                                            syncedRound = syncedRound.copy(transactionId = transactionId)
+                                        } else {
+                                            android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to create transaction: ${transactionResult.exceptionOrNull()?.message}")
+                                        }
+                                    }
+                                    is NetworkResult.Error -> {
+                                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to update token balance: ${updateResult.error}")
+                                    }
+                                    is NetworkResult.Loading -> { /* Ignore */ }
+                                }
+                            } else {
+                                android.util.Log.d("PlayingPartnerVM", "ℹ️ No token cost for this round, skipping deduction")
+                            }
+                        } else if (round.transactionId != null) {
+                            android.util.Log.d("PlayingPartnerVM", "ℹ️ Round already has transaction ID, skipping duplicate charge")
+                        }
+                        
                         roundRepository.saveRound(syncedRound)
                     }
                     is NetworkResult.Error -> {
