@@ -2,8 +2,6 @@ package com.sogo.golf.msl.features.review_scores.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -110,12 +108,17 @@ private fun ReviewScoresPortrait(
                     }
                 }
                 uiState.round != null -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        item {
+                        // Cards container with weight to fill available space
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             PostRoundCard(
                                 playerName = "${uiState.round!!.golferFirstName ?: ""} ${uiState.round!!.golferLastName ?: ""}".trim(),
                                 competitionType = uiState.round!!.compType ?: "Competition",
@@ -129,12 +132,11 @@ private fun ReviewScoresPortrait(
                                     currentSignaturePlayerFirstName = uiState.round!!.golferFirstName ?: ""
                                     currentSignaturePlayerLastName = uiState.round!!.golferLastName ?: ""
                                     showSignatureDialog = true
-                                }
+                                },
+                                modifier = Modifier.weight(1f)
                             )
-                        }
 
-                        if (uiState.round!!.playingPartnerRound != null) {
-                            item {
+                            if (uiState.round!!.playingPartnerRound != null) {
                                 PostRoundCard(
                                     playerName = "${uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""} ${uiState.round!!.playingPartnerRound!!.golferLastName ?: ""}".trim(),
                                     competitionType = uiState.round!!.playingPartnerRound!!.compType ?: "Competition",
@@ -153,36 +155,34 @@ private fun ReviewScoresPortrait(
                                         currentSignaturePlayerFirstName = uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""
                                         currentSignaturePlayerLastName = uiState.round!!.playingPartnerRound!!.golferLastName ?: ""
                                         showSignatureDialog = true
-                                    }
+                                    },
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                         }
-
-                        item {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            
-                            Button(
-                                onClick = { showSubmitDialog = true },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                enabled = !uiState.isSubmitting && !uiState.isSubmitted,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
+                        
+                        // Submit button at bottom with fixed height
+                        Button(
+                            onClick = { showSubmitDialog = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            enabled = !uiState.isSubmitting && !uiState.isSubmitted,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            if (uiState.isSubmitting) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White
                                 )
-                            ) {
-                                if (uiState.isSubmitting) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(20.dp),
-                                        color = Color.White
-                                    )
-                                } else {
-                                    Text(
-                                        text = if (uiState.isSubmitted) "Submitted" else "Submit Scores",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
+                            } else {
+                                Text(
+                                    text = if (uiState.isSubmitted) "Submitted" else "Submit Scores",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
                             }
                         }
                     }

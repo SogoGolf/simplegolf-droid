@@ -42,14 +42,14 @@ fun PostRoundCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp)
         ) {
             Text(
                 text = playerName,
@@ -60,27 +60,27 @@ fun PostRoundCard(
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             
             Text(
                 text = competitionType,
-                fontSize = 16.sp,
+                fontSize = 14.sp,
                 color = Color.Gray,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             Text(
                 text = "Daily Handicap: $dailyHandicap",
-                fontSize = 14.sp,
+                fontSize = 12.sp,
                 color = Color.Black,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -91,23 +91,23 @@ fun PostRoundCard(
                 ScoreColumn("Grand Total", grandTotal)
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             Text(
                 text = "Signature",
-                fontSize = 16.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.Black
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             
             SignatureBox(
                 signatureBase64 = signatureBase64,
                 onSignatureClick = onSignatureClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp)
+                    .height(80.dp)
             )
         }
     }
