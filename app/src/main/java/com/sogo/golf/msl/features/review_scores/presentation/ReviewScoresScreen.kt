@@ -25,6 +25,7 @@ import com.sogo.golf.msl.navigation.NavViewModel
 import com.sogo.golf.msl.shared_components.ui.PostRoundCard
 import com.sogo.golf.msl.shared_components.ui.PostRoundHeader
 import com.sogo.golf.msl.shared_components.ui.SignatureDialog
+import com.sogo.golf.msl.shared_components.ui.SubmitRoundSuccessDialog
 import com.sogo.golf.msl.ui.theme.MSLColors
 
 @Composable
@@ -352,20 +353,10 @@ private fun ReviewScoresPortrait(
     }
 
     if (showSuccessDialog && !uiState.isSubmitting) {
-        AlertDialog(
-            onDismissRequest = { 
+        SubmitRoundSuccessDialog(
+            playingPartnerName = uiState.round?.playingPartnerRound?.golferFirstName ?: "",
+            onDone = {
                 showSuccessDialog = false
-            },
-            title = { Text("Success") },
-            text = { Text("Scores have been submitted successfully!") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showSuccessDialog = false
-                    }
-                ) {
-                    Text("OK")
-                }
             }
         )
     }
