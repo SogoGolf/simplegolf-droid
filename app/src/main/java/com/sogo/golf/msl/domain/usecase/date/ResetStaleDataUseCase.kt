@@ -10,6 +10,7 @@ import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.shared.utils.DateUtils
+import com.sogo.golf.msl.data.local.preferences.RoundPreferences
 import javax.inject.Inject
 
 class ResetStaleDataUseCase @Inject constructor(
@@ -20,7 +21,8 @@ class ResetStaleDataUseCase @Inject constructor(
     private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
     private val gameDataTimestampPreferences: GameDataTimestampPreferences,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val roundPreferences: RoundPreferences
 ) {
     suspend operator fun invoke(): Result<Unit> {
         return try {
@@ -70,6 +72,11 @@ class ResetStaleDataUseCase @Inject constructor(
                 android.util.Log.d("ResetStaleData", "📅 Step 4: Updating stored date...")
                 val todayDate = DateUtils.getTodayDateString()
                 gameDataTimestampPreferences.saveGameDataDate(todayDate)
+
+                // Step 5: Reset includeRound preference to true for new day
+                android.util.Log.d("ResetStaleData", "🔄 Step 5: Resetting includeRound preference...")
+                roundPreferences.setIncludeRoundOnSogo(true)
+                android.util.Log.d("ResetStaleData", "✅ Reset includeRound preference to true for new day")
 
                 android.util.Log.d("ResetStaleData", "✅ Stale data reset completed successfully")
                 Result.success(Unit)

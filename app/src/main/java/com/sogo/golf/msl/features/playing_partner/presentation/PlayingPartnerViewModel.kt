@@ -148,7 +148,9 @@ class PlayingPartnerViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _includeRound.value = roundPreferences.getIncludeRoundOnSogo()
+            val savedValue = roundPreferences.getIncludeRoundOnSogo()
+            android.util.Log.d("PlayingPartnerVM", "🔄 Initializing _includeRound from SharedPreferences: $savedValue")
+            _includeRound.value = savedValue
         }
     }
 
@@ -158,14 +160,20 @@ class PlayingPartnerViewModel @Inject constructor(
         mslFees,
         _includeRound
     ) { game, fees, include ->
+        android.util.Log.d("PlayingPartnerVM", "🔄 TokenCost calculation - include: $include, game: ${game?.numberOfHoles}, fees count: ${fees.size}")
         if (!include) {
+            android.util.Log.d("PlayingPartnerVM", "💰 TokenCost = 0.0 (include round disabled)")
             0.0
         } else {
-            game?.numberOfHoles?.let { holes ->
-                fees.find { fee ->
+            val cost = game?.numberOfHoles?.let { holes ->
+                val matchingFee = fees.find { fee ->
                     fee.numberHoles == holes
-                }?.cost ?: 0.0
+                }
+                android.util.Log.d("PlayingPartnerVM", "🔍 Looking for fee with $holes holes, found: ${matchingFee?.cost}")
+                matchingFee?.cost ?: 0.0
             } ?: 0.0
+            android.util.Log.d("PlayingPartnerVM", "💰 TokenCost = $cost")
+            cost
         }
     }.stateIn(
         scope = viewModelScope,
@@ -239,9 +247,11 @@ class PlayingPartnerViewModel @Inject constructor(
     }
 
     fun setIncludeRound(include: Boolean) {
+        android.util.Log.d("PlayingPartnerVM", "🔄 Setting _includeRound to: $include")
         _includeRound.value = include
         viewModelScope.launch {
             roundPreferences.setIncludeRoundOnSogo(include)
+            android.util.Log.d("PlayingPartnerVM", "✅ Saved includeRound to SharedPreferences: $include")
         }
     }
 

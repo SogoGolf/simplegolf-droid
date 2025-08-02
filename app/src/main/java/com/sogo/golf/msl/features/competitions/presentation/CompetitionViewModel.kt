@@ -288,7 +288,9 @@ class CompetitionViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _includeRound.value = roundPreferences.getIncludeRoundOnSogo()
+            val savedValue = roundPreferences.getIncludeRoundOnSogo()
+            android.util.Log.d("CompetitionVM", "🔄 Initializing _includeRound from SharedPreferences: $savedValue")
+            _includeRound.value = savedValue
         }
     }
 
@@ -332,9 +334,11 @@ class CompetitionViewModel @Inject constructor(
 
     // ✅ NEW: Update include round state
     fun setIncludeRound(include: Boolean) {
+        android.util.Log.d("CompetitionVM", "🔄 Setting _includeRound to: $include")
         _includeRound.value = include
         viewModelScope.launch {
             roundPreferences.setIncludeRoundOnSogo(include)
+            android.util.Log.d("CompetitionVM", "✅ Saved includeRound to SharedPreferences: $include")
         }
     }
 
