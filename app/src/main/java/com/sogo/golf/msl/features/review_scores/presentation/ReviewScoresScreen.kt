@@ -20,6 +20,7 @@ import com.sogo.golf.msl.navigation.NavViewModel
 import com.sogo.golf.msl.shared_components.ui.PostRoundCard
 import com.sogo.golf.msl.shared_components.ui.PostRoundHeader
 import com.sogo.golf.msl.shared_components.ui.SignatureDialog
+import com.sogo.golf.msl.ui.theme.MSLColors
 
 @Composable
 fun ReviewScoresScreen(
@@ -133,6 +134,7 @@ private fun ReviewScoresPortrait(
                                     currentSignaturePlayerLastName = uiState.round!!.golferLastName ?: ""
                                     showSignatureDialog = true
                                 },
+                                backgroundColor = MSLColors.mslGrey,
                                 modifier = Modifier.weight(1f)
                             )
 
@@ -156,6 +158,7 @@ private fun ReviewScoresPortrait(
                                         currentSignaturePlayerLastName = uiState.round!!.playingPartnerRound!!.golferLastName ?: ""
                                         showSignatureDialog = true
                                     },
+                                    backgroundColor = MSLColors.mslBlue,
                                     modifier = Modifier.weight(1f)
                                 )
                             }

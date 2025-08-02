@@ -26,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sogo.golf.msl.ui.theme.MSLColors
+import java.util.Locale
 
 @Composable
 fun PostRoundCard(
@@ -37,14 +39,15 @@ fun PostRoundCard(
     grandTotal: String,
     signatureBase64: String?,
     onSignatureClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = Color.White
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Column(
             modifier = Modifier
@@ -55,7 +58,7 @@ fun PostRoundCard(
                 text = playerName,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
@@ -63,9 +66,9 @@ fun PostRoundCard(
             Spacer(modifier = Modifier.height(4.dp))
             
             Text(
-                text = competitionType,
+                text = competitionType.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
                 fontSize = 14.sp,
-                color = Color.Gray,
+                color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
@@ -75,7 +78,7 @@ fun PostRoundCard(
             Text(
                 text = "Daily Handicap: $dailyHandicap",
                 fontSize = 12.sp,
-                color = Color.Black,
+                color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
@@ -97,7 +100,7 @@ fun PostRoundCard(
                 text = "Signature",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.Black
+                color = Color.White
             )
             
             Spacer(modifier = Modifier.height(4.dp))
@@ -124,7 +127,7 @@ private fun ScoreColumn(
         Text(
             text = label,
             fontSize = 12.sp,
-            color = Color.Gray,
+            color = Color.White,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -132,7 +135,7 @@ private fun ScoreColumn(
             text = score,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.Black,
+            color = Color.White,
             textAlign = TextAlign.Center
         )
     }
@@ -199,12 +202,13 @@ private fun decodeBase64ToBitmap(base64String: String): Bitmap? {
 fun PostRoundCardPreview() {
     PostRoundCard(
         playerName = "John Doe",
-        competitionType = "Stroke Play",
+        competitionType = "stroke play",
         dailyHandicap = "12.5",
         frontNineScore = "42",
         backNineScore = "38",
         grandTotal = "80",
         signatureBase64 = null,
-        onSignatureClick = { }
+        onSignatureClick = { },
+        backgroundColor = MSLColors.mslGrey
     )
 }
