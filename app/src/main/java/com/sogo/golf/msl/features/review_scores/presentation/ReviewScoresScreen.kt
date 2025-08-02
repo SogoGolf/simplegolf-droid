@@ -357,6 +357,7 @@ private fun ReviewScoresPortrait(
             playingPartnerName = uiState.round?.playingPartnerRound?.golferFirstName ?: "",
             onDone = {
                 showSuccessDialog = false
+                viewModel.navigateToHomeAfterSuccess()
             }
         )
     }

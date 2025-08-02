@@ -178,6 +178,7 @@ class ReviewScoresViewModel @AssistedInject constructor(
                             
                             android.util.Log.d(TAG, "Round submitted successfully: ${currentRound.id}")
                             
+                            // Perform immediate cleanup operations (but not navigation)
                             viewModelScope.launch {
                                 try {
                                     android.util.Log.d(TAG, "Starting post-submission cleanup")
@@ -200,11 +201,7 @@ class ReviewScoresViewModel @AssistedInject constructor(
                                     
                                     resetStaleDataUseCase()
                                     
-                                    android.util.Log.d(TAG, "Navigating to home screen after successful submission")
-                                    navController.navigate("homescreen") {
-                                        popUpTo(0) { inclusive = true }
-                                        launchSingleTop = true
-                                    }
+                                    android.util.Log.d(TAG, "Post-submission cleanup completed - waiting for user to dismiss dialog")
                                 } catch (e: Exception) {
                                     android.util.Log.e(TAG, "Error during post-submission cleanup", e)
                                 }
@@ -331,6 +328,14 @@ class ReviewScoresViewModel @AssistedInject constructor(
             successMessage = null
         )
         _roundSubmitState.value = RoundSubmitState()
+    }
+    
+    fun navigateToHomeAfterSuccess() {
+        android.util.Log.d(TAG, "Navigating to home screen after user dismissed success dialog")
+        navController.navigate("homescreen") {
+            popUpTo(0) { inclusive = true }
+            launchSingleTop = true
+        }
     }
 
     @AssistedFactory
