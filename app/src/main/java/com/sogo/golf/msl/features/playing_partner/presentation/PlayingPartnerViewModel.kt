@@ -613,6 +613,7 @@ class PlayingPartnerViewModel @Inject constructor(
                                             
                                             // Update round with transaction ID to prevent duplicate charges
                                             syncedRound = syncedRound.copy(transactionId = transactionId)
+                                            android.util.Log.d("PlayingPartnerVM", "✅ Round updated with transactionId: $transactionId")
                                         } else {
                                             android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to create transaction: ${transactionResult.exceptionOrNull()?.message}")
                                         }
@@ -629,7 +630,10 @@ class PlayingPartnerViewModel @Inject constructor(
                             android.util.Log.d("PlayingPartnerVM", "ℹ️ Round already has transaction ID, skipping duplicate charge")
                         }
                         
+                        // Save the updated round (with transactionId if payment occurred)
+                        android.util.Log.d("PlayingPartnerVM", "🔄 Saving updated round to database (transactionId: ${syncedRound.transactionId})")
                         roundRepository.saveRound(syncedRound)
+                        android.util.Log.d("PlayingPartnerVM", "✅ Updated round saved to database")
                     }
                     is NetworkResult.Error -> {
                         android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to sync round to MongoDB: ${createRoundResult.error}")
