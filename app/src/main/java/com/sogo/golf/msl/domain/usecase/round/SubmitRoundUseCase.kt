@@ -12,10 +12,10 @@ import javax.inject.Inject
 class SubmitRoundUseCase @Inject constructor(
     private val repository: MslRepository
 ) {
-    operator fun invoke(clientId: Int, mslScores: ScoresContainer): Flow<Resource<ScoresResponse>> = flow {
+    operator fun invoke(clubId: String, mslScores: ScoresContainer): Flow<Resource<ScoresResponse>> = flow {
         try {
             emit(Resource.Loading())
-            when (val result = repository.postMslScores(clientId, mslScores)) {
+            when (val result = repository.postMslScores(clubId, mslScores)) {
                 is NetworkResult.Success -> {
                     emit(Resource.Success(result.data))
                 }

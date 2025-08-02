@@ -10,6 +10,7 @@ import com.sogo.golf.msl.domain.model.msl.v2.ScoresPayload
 import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.round.GetRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.SubmitRoundUseCase
+import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,7 +26,8 @@ import javax.inject.Inject
 class ReviewScoresViewModel @Inject constructor(
     private val getRoundUseCase: GetRoundUseCase,
     private val roundRepository: RoundLocalDbRepository,
-    private val submitRoundUseCase: SubmitRoundUseCase
+    private val submitRoundUseCase: SubmitRoundUseCase,
+    private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase
 ) : ViewModel() {
 
     companion object {
@@ -129,9 +131,19 @@ class ReviewScoresViewModel @Inject constructor(
                 )
 
                 val scoresContainer = createScoresContainer(currentRound)
-                val clientId = 1
+                
+                val selectedClub = getMslClubAndTenantIdsUseCase()
+                val clubId = selectedClub?.clubId?.toString()
+                
+                if (clubId == null) {
+                    _uiState.value = _uiState.value.copy(
+                        isSubmitting = false,
+                        errorMessage = "No club selected. Please select a club first."
+                    )
+                    return@launch
+                }
 
-                submitRoundUseCase(clientId, scoresContainer).onEach { result ->
+                submitRoundUseCase(clubId, scoresContainer).onEach { result ->
                     when (result) {
                         is Resource.Success -> {
                             _roundSubmitState.value = _roundSubmitState.value.copy(

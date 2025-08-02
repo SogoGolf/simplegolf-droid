@@ -303,12 +303,12 @@ class MslRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun postMslScores(clientId: Int, scores: com.sogo.golf.msl.domain.model.msl.v2.ScoresContainer): NetworkResult<com.sogo.golf.msl.domain.model.msl.v2.ScoresResponse> {
+    override suspend fun postMslScores(clubId: String, scores: com.sogo.golf.msl.domain.model.msl.v2.ScoresContainer): NetworkResult<com.sogo.golf.msl.domain.model.msl.v2.ScoresResponse> {
         return safeNetworkCall {
-            Log.d(TAG, "Submitting MSL scores for client: $clientId")
+            Log.d(TAG, "Submitting MSL scores for club: $clubId")
 
             val response = golfApiService.postMslScores(
-                clientId = clientId,
+                clubId = clubId,
                 scores = scores
             )
 
