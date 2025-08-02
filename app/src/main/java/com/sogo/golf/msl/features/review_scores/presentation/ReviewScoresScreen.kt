@@ -55,6 +55,8 @@ private fun ReviewScoresPortrait(
     
     var showSignatureDialog by remember { mutableStateOf(false) }
     var currentSignaturePlayerId by remember { mutableStateOf("") }
+    var currentSignaturePlayerFirstName by remember { mutableStateOf("") }
+    var currentSignaturePlayerLastName by remember { mutableStateOf("") }
     var showSubmitDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
@@ -124,6 +126,8 @@ private fun ReviewScoresPortrait(
                                 signatureBase64 = playerSignatures[uiState.round!!.golferId ?: ""],
                                 onSignatureClick = {
                                     currentSignaturePlayerId = uiState.round!!.golferId ?: ""
+                                    currentSignaturePlayerFirstName = uiState.round!!.golferFirstName ?: ""
+                                    currentSignaturePlayerLastName = uiState.round!!.golferLastName ?: ""
                                     showSignatureDialog = true
                                 }
                             )
@@ -146,6 +150,8 @@ private fun ReviewScoresPortrait(
                                     signatureBase64 = playerSignatures[uiState.round!!.playingPartnerRound!!.golferId ?: ""],
                                     onSignatureClick = {
                                         currentSignaturePlayerId = uiState.round!!.playingPartnerRound!!.golferId ?: ""
+                                        currentSignaturePlayerFirstName = uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""
+                                        currentSignaturePlayerLastName = uiState.round!!.playingPartnerRound!!.golferLastName ?: ""
                                         showSignatureDialog = true
                                     }
                                 )
@@ -185,17 +191,17 @@ private fun ReviewScoresPortrait(
         }
     }
 
-    SignatureDialog(
-        isVisible = showSignatureDialog,
-        onDismiss = { showSignatureDialog = false },
-        onSignatureSaved = { signature ->
-            viewModel.updatePlayerSignature(currentSignaturePlayerId, signature)
-            showSignatureDialog = false
-        },
-        onClearSignature = {
-            viewModel.clearPlayerSignature(currentSignaturePlayerId)
-        }
-    )
+    if (showSignatureDialog) {
+        SignatureDialog(
+            firstName = currentSignaturePlayerFirstName,
+            lastName = currentSignaturePlayerLastName,
+            onDismiss = { showSignatureDialog = false },
+            onSignatureCaptured = { signature ->
+                viewModel.updatePlayerSignature(currentSignaturePlayerId, signature)
+                showSignatureDialog = false
+            }
+        )
+    }
 
     if (showSubmitDialog) {
         AlertDialog(
