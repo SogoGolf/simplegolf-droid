@@ -1,7 +1,9 @@
 package com.sogo.golf.msl.features.review_scores.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -112,6 +114,7 @@ private fun ReviewScoresPortrait(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .navigationBarsPadding()
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -120,24 +123,7 @@ private fun ReviewScoresPortrait(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            PostRoundCard(
-                                playerName = "${uiState.round!!.golferFirstName ?: ""} ${uiState.round!!.golferLastName ?: ""}".trim(),
-                                competitionType = uiState.round!!.compType ?: "Competition",
-                                dailyHandicap = uiState.round!!.dailyHandicap?.toString() ?: "N/A",
-                                frontNineScore = viewModel.calculateFrontNineScore(uiState.round!!).toString(),
-                                backNineScore = viewModel.calculateBackNineScore(uiState.round!!).toString(),
-                                grandTotal = viewModel.calculateGrandTotal(uiState.round!!).toString(),
-                                signatureBase64 = playerSignatures[uiState.round!!.golferId ?: ""],
-                                onSignatureClick = {
-                                    currentSignaturePlayerId = uiState.round!!.golferId ?: ""
-                                    currentSignaturePlayerFirstName = uiState.round!!.golferFirstName ?: ""
-                                    currentSignaturePlayerLastName = uiState.round!!.golferLastName ?: ""
-                                    showSignatureDialog = true
-                                },
-                                backgroundColor = MSLColors.mslGrey,
-                                modifier = Modifier.weight(1f)
-                            )
-
+                            // Playing partner card first
                             if (uiState.round!!.playingPartnerRound != null) {
                                 PostRoundCard(
                                     playerName = "${uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""} ${uiState.round!!.playingPartnerRound!!.golferLastName ?: ""}".trim(),
@@ -154,37 +140,83 @@ private fun ReviewScoresPortrait(
                                     signatureBase64 = playerSignatures[uiState.round!!.playingPartnerRound!!.golferId ?: ""],
                                     onSignatureClick = {
                                         currentSignaturePlayerId = uiState.round!!.playingPartnerRound!!.golferId ?: ""
-                                        currentSignaturePlayerFirstName = uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""
-                                        currentSignaturePlayerLastName = uiState.round!!.playingPartnerRound!!.golferLastName ?: ""
+                                        currentSignaturePlayerFirstName = uiState.round!!.golferFirstName ?: ""
+                                        currentSignaturePlayerLastName = uiState.round!!.golferLastName ?: ""
                                         showSignatureDialog = true
                                     },
                                     backgroundColor = MSLColors.mslBlue,
+                                    signerName = "${uiState.round!!.golferFirstName ?: ""} ${uiState.round!!.golferLastName ?: ""}".trim(),
                                     modifier = Modifier.weight(1f)
                                 )
                             }
+
+                            // Golfer card second
+                            PostRoundCard(
+                                playerName = "${uiState.round!!.golferFirstName ?: ""} ${uiState.round!!.golferLastName ?: ""}".trim(),
+                                competitionType = uiState.round!!.compType ?: "Competition",
+                                dailyHandicap = uiState.round!!.dailyHandicap?.toString() ?: "N/A",
+                                frontNineScore = viewModel.calculateFrontNineScore(uiState.round!!).toString(),
+                                backNineScore = viewModel.calculateBackNineScore(uiState.round!!).toString(),
+                                grandTotal = viewModel.calculateGrandTotal(uiState.round!!).toString(),
+                                signatureBase64 = playerSignatures[uiState.round!!.golferId ?: ""],
+                                onSignatureClick = {
+                                    currentSignaturePlayerId = uiState.round!!.golferId ?: ""
+                                    currentSignaturePlayerFirstName = if (uiState.round!!.playingPartnerRound != null) {
+                                        uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""
+                                    } else {
+                                        uiState.round!!.golferFirstName ?: ""
+                                    }
+                                    currentSignaturePlayerLastName = if (uiState.round!!.playingPartnerRound != null) {
+                                        uiState.round!!.playingPartnerRound!!.golferLastName ?: ""
+                                    } else {
+                                        uiState.round!!.golferLastName ?: ""
+                                    }
+                                    showSignatureDialog = true
+                                },
+                                backgroundColor = MSLColors.mslGrey,
+                                signerName = if (uiState.round!!.playingPartnerRound != null) {
+                                    "${uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""} ${uiState.round!!.playingPartnerRound!!.golferLastName ?: ""}".trim()
+                                } else {
+                                    "${uiState.round!!.golferFirstName ?: ""} ${uiState.round!!.golferLastName ?: ""}".trim()
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
                         }
                         
-                        // Submit button at bottom with fixed height
-                        Button(
-                            onClick = { showSubmitDialog = true },
+                        // Submit button at bottom matching other screens
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp),
-                            enabled = !uiState.isSubmitting && !uiState.isSubmitted,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
+                                .height(60.dp)
+                                .background(if (!uiState.isSubmitting && !uiState.isSubmitted) MSLColors.mslYellow else Color.LightGray)
+                                .clickable(enabled = !uiState.isSubmitting && !uiState.isSubmitted) {
+                                    showSubmitDialog = true
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
                             if (uiState.isSubmitting) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    color = Color.White
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(24.dp),
+                                        color = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Submit Scores",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 28.sp
+                                    )
+                                }
                             } else {
                                 Text(
                                     text = if (uiState.isSubmitted) "Submitted" else "Submit Scores",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
+                                    color = if (!uiState.isSubmitting && !uiState.isSubmitted) Color.White else Color.DarkGray,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 28.sp
                                 )
                             }
                         }

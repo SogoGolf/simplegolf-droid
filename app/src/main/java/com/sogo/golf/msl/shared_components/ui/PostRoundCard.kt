@@ -40,7 +40,8 @@ fun PostRoundCard(
     signatureBase64: String?,
     onSignatureClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = Color.White
+    backgroundColor: Color = Color.White,
+    signerName: String = playerName
 ) {
     Card(
         modifier = modifier
@@ -56,7 +57,7 @@ fun PostRoundCard(
         ) {
             Text(
                 text = playerName,
-                fontSize = 20.sp,
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
@@ -67,7 +68,7 @@ fun PostRoundCard(
             
             Text(
                 text = competitionType.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
@@ -77,7 +78,7 @@ fun PostRoundCard(
             
             Text(
                 text = "Daily Handicap: $dailyHandicap",
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
@@ -98,7 +99,7 @@ fun PostRoundCard(
             
             Text(
                 text = "Signature",
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
                 color = Color.White
             )
@@ -108,6 +109,7 @@ fun PostRoundCard(
             SignatureBox(
                 signatureBase64 = signatureBase64,
                 onSignatureClick = onSignatureClick,
+                signerName = signerName,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
@@ -126,14 +128,14 @@ private fun ScoreColumn(
     ) {
         Text(
             text = label,
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.bodySmall,
             color = Color.White,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = score,
-            fontSize = 18.sp,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = Color.White,
             textAlign = TextAlign.Center
@@ -145,6 +147,7 @@ private fun ScoreColumn(
 private fun SignatureBox(
     signatureBase64: String?,
     onSignatureClick: () -> Unit,
+    signerName: String,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -169,22 +172,32 @@ private fun SignatureBox(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                SignaturePlaceholder()
+                SignaturePlaceholder(signerName = signerName)
             }
         } else {
-            SignaturePlaceholder()
+            SignaturePlaceholder(signerName = signerName)
         }
     }
 }
 
 @Composable
-private fun SignaturePlaceholder() {
-    Text(
-        text = "Tap to sign",
-        fontSize = 14.sp,
-        color = Color.Gray,
-        textAlign = TextAlign.Center
-    )
+private fun SignaturePlaceholder(signerName: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Tap to sign",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "($signerName)",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray,
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 private fun decodeBase64ToBitmap(base64String: String): Bitmap? {
