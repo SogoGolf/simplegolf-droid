@@ -10,6 +10,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -260,7 +262,10 @@ private fun ReviewScoresPortrait(
                         .background(Color.Black.copy(alpha = 0.7f))
                         .zIndex(1000f)
                         .pointerInput(Unit) {
-                            // Consume all touch events to block interaction
+                            awaitEachGesture {
+                                awaitFirstDown()
+                                // Consume all touch events to block interaction
+                            }
                         },
                     contentAlignment = Alignment.Center
                 ) {
