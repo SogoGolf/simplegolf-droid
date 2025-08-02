@@ -255,27 +255,26 @@ private fun ReviewScoresPortrait(
                 }
             }
             
-<<<<<<< HEAD
             // Loading overlay during MSL submission
-            if (roundSubmitState.isSending) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.7f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Submitting scores...",
-                            color = Color.White,
-                            fontSize = 16.sp
-                        )
-=======
+//            if (roundSubmitState.isSending) {
+//                Box(
+//                    modifier = Modifier
+//                        .fillMaxSize()
+//                        .background(Color.Black.copy(alpha = 0.7f)),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+//                        CircularProgressIndicator(
+//                            color = Color.White,
+//                            modifier = Modifier.size(48.dp)
+//                        )
+//                        Spacer(modifier = Modifier.height(16.dp))
+//                        Text(
+//                            text = "Submitting scores...",
+//                            color = Color.White,
+//                            fontSize = 16.sp
+//                        )
+
             // Full-screen blocking overlay during submission
             if (uiState.isSubmitting) {
                 Box(
@@ -310,14 +309,7 @@ private fun ReviewScoresPortrait(
                                 fontWeight = FontWeight.Bold,
                                 color = Color.Black
                             )
-                            Text(
-                                text = "Please wait, do not tap the screen",
-                                fontSize = 14.sp,
-                                color = Color.Gray,
-                                textAlign = TextAlign.Center
-                            )
                         }
->>>>>>> devin/1754106832-round-submission-cleanup
                     }
                 }
             }
