@@ -39,6 +39,12 @@ interface SogoMongoApiService {
         @Body payload: RoundUpdatePayload
     ): Response<Unit>
 
+    @PATCH("rounds/{id}")
+    suspend fun updateRoundSubmissionStatus(
+        @Path("id") roundId: String,
+        @Body payload: RoundSubmissionUpdatePayload
+    ): Response<Unit>
+
     @PATCH("rounds/{roundId}/holes/{holeNumber}")
     suspend fun updateHoleScore(
         @Path("roundId") roundId: String,
@@ -74,5 +80,11 @@ data class HoleScoreData(
 
 data class RoundUpdatePayload(
     val holeScores: List<HoleScoreDto>? = null,
-    val playingPartnerRound: PlayingPartnerRoundDto? = null
+    val playingPartnerRound: PlayingPartnerRoundDto? = null,
+    val isSubmitted: Boolean? = null
+)
+
+data class RoundSubmissionUpdatePayload(
+    val isSubmitted: Boolean,
+    val submittedTime: String
 )

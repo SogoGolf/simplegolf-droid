@@ -182,17 +182,17 @@ class ReviewScoresViewModel @AssistedInject constructor(
                                 try {
                                     android.util.Log.d(TAG, "Starting post-submission cleanup")
                                     
-                                    // Update MongoDB round with isSubmitted = true
-                                    android.util.Log.d(TAG, "Updating MongoDB round with isSubmitted = true")
-                                    when (val mongoResult = sogoMongoRepository.updateRound(currentRound.id, updatedRound)) {
+                                    // Update MongoDB round with isSubmitted = true using minimal payload
+                                    android.util.Log.d(TAG, "Updating MongoDB round submission status to true")
+                                    when (val mongoResult = sogoMongoRepository.updateRoundSubmissionStatus(currentRound.id, true)) {
                                         is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
-                                            android.util.Log.d(TAG, "✅ Successfully updated MongoDB round")
+                                            android.util.Log.d(TAG, "✅ Successfully updated MongoDB round submission status")
                                         }
                                         is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
-                                            android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round: ${mongoResult.error.toUserMessage()}")
+                                            android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round submission status: ${mongoResult.error.toUserMessage()}")
                                         }
                                         is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
-                                            android.util.Log.d(TAG, "MongoDB round update in progress...")
+                                            android.util.Log.d(TAG, "MongoDB round submission status update in progress...")
                                         }
                                     }
                                     
