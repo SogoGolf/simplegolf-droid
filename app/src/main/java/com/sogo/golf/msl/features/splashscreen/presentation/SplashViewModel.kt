@@ -20,11 +20,11 @@ class SplashViewModel @Inject constructor(
             initialValue = com.sogo.golf.msl.domain.model.AuthState()
         )
 
-    fun getNextDestination(): String {
-        return when {
-            !authState.value.isLoggedIn -> "login"
-            authState.value.hasActiveRound -> "playroundscreen"
-            else -> "homescreen"
-        }
-    }
+//    fun getNextDestination(): String {
+//        return when {
+//            !authState.value.isLoggedIn -> "login"
+//            authState.value.hasActiveRound -> "playroundscreen"
+//            else -> "homescreen"
+//        }
+//    }
 }
