@@ -147,10 +147,12 @@ class PlayingPartnerViewModel @Inject constructor(
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
 
     init {
+        // Load SharedPreferences value immediately to avoid race condition
         viewModelScope.launch {
             val savedValue = roundPreferences.getIncludeRoundOnSogo()
             android.util.Log.d("PlayingPartnerVM", "🔄 Initializing _includeRound from SharedPreferences: $savedValue")
             _includeRound.value = savedValue
+            android.util.Log.d("PlayingPartnerVM", "✅ _includeRound initialized with value: ${_includeRound.value}")
         }
         
         // Monitor _includeRound changes
@@ -196,7 +198,7 @@ class PlayingPartnerViewModel @Inject constructor(
         }
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.Eagerly,
         initialValue = 0.0
     )
 
