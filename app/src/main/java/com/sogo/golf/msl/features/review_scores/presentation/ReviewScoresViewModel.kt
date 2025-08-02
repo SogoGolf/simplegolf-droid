@@ -213,27 +213,27 @@ class ReviewScoresViewModel @Inject constructor(
         val golferSignature = _playerSignatures.value[round.golferId ?: ""] ?: ""
         val golferGLNumber = round.golferGLNumber ?: ""
         
-        if (golferGLNumber.isNotEmpty()) {
-            val golferHoles = round.holeScores.map { holeScore ->
-                HolePayload(
-                    grossScore = holeScore.strokes,
-                    ballPickedUp = holeScore.isBallPickedUp ?: false,
-                    notPlayed = holeScore.isHoleNotPlayed ?: false
-                )
-            }
-            
-            playerScores.add(
-                ScoresPayload(
-                    golfLinkNumber = golferGLNumber,
-                    signature = golferSignature,
-                    holes = golferHoles
-                )
-            )
-        }
-
         round.playingPartnerRound?.let { partnerRound ->
             val partnerSignature = _playerSignatures.value[partnerRound.golferId ?: ""] ?: ""
             val partnerGLNumber = partnerRound.golflinkNo ?: ""
+            
+            if (golferGLNumber.isNotEmpty()) {
+                val golferHoles = round.holeScores.map { holeScore ->
+                    HolePayload(
+                        grossScore = holeScore.strokes,
+                        ballPickedUp = holeScore.isBallPickedUp ?: false,
+                        notPlayed = holeScore.isHoleNotPlayed ?: false
+                    )
+                }
+                
+                playerScores.add(
+                    ScoresPayload(
+                        golfLinkNumber = golferGLNumber,
+                        signature = partnerSignature,
+                        holes = golferHoles
+                    )
+                )
+            }
             
             if (partnerGLNumber.isNotEmpty()) {
                 val partnerHoles = partnerRound.holeScores.map { holeScore ->
@@ -247,8 +247,26 @@ class ReviewScoresViewModel @Inject constructor(
                 playerScores.add(
                     ScoresPayload(
                         golfLinkNumber = partnerGLNumber,
-                        signature = partnerSignature,
+                        signature = golferSignature,
                         holes = partnerHoles
+                    )
+                )
+            }
+        } ?: run {
+            if (golferGLNumber.isNotEmpty()) {
+                val golferHoles = round.holeScores.map { holeScore ->
+                    HolePayload(
+                        grossScore = holeScore.strokes,
+                        ballPickedUp = holeScore.isBallPickedUp ?: false,
+                        notPlayed = holeScore.isHoleNotPlayed ?: false
+                    )
+                }
+                
+                playerScores.add(
+                    ScoresPayload(
+                        golfLinkNumber = golferGLNumber,
+                        signature = golferSignature,
+                        holes = golferHoles
                     )
                 )
             }
