@@ -152,6 +152,13 @@ class PlayingPartnerViewModel @Inject constructor(
             android.util.Log.d("PlayingPartnerVM", "🔄 Initializing _includeRound from SharedPreferences: $savedValue")
             _includeRound.value = savedValue
         }
+        
+        // Monitor _includeRound changes
+        viewModelScope.launch {
+            _includeRound.collect { value ->
+                android.util.Log.d("PlayingPartnerVM", "🔄 _includeRound StateFlow changed to: $value")
+            }
+        }
     }
 
     // Token cost calculation based on game holes and fees
@@ -160,7 +167,16 @@ class PlayingPartnerViewModel @Inject constructor(
         mslFees,
         _includeRound
     ) { game, fees, include ->
-        android.util.Log.d("PlayingPartnerVM", "🔄 TokenCost calculation - include: $include, game: ${game?.numberOfHoles}, fees count: ${fees.size}")
+        android.util.Log.d("PlayingPartnerVM", "🔄 TokenCost calculation triggered")
+        android.util.Log.d("PlayingPartnerVM", "  - include: $include")
+        android.util.Log.d("PlayingPartnerVM", "  - game: ${game?.let { "holes=${it.numberOfHoles}" } ?: "null"}")
+        android.util.Log.d("PlayingPartnerVM", "  - fees count: ${fees.size}")
+        if (fees.isNotEmpty()) {
+            fees.forEachIndexed { index, fee ->
+                android.util.Log.d("PlayingPartnerVM", "    Fee $index: ${fee.numberHoles} holes = ${fee.cost} tokens")
+            }
+        }
+        
         if (!include) {
             android.util.Log.d("PlayingPartnerVM", "💰 TokenCost = 0.0 (include round disabled)")
             0.0
@@ -171,7 +187,10 @@ class PlayingPartnerViewModel @Inject constructor(
                 }
                 android.util.Log.d("PlayingPartnerVM", "🔍 Looking for fee with $holes holes, found: ${matchingFee?.cost}")
                 matchingFee?.cost ?: 0.0
-            } ?: 0.0
+            } ?: run {
+                android.util.Log.d("PlayingPartnerVM", "⚠️ Game is null or has no numberOfHoles")
+                0.0
+            }
             android.util.Log.d("PlayingPartnerVM", "💰 TokenCost = $cost")
             cost
         }

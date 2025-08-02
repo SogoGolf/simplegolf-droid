@@ -292,6 +292,13 @@ class CompetitionViewModel @Inject constructor(
             android.util.Log.d("CompetitionVM", "🔄 Initializing _includeRound from SharedPreferences: $savedValue")
             _includeRound.value = savedValue
         }
+        
+        // Monitor _includeRound changes
+        viewModelScope.launch {
+            _includeRound.collect { value ->
+                android.util.Log.d("CompetitionVM", "🔄 _includeRound StateFlow changed to: $value")
+            }
+        }
     }
 
     // ✅ NEW: Token cost calculation as StateFlow

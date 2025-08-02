@@ -37,13 +37,17 @@ class RoundPreferencesImpl @Inject constructor(
     }
 
     override suspend fun setIncludeRoundOnSogo(include: Boolean) {
+        android.util.Log.d("RoundPreferences", "🔄 Setting includeRoundOnSogo to: $include")
         prefs.edit()
             .putBoolean(KEY_INCLUDE_ROUND_ON_SOGO, include)
             .apply()
+        android.util.Log.d("RoundPreferences", "✅ Successfully saved includeRoundOnSogo: $include")
     }
 
     override suspend fun getIncludeRoundOnSogo(): Boolean {
-        return prefs.getBoolean(KEY_INCLUDE_ROUND_ON_SOGO, true)
+        val value = prefs.getBoolean(KEY_INCLUDE_ROUND_ON_SOGO, true)
+        android.util.Log.d("RoundPreferences", "📖 Reading includeRoundOnSogo: $value (default: true)")
+        return value
     }
 
     override suspend fun clearIncludeRoundOnSogo() {
