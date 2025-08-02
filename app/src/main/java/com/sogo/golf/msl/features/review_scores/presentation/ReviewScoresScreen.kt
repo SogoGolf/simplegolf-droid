@@ -59,6 +59,7 @@ private fun ReviewScoresPortrait(
     var currentSignaturePlayerLastName by remember { mutableStateOf("") }
     var showSubmitDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+    var showSignatureErrorDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(roundId) {
         if (roundId.isNotEmpty()) {
@@ -192,7 +193,20 @@ private fun ReviewScoresPortrait(
                                 .height(60.dp)
                                 .background(if (!uiState.isSubmitting && !uiState.isSubmitted) MSLColors.mslYellow else Color.LightGray)
                                 .clickable(enabled = !uiState.isSubmitting && !uiState.isSubmitted) {
-                                    showSubmitDialog = true
+                                    // Check if both signatures are present
+                                    val golferSignature = playerSignatures[uiState.round!!.golferId ?: ""]
+                                    val playingPartnerSignature = if (uiState.round!!.playingPartnerRound != null) {
+                                        playerSignatures[uiState.round!!.playingPartnerRound!!.golferId ?: ""]
+                                    } else null
+                                    
+                                    val hasGolferSignature = !golferSignature.isNullOrEmpty()
+                                    val hasPlayingPartnerSignature = uiState.round!!.playingPartnerRound == null || !playingPartnerSignature.isNullOrEmpty()
+                                    
+                                    if (hasGolferSignature && hasPlayingPartnerSignature) {
+                                        showSubmitDialog = true
+                                    } else {
+                                        showSignatureErrorDialog = true
+                                    }
                                 },
                             contentAlignment = Alignment.Center
                         ) {
@@ -277,6 +291,21 @@ private fun ReviewScoresPortrait(
                         showSuccessDialog = false
                         navController.popBackStack()
                     }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    if (showSignatureErrorDialog) {
+        AlertDialog(
+            onDismissRequest = { showSignatureErrorDialog = false },
+            title = { Text("Signatures Required") },
+            text = { Text("Please sign both cards") },
+            confirmButton = {
+                Button(
+                    onClick = { showSignatureErrorDialog = false }
                 ) {
                     Text("OK")
                 }
