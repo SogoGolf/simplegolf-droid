@@ -187,7 +187,6 @@ fun CompetitionsScreen(
                 golfer = currentGolfer,
                 sogoGolfer = sogoGolfer,
                 tokenCost = tokenCost,
-                canProceed = canProceed,
                 onIncludeRoundChanged = { newValue ->
                     includeRound = newValue
                     competitionViewModel.setIncludeRound(newValue)
@@ -321,7 +320,6 @@ fun FooterContent(
     golfer: com.sogo.golf.msl.domain.model.msl.MslGolfer?,
     sogoGolfer: SogoGolfer?,
     tokenCost: Double,
-    canProceed: Boolean,
     onIncludeRoundChanged: (Boolean) -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -375,9 +373,9 @@ fun FooterContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(60.dp)
-                .background(if (canProceed) mslYellow else Color.LightGray)
-                .clickable(enabled = canProceed) {
-                    if (canProceed) {
+                .background(if (hasCompetitions) mslYellow else Color.LightGray)
+                .clickable(enabled = hasCompetitions) {
+                    if (hasCompetitions) {
                         onNextClick()
                     }
                 },
