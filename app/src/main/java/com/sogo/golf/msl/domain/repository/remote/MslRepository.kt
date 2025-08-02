@@ -16,4 +16,6 @@ interface MslRepository {
     // NEW: Marker API methods
     suspend fun selectMarker(playerGolfLinkNumber: String): NetworkResult<Unit>
     suspend fun removeMarker(playerGolfLinkNumber: String): NetworkResult<Unit>
+
+    suspend fun postMslScores(clientId: Int, scores: com.sogo.golf.msl.domain.model.msl.v2.ScoresContainer): NetworkResult<com.sogo.golf.msl.domain.model.msl.v2.ScoresResponse>
 }

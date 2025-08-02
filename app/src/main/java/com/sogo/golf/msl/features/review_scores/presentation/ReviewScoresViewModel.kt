@@ -2,14 +2,21 @@ package com.sogo.golf.msl.features.review_scores.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sogo.golf.msl.common.Resource
 import com.sogo.golf.msl.domain.model.Round
+import com.sogo.golf.msl.domain.model.msl.v2.HolePayload
+import com.sogo.golf.msl.domain.model.msl.v2.ScoresContainer
+import com.sogo.golf.msl.domain.model.msl.v2.ScoresPayload
 import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.round.GetRoundUseCase
+import com.sogo.golf.msl.domain.usecase.round.SubmitRoundUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -17,7 +24,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ReviewScoresViewModel @Inject constructor(
     private val getRoundUseCase: GetRoundUseCase,
-    private val roundRepository: RoundLocalDbRepository
+    private val roundRepository: RoundLocalDbRepository,
+    private val submitRoundUseCase: SubmitRoundUseCase
 ) : ViewModel() {
 
     companion object {
@@ -31,6 +39,9 @@ class ReviewScoresViewModel @Inject constructor(
     
     private val _playerSignatures = MutableStateFlow<Map<String, String>>(emptyMap())
     val playerSignatures: StateFlow<Map<String, String>> = _playerSignatures.asStateFlow()
+
+    private val _roundSubmitState = MutableStateFlow(RoundSubmitState())
+    val roundSubmitState: StateFlow<RoundSubmitState> = _roundSubmitState.asStateFlow()
 
     val currentRound = _currentRoundId
         .stateIn(
@@ -117,21 +128,57 @@ class ReviewScoresViewModel @Inject constructor(
                     errorMessage = null
                 )
 
-                val updatedRound = currentRound.copy(
-                    isSubmitted = true,
-                    submittedTime = org.threeten.bp.LocalDateTime.now(),
-                    lastUpdated = System.currentTimeMillis()
-                )
+                val scoresContainer = createScoresContainer(currentRound)
+                val clientId = 1
 
-                roundRepository.saveRound(updatedRound)
-                
-                _uiState.value = _uiState.value.copy(
-                    isSubmitting = false,
-                    isSubmitted = true,
-                    successMessage = "Round submitted successfully!"
-                )
-                
-                android.util.Log.d(TAG, "Round submitted successfully: ${currentRound.id}")
+                submitRoundUseCase(clientId, scoresContainer).onEach { result ->
+                    when (result) {
+                        is Resource.Success -> {
+                            _roundSubmitState.value = _roundSubmitState.value.copy(
+                                isSending = false,
+                                isSuccess = true,
+                                error = null
+                            )
+                            
+                            val updatedRound = currentRound.copy(
+                                isSubmitted = true,
+                                submittedTime = org.threeten.bp.LocalDateTime.now(),
+                                lastUpdated = System.currentTimeMillis()
+                            )
+
+                            roundRepository.saveRound(updatedRound)
+                            
+                            _uiState.value = _uiState.value.copy(
+                                isSubmitting = false,
+                                isSubmitted = true,
+                                successMessage = "Round submitted successfully!"
+                            )
+                            
+                            android.util.Log.d(TAG, "Round submitted successfully: ${currentRound.id}")
+                        }
+                        is Resource.Error -> {
+                            _roundSubmitState.value = _roundSubmitState.value.copy(
+                                isSending = false,
+                                isSuccess = false,
+                                error = result.message
+                            )
+                            
+                            _uiState.value = _uiState.value.copy(
+                                isSubmitting = false,
+                                errorMessage = result.message ?: "Error submitting round"
+                            )
+                            
+                            android.util.Log.e(TAG, "Error submitting round: ${result.message}")
+                        }
+                        is Resource.Loading -> {
+                            _roundSubmitState.value = _roundSubmitState.value.copy(
+                                isSending = true,
+                                isSuccess = false,
+                                error = null
+                            )
+                        }
+                    }
+                }.launchIn(viewModelScope)
                 
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "Error submitting round", e)
@@ -139,8 +186,63 @@ class ReviewScoresViewModel @Inject constructor(
                     isSubmitting = false,
                     errorMessage = "Error submitting round: ${e.message}"
                 )
+                _roundSubmitState.value = _roundSubmitState.value.copy(
+                    isSending = false,
+                    isSuccess = false,
+                    error = e.message
+                )
             }
         }
+    }
+
+    private fun createScoresContainer(round: Round): ScoresContainer {
+        val playerScores = mutableListOf<ScoresPayload>()
+
+        val golferSignature = _playerSignatures.value[round.golferId ?: ""] ?: ""
+        val golferGLNumber = round.golferGLNumber ?: ""
+        
+        if (golferGLNumber.isNotEmpty()) {
+            val golferHoles = round.holeScores.map { holeScore ->
+                HolePayload(
+                    grossScore = holeScore.strokes,
+                    ballPickedUp = holeScore.isBallPickedUp ?: false,
+                    notPlayed = holeScore.isHoleNotPlayed ?: false
+                )
+            }
+            
+            playerScores.add(
+                ScoresPayload(
+                    golfLinkNumber = golferGLNumber,
+                    signature = golferSignature,
+                    holes = golferHoles
+                )
+            )
+        }
+
+        round.playingPartnerRound?.let { partnerRound ->
+            val partnerSignature = _playerSignatures.value[partnerRound.golferId ?: ""] ?: ""
+            val partnerGLNumber = partnerRound.golflinkNo ?: ""
+            
+            if (partnerGLNumber.isNotEmpty()) {
+                val partnerHoles = partnerRound.holeScores.map { holeScore ->
+                    HolePayload(
+                        grossScore = holeScore.strokes,
+                        ballPickedUp = holeScore.isBallPickedUp ?: false,
+                        notPlayed = holeScore.isHoleNotPlayed ?: false
+                    )
+                }
+                
+                playerScores.add(
+                    ScoresPayload(
+                        golfLinkNumber = partnerGLNumber,
+                        signature = partnerSignature,
+                        holes = partnerHoles
+                    )
+                )
+            }
+        }
+
+        return ScoresContainer(playerScores = playerScores)
     }
 
     fun clearMessages() {
@@ -156,6 +258,7 @@ class ReviewScoresViewModel @Inject constructor(
             isSubmitting = false,
             successMessage = null
         )
+        _roundSubmitState.value = RoundSubmitState()
     }
 }
 
@@ -166,4 +269,10 @@ data class ReviewScoresUiState(
     val isSubmitted: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null
+)
+
+data class RoundSubmitState(
+    val isSending: Boolean = false,
+    val isSuccess: Boolean = false,
+    val error: String? = null
 )

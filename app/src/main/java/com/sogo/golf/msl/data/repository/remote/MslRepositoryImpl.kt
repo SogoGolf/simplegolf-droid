@@ -302,4 +302,27 @@ class MslRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun postMslScores(clientId: Int, scores: com.sogo.golf.msl.domain.model.msl.v2.ScoresContainer): NetworkResult<com.sogo.golf.msl.domain.model.msl.v2.ScoresResponse> {
+        return safeNetworkCall {
+            Log.d(TAG, "Submitting MSL scores for client: $clientId")
+
+            val response = golfApiService.postMslScores(
+                clientId = clientId,
+                scores = scores
+            )
+
+            if (response.isSuccessful) {
+                val scoresResponse = response.body()
+                    ?: throw Exception("Empty scores response")
+
+                Log.d(TAG, "✅ Successfully submitted MSL scores")
+                scoresResponse
+            } else {
+                Log.e(TAG, "❌ Failed to submit MSL scores: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to submit MSL scores: ${response.message()}")
+            }
+        }
+    }
 }
