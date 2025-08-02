@@ -61,6 +61,14 @@ import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import com.revenuecat.purchases.CustomerInfo
+import com.revenuecat.purchases.PurchasesError
+import com.revenuecat.purchases.models.StoreTransaction
+import com.revenuecat.purchases.ui.revenuecatui.PaywallDialog
+import com.revenuecat.purchases.ui.revenuecatui.PaywallDialogOptions
+import com.revenuecat.purchases.ui.revenuecatui.PaywallListener
+import androidx.lifecycle.viewModelScope
+import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,6 +91,7 @@ fun CompetitionsScreen(
     val tokenCost by competitionViewModel.tokenCost.collectAsState()
     val canProceed by competitionViewModel.canProceed.collectAsState()
     val uiState by competitionViewModel.uiState.collectAsState()
+    val purchaseTokensState by competitionViewModel.purchaseTokensState.collectAsState()
     
     // Set status bar to white with black text and icons
     SideEffect {
@@ -184,7 +193,15 @@ fun CompetitionsScreen(
                     competitionViewModel.setIncludeRound(newValue)
                 },
                 onNextClick = {
-                    navController.navigate(nextRoute)
+                    val hasInsufficientTokens = includeRound && 
+                        tokenCost > 0 && 
+                        (sogoGolfer?.tokenBalance ?: 0) < tokenCost
+                    
+                    if (hasInsufficientTokens) {
+                        competitionViewModel.purchaseTokens()
+                    } else {
+                        navController.navigate(nextRoute)
+                    }
                 }
             )
         }
@@ -204,6 +221,50 @@ fun CompetitionsScreen(
                 }
             )
         }
+    }
+
+    if (purchaseTokensState.isInProgress) {
+        PaywallDialog(
+            PaywallDialogOptions.Builder()
+                .setRequiredEntitlementIdentifier("all_features")
+                .setShouldDisplayBlock {
+                    true
+                }
+                .setListener(
+                    object : PaywallListener {
+                        override fun onPurchaseStarted(rcPackage: com.revenuecat.purchases.Package) {
+                            super.onPurchaseStarted(rcPackage)
+                            Log.d("PaywallDialog", "onPurchaseStarted: $rcPackage")
+                        }
+                        override fun onPurchaseCompleted(customerInfo: CustomerInfo, storeTransaction: StoreTransaction) {
+                            super.onPurchaseCompleted(customerInfo, storeTransaction)
+                            Log.d("PaywallDialog", "onPurchaseCompleted: $customerInfo")
+
+                            competitionViewModel.viewModelScope.launch {
+                                competitionViewModel.updateTokenBalanceForGolfer(storeTransaction) {
+                                    navController.navigate(nextRoute)
+                                }
+                            }
+                        }
+                        override fun onPurchaseError(error: PurchasesError) {
+                            super.onPurchaseError(error)
+                            Log.d("PaywallDialog", "onPurchaseError: $error")
+
+                            competitionViewModel.setPurchaseTokensState(isInProgress = false)
+                        }
+                        override fun onRestoreCompleted(customerInfo: CustomerInfo) {
+                            Log.d("PaywallDialog", "onRestoreCompleted: $customerInfo")
+
+                            competitionViewModel.setPurchaseTokensState(isInProgress = false)
+                        }
+                    }
+                )
+                .setDismissRequest {
+                    Log.d("PaywallDialog", "setDismissRequest: close the dialog now")
+                    competitionViewModel.setPurchaseTokensState(isInProgress = false)
+                }
+                .build()
+        )
     }
 }
 
@@ -314,9 +375,9 @@ fun FooterContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(60.dp)
-                .background(if (hasCompetitions) mslYellow else Color.LightGray)
-                .clickable(enabled = hasCompetitions) {
-                    if (hasCompetitions) {
+                .background(if (canProceed) mslYellow else Color.LightGray)
+                .clickable(enabled = canProceed) {
+                    if (canProceed) {
                         onNextClick()
                     }
                 },

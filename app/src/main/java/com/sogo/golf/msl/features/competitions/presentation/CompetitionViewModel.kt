@@ -9,6 +9,9 @@ import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.fees.GetFeesUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
+import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
+import com.revenuecat.purchases.models.StoreTransaction
+import android.util.Log
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -38,6 +41,9 @@ class CompetitionViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(CompetitionUiState())
     val uiState: StateFlow<CompetitionUiState> = _uiState.asStateFlow()
+
+    private val _purchaseTokensState = MutableStateFlow(PurchaseTokensState())
+    val purchaseTokensState: StateFlow<PurchaseTokensState> = _purchaseTokensState.asStateFlow()
 
     // ✅ ADD: Store the selected round cost
     private val _selectedRoundCost = MutableStateFlow(0.0)
@@ -377,6 +383,53 @@ class CompetitionViewModel @Inject constructor(
                     errorMessage = "Error checking database: ${e.message}"
                 )
             }
+        }
+    }
+
+    fun purchaseTokens() {
+        viewModelScope.launch {
+            _purchaseTokensState.value = _purchaseTokensState.value.copy(isInProgress = true)
+            try {
+                Log.d("CompetitionViewModel", "Starting token purchase process")
+            } catch (e: Exception) {
+                _purchaseTokensState.value = _purchaseTokensState.value.copy(isInProgress = false)
+                Log.e("CompetitionViewModel", "Error during purchase: ${e.message}")
+            }
+        }
+    }
+
+    fun setPurchaseTokensState(isInProgress: Boolean) {
+        _purchaseTokensState.value = _purchaseTokensState.value.copy(isInProgress = isInProgress)
+    }
+
+    suspend fun updateTokenBalanceForGolfer(
+        storeTransaction: StoreTransaction,
+        onNavigateToNext: () -> Unit
+    ) {
+        setPurchaseTokensState(isInProgress = true)
+
+        try {
+            val currentGolfer = sogoGolfer.value
+            if (currentGolfer?.golfLinkNo != null) {
+                Log.d("CompetitionViewModel", "Refreshing golfer data after purchase")
+                val result = fetchAndSaveSogoGolferUseCase(currentGolfer.golfLinkNo)
+                when (result) {
+                    is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
+                        Log.d("CompetitionViewModel", "Successfully updated token balance to ${result.data.tokenBalance}")
+                        onNavigateToNext()
+                    }
+                    is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
+                        Log.e("CompetitionViewModel", "Failed to refresh golfer data: ${result.error}")
+                    }
+                    is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
+                        Log.d("CompetitionViewModel", "Loading golfer data...")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("CompetitionViewModel", "Error updating token balance", e)
+        } finally {
+            setPurchaseTokensState(isInProgress = false)
         }
     }
 }
