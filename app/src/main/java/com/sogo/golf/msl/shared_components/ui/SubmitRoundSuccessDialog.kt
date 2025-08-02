@@ -15,13 +15,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.sogo.golf.msl.R
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlack
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
@@ -64,10 +67,14 @@ fun SubmitRoundSuccessDialog(
                     textAlign = TextAlign.Center
                 )
                 AsyncImage(
-                    model = R.drawable.greentick,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(R.drawable.greentick)
+                        .memoryCacheKey("success_greentick")
+                        .build(),
                     contentDescription = "Success",
                     modifier = Modifier
-                        .size(imageSize)
+                        .size(imageSize),
+                    contentScale = ContentScale.Fit,
                 )
                 Button(
                     onClick = { onDone() },
