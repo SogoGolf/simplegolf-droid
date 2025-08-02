@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -114,8 +113,7 @@ private fun ReviewScoresPortrait(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .navigationBarsPadding()
-                            .padding(16.dp),
+                            .navigationBarsPadding(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Cards container with weight to fill available space
@@ -135,8 +133,10 @@ private fun ReviewScoresPortrait(
                                     backNineScore = uiState.round!!.playingPartnerRound!!.holeScores
                                         .filter { it.holeNumber in 10..18 }
                                         .sumOf { it.strokes }.toString(),
-                                    grandTotal = uiState.round!!.playingPartnerRound!!.holeScores
+                                    grandTotalStrokes = uiState.round!!.playingPartnerRound!!.holeScores
                                         .sumOf { it.strokes }.toString(),
+                                    compScoreTotal = 99.toString(),
+
                                     signatureBase64 = playerSignatures[uiState.round!!.playingPartnerRound!!.golferId ?: ""],
                                     onSignatureClick = {
                                         currentSignaturePlayerId = uiState.round!!.playingPartnerRound!!.golferId ?: ""
@@ -157,7 +157,9 @@ private fun ReviewScoresPortrait(
                                 dailyHandicap = uiState.round!!.dailyHandicap?.toString() ?: "N/A",
                                 frontNineScore = viewModel.calculateFrontNineScore(uiState.round!!).toString(),
                                 backNineScore = viewModel.calculateBackNineScore(uiState.round!!).toString(),
-                                grandTotal = viewModel.calculateGrandTotal(uiState.round!!).toString(),
+                                grandTotalStrokes = viewModel.calculateGrandTotal(uiState.round!!).toString(),
+                                compScoreTotal = 99.toString(),
+
                                 signatureBase64 = playerSignatures[uiState.round!!.golferId ?: ""],
                                 onSignatureClick = {
                                     currentSignaturePlayerId = uiState.round!!.golferId ?: ""
@@ -197,7 +199,7 @@ private fun ReviewScoresPortrait(
                             if (uiState.isSubmitting) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
+                                    horizontalArrangement = Arrangement.Center,
                                 ) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(24.dp),

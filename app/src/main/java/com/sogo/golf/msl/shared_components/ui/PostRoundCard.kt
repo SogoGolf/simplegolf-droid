@@ -3,7 +3,6 @@ package com.sogo.golf.msl.shared_components.ui
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,12 +19,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.sogo.golf.msl.ui.theme.MSLColors
 import java.util.Locale
 
@@ -36,7 +33,8 @@ fun PostRoundCard(
     dailyHandicap: String,
     frontNineScore: String,
     backNineScore: String,
-    grandTotal: String,
+    grandTotalStrokes: String,
+    compScoreTotal: String,
     signatureBase64: String?,
     onSignatureClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -53,7 +51,8 @@ fun PostRoundCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(horizontal = 12.dp)
+                .padding(top = 5.dp)
         ) {
             Text(
                 text = playerName,
@@ -68,23 +67,23 @@ fun PostRoundCard(
             
             Text(
                 text = competitionType.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(18.dp))
             
             Text(
                 text = "Daily Handicap: $dailyHandicap",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyLarge,
                 color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(18.dp))
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -92,7 +91,8 @@ fun PostRoundCard(
             ) {
                 ScoreColumn("Front 9", frontNineScore)
                 ScoreColumn("Back 9", backNineScore)
-                ScoreColumn("Grand Total", grandTotal)
+                ScoreColumn("Total", grandTotalStrokes)
+                ScoreColumn("Pts", compScoreTotal)
             }
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -104,7 +104,7 @@ fun PostRoundCard(
                 color = Color.White
             )
             
-            Spacer(modifier = Modifier.height(4.dp))
+//            Spacer(modifier = Modifier.height(24.dp))
             
             SignatureBox(
                 signatureBase64 = signatureBase64,
@@ -128,7 +128,7 @@ private fun ScoreColumn(
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.titleLarge,
             color = Color.White,
             textAlign = TextAlign.Center
         )
@@ -219,7 +219,8 @@ fun PostRoundCardPreview() {
         dailyHandicap = "12.5",
         frontNineScore = "42",
         backNineScore = "38",
-        grandTotal = "80",
+        grandTotalStrokes = "80",
+        compScoreTotal = "21",
         signatureBase64 = null,
         onSignatureClick = { },
         backgroundColor = MSLColors.mslGrey
