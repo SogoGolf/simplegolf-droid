@@ -36,9 +36,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.navigation.NavViewModel
@@ -70,6 +75,8 @@ private fun Screen4Portrait(
     viewModel: NavViewModel,
     playRoundViewModel: PlayRoundViewModel
 ) {
+    val context = LocalContext.current
+
     val deleteMarkerEnabled by playRoundViewModel.deleteMarkerEnabled.collectAsState()
     val isRemovingMarker by playRoundViewModel.isRemovingMarker.collectAsState()
     val markerError by playRoundViewModel.markerError.collectAsState()
@@ -99,6 +106,16 @@ private fun Screen4Portrait(
             }
         }
         // If showBackButton is false, do nothing (completely block back navigation)
+    }
+
+    SideEffect {
+        val window = (context as? androidx.activity.ComponentActivity)?.window
+            ?: return@SideEffect
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        window.statusBarColor = Color.White.toArgb()
+        insetsController.isAppearanceLightStatusBars = true
     }
 
     Scaffold(
