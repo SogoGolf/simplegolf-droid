@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -241,7 +242,11 @@ private fun Screen4Portrait(
 //                Text("123", modifier = Modifier.statusBarsPadding())
 //            }
 
-             Spacer(modifier = Modifier.height(5.dp))
+            // Responsive spacer based on screen density
+//            with(LocalDensity.current) {
+//                val spacingDp = (2 * density).dp
+//                Spacer(modifier = Modifier.height(spacingDp))
+//            }
 
             // Extract golfer data from Room database
             val currentGolferValue = currentGolfer
@@ -358,7 +363,11 @@ private fun Screen4Portrait(
             )
 
             // Gap between cards
-            Spacer(modifier = Modifier.height(10.dp))
+            //Spacer(modifier = Modifier.height(10.dp))
+            with(LocalDensity.current) {
+                val spacingDp = (2 * density).dp
+                Spacer(modifier = Modifier.height(spacingDp))
+            }
 
             // Bottom card - Main Golfer
             HoleCardTest(
