@@ -99,6 +99,21 @@ class CompetitionViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    val calculatedFee = combine(
+        localGame,
+        mslFees
+    ) { game, fees ->
+        val holes = game?.numberOfHoles ?: 18
+        val matchingFees = fees.filter { fee -> 
+            fee.numberHoles == holes && fee.entityName == "msl" && !fee.isWaived 
+        }
+        matchingFees.firstOrNull()?.cost ?: 1.0
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = 1.0
+    )
+
 
     val allCompetitions = competitionRepository.getAllCompetitions()
         .stateIn(
@@ -143,31 +158,22 @@ class CompetitionViewModel @Inject constructor(
             }
         }
         
-        // Load include round preference and token cost on initialization
+        // Load include round preference and update token cost based on calculated fee
         viewModelScope.launch {
             _includeRound.value = includeRoundPreferences.getIncludeRound()
-            _tokenCost.value = if (_includeRound.value) {
-                includeRoundPreferences.getRoundCost()
-            } else {
-                0.0
-            }
             
-            android.util.Log.d("CompetitionViewModel", "=== TOKEN COST INITIALIZATION ===")
-            android.util.Log.d("CompetitionViewModel", "Include round: ${_includeRound.value}")
-            android.util.Log.d("CompetitionViewModel", "Token cost: ${_tokenCost.value}")
-        }
-        
-        // Update token cost when include round changes
-        viewModelScope.launch {
-            _includeRound.collect { include ->
-                val newCost = if (include) {
-                    includeRoundPreferences.getRoundCost()
-                } else {
-                    0.0
-                }
+            // Observe calculated fee and update token cost accordingly
+            combine(
+                _includeRound,
+                calculatedFee
+            ) { include, fee ->
+                if (include) fee else 0.0
+            }.collect { newCost ->
                 _tokenCost.value = newCost
                 android.util.Log.d("CompetitionViewModel", "=== TOKEN COST UPDATED ===")
-                android.util.Log.d("CompetitionViewModel", "Include round: $include")
+                android.util.Log.d("CompetitionViewModel", "Include round: ${_includeRound.value}")
+                android.util.Log.d("CompetitionViewModel", "Game holes: ${localGame.value?.numberOfHoles}")
+                android.util.Log.d("CompetitionViewModel", "Calculated fee: ${calculatedFee.value}")
                 android.util.Log.d("CompetitionViewModel", "New token cost: $newCost")
             }
         }
@@ -339,27 +345,22 @@ class CompetitionViewModel @Inject constructor(
         _includeRound.value = include
         viewModelScope.launch {
             includeRoundPreferences.setIncludeRound(include)
-            // Update token cost when include round changes
+            // Update token cost using calculated fee instead of stored preference
             _tokenCost.value = if (include) {
-                includeRoundPreferences.getRoundCost()
+                calculatedFee.value
             } else {
                 0.0
             }
         }
     }
 
-    // ✅ NEW: Set round cost in SharedPreferences
-    fun setRoundCost(cost: Double) {
+    // ✅ UPDATED: Log calculated fee instead of setting static cost
+    fun logCalculatedFee() {
         viewModelScope.launch {
-            // First save to SharedPreferences
-            includeRoundPreferences.setRoundCost(cost)
-            // Then update token cost if include round is enabled
-            if (_includeRound.value) {
-                _tokenCost.value = cost
-            }
-            android.util.Log.d("CompetitionViewModel", "=== ROUND COST SET ===")
-            android.util.Log.d("CompetitionViewModel", "New round cost: $cost")
-            android.util.Log.d("CompetitionViewModel", "Updated token cost: ${_tokenCost.value}")
+            android.util.Log.d("CompetitionViewModel", "=== CALCULATED FEE INFO ===")
+            android.util.Log.d("CompetitionViewModel", "Game holes: ${localGame.value?.numberOfHoles}")
+            android.util.Log.d("CompetitionViewModel", "Calculated fee: ${calculatedFee.value}")
+            android.util.Log.d("CompetitionViewModel", "Current token cost: ${_tokenCost.value}")
         }
     }
 

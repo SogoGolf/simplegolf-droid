@@ -102,6 +102,10 @@ fun CompetitionsScreen(
         windowInsetsController.isAppearanceLightStatusBars = true
     }
 
+    LaunchedEffect(Unit) {
+        competitionViewModel.triggerRefresh()
+    }
+
     ScreenWithDrawer(
         navController = navController,
         topBar = {
