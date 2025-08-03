@@ -79,7 +79,7 @@ fun CompetitionsScreen(
     competitionViewModel: CompetitionViewModel = hiltViewModel()
 ) {
     val view = LocalView.current
-    var includeRound by remember { mutableStateOf(true) }
+    val includeRound by competitionViewModel.includeRound.collectAsState()
     val refreshState = rememberPullToRefreshState()
 
 
@@ -188,7 +188,6 @@ fun CompetitionsScreen(
                 sogoGolfer = sogoGolfer,
                 tokenCost = tokenCost,
                 onIncludeRoundChanged = { newValue ->
-                    includeRound = newValue
                     competitionViewModel.setIncludeRound(newValue)
                 },
                 onNextClick = {
