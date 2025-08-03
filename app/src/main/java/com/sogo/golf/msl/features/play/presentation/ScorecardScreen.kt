@@ -20,7 +20,7 @@ fun ScorecardScreen() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Yellow),
+                .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
             Column(
