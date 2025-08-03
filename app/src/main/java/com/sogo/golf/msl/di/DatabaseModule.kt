@@ -9,7 +9,9 @@ import com.sogo.golf.msl.data.local.database.MIGRATION_7_8
 import com.sogo.golf.msl.data.local.database.MIGRATION_8_9
 import com.sogo.golf.msl.data.local.database.MIGRATION_9_10
 import com.sogo.golf.msl.data.local.database.MIGRATION_10_11
+import com.sogo.golf.msl.data.local.database.MIGRATION_11_12
 import com.sogo.golf.msl.data.local.database.dao.RoundDao
+import com.sogo.golf.msl.data.local.database.dao.TransactionDao
 import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
 import com.sogo.golf.msl.data.local.database.dao.MslGameDao
 import com.sogo.golf.msl.data.local.database.dao.MslGolferDao
@@ -36,7 +38,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
+            .addMigrations(MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
             .fallbackToDestructiveMigration() // Keep this as fallback
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
@@ -80,5 +82,10 @@ object DatabaseModule {
     @Provides
     fun provideRoundDao(database: AppDatabase): RoundDao {
         return database.roundDao()
+    }
+
+    @Provides
+    fun provideTransactionDao(database: AppDatabase): TransactionDao {
+        return database.transactionDao()
     }
 }

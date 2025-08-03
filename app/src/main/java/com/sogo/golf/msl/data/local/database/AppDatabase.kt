@@ -7,8 +7,10 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.sogo.golf.msl.data.local.database.entities.RoundEntity
+import com.sogo.golf.msl.data.local.database.entities.TransactionEntity
 import com.sogo.golf.msl.data.local.database.dao.CompetitionDao
 import com.sogo.golf.msl.data.local.database.dao.RoundDao
+import com.sogo.golf.msl.data.local.database.dao.TransactionDao
 import com.sogo.golf.msl.data.local.database.dao.MslGameDao
 import com.sogo.golf.msl.data.local.database.dao.MslGolferDao
 import com.sogo.golf.msl.data.local.database.dao.mongodb.FeeDao
@@ -117,6 +119,30 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
     }
 }
 
+val MIGRATION_11_12 = object : Migration(11, 12) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Create transactions table for duplicate prevention
+        database.execSQL("""
+            CREATE TABLE IF NOT EXISTS transactions (
+                id TEXT NOT NULL PRIMARY KEY,
+                entityId TEXT,
+                transactionId TEXT NOT NULL,
+                golferId TEXT NOT NULL,
+                golferEmail TEXT,
+                transactionDate INTEGER NOT NULL,
+                amount INTEGER NOT NULL,
+                transactionType TEXT NOT NULL,
+                debitCreditType TEXT NOT NULL,
+                comment TEXT,
+                status TEXT,
+                mainCompetitionId INTEGER,
+                lastUpdated INTEGER NOT NULL,
+                isSynced INTEGER NOT NULL
+            )
+        """.trimIndent())
+    }
+}
+
 @Database(
     entities = [
         CompetitionEntity::class,
@@ -125,8 +151,9 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
         FeeEntity::class,
         SogoGolferEntity::class,
         RoundEntity::class,
+        TransactionEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -136,6 +163,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun feeDao(): FeeDao
     abstract fun sogoGolferDao(): SogoGolferDao
     abstract fun roundDao(): RoundDao
+    abstract fun transactionDao(): TransactionDao
 
     companion object {
         const val DATABASE_NAME = "msl_golf_database"

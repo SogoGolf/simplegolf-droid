@@ -6,6 +6,7 @@ import com.sogo.golf.msl.data.network.dto.mongodb.RoundDto
 import com.sogo.golf.msl.data.network.dto.mongodb.HoleScoreDto
 import com.sogo.golf.msl.data.network.dto.mongodb.PlayingPartnerRoundDto
 import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
+import com.sogo.golf.msl.data.network.dto.mongodb.TransactionDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -68,6 +69,13 @@ interface SogoMongoApiService {
     suspend fun createTransaction(
         @Body transactionDto: TransactionDto
     ): Response<TransactionDto>
+
+    @GET("transactions/by-golfer-date-competition")
+    suspend fun getTransactionsByGolferDateCompetition(
+        @Query("golferId") golferId: String,
+        @Query("date") date: String,
+        @Query("mainCompetitionId") mainCompetitionId: Int
+    ): Response<List<TransactionDto>>
 }
 
 data class TokenBalanceUpdatePayload(
@@ -83,7 +91,8 @@ data class TransactionDto(
     val transactionType: String,
     val debitCreditType: String,
     val comment: String,
-    val status: String
+    val status: String,
+    val mainCompetitionId: Int? = null
 )
 
 data class HoleScoreUpdatePayload(
