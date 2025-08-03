@@ -32,14 +32,6 @@ fun ScorecardScreen() {
                     style = MaterialTheme.typography.headlineLarge,
                     color = Color.Black
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Landscape Mode Only",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Black
-                )
             }
         }
     }
