@@ -542,8 +542,8 @@ class PlayingPartnerViewModel @Inject constructor(
                                     entityIdVal = sogoGolferData.entityId,
                                     transId = transactionId,
                                     sogoGolfer = sogoGolferData,
-                                    transactionTypeVal = "ROUND_FEE",
-                                    debitCreditTypeVal = "DEBIT",
+                                    transactionTypeVal = "play_round",
+                                    debitCreditTypeVal = "debit",
                                     commentVal = "Round fee for competition $mainCompetitionId",
                                     statusVal = "completed",
                                     mainCompetitionId = mainCompetitionId
