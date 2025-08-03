@@ -141,33 +141,32 @@ class PlayingPartnerViewModel @Inject constructor(
     private val _includeRound = MutableStateFlow(true)
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
 
+    // Token cost from SharedPreferences
+    private val _tokenCost = MutableStateFlow(0.0)
+    val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
+
     init {
-        // Load include round preference on initialization
+        // Load include round preference and token cost on initialization
         viewModelScope.launch {
             _includeRound.value = includeRoundPreferences.getIncludeRound()
+            _tokenCost.value = if (_includeRound.value) {
+                includeRoundPreferences.getRoundCost()
+            } else {
+                0.0
+            }
+        }
+        
+        // Update token cost when include round changes
+        viewModelScope.launch {
+            _includeRound.collect { include ->
+                _tokenCost.value = if (include) {
+                    includeRoundPreferences.getRoundCost()
+                } else {
+                    0.0
+                }
+            }
         }
     }
-
-    // Token cost calculation based on game holes and fees
-    val tokenCost = combine(
-        localGame,
-        mslFees,
-        _includeRound
-    ) { game, fees, include ->
-        if (!include) {
-            0.0
-        } else {
-            game?.numberOfHoles?.let { holes ->
-                fees.find { fee ->
-                    fee.numberHoles == holes
-                }?.cost ?: 0.0
-            } ?: 0.0
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = 0.0
-    )
 
     // Can proceed calculation based on game availability and token balance
     val canProceed = combine(
@@ -238,6 +237,12 @@ class PlayingPartnerViewModel @Inject constructor(
         _includeRound.value = include
         viewModelScope.launch {
             includeRoundPreferences.setIncludeRound(include)
+            // Update token cost when include round changes
+            _tokenCost.value = if (include) {
+                includeRoundPreferences.getRoundCost()
+            } else {
+                0.0
+            }
         }
     }
 

@@ -286,33 +286,32 @@ class CompetitionViewModel @Inject constructor(
     private val _includeRound = MutableStateFlow(true)
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
 
+    // ✅ NEW: Token cost from SharedPreferences
+    private val _tokenCost = MutableStateFlow(0.0)
+    val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
+
     init {
-        // Load include round preference on initialization
+        // Load include round preference and token cost on initialization
         viewModelScope.launch {
             _includeRound.value = includeRoundPreferences.getIncludeRound()
+            _tokenCost.value = if (_includeRound.value) {
+                includeRoundPreferences.getRoundCost()
+            } else {
+                0.0
+            }
+        }
+        
+        // Update token cost when include round changes
+        viewModelScope.launch {
+            _includeRound.collect { include ->
+                _tokenCost.value = if (include) {
+                    includeRoundPreferences.getRoundCost()
+                } else {
+                    0.0
+                }
+            }
         }
     }
-
-    // ✅ NEW: Token cost calculation as StateFlow
-    val tokenCost = combine(
-        localGame,
-        mslFees,
-        _includeRound
-    ) { game, fees, include ->
-        if (!include) {
-            0.0
-        } else {
-            game?.numberOfHoles?.let { holes ->
-                fees.find { fee ->
-                    fee.numberHoles == holes
-                }?.cost ?: 0.0
-            } ?: 0.0
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = 0.0
-    )
 
     // ✅ NEW: Can proceed calculation as StateFlow
     val canProceed = combine(
@@ -336,6 +335,23 @@ class CompetitionViewModel @Inject constructor(
         _includeRound.value = include
         viewModelScope.launch {
             includeRoundPreferences.setIncludeRound(include)
+            // Update token cost when include round changes
+            _tokenCost.value = if (include) {
+                includeRoundPreferences.getRoundCost()
+            } else {
+                0.0
+            }
+        }
+    }
+
+    // ✅ NEW: Set round cost in SharedPreferences
+    fun setRoundCost(cost: Double) {
+        viewModelScope.launch {
+            includeRoundPreferences.setRoundCost(cost)
+            // Update token cost if include round is enabled
+            if (_includeRound.value) {
+                _tokenCost.value = cost
+            }
         }
     }
 

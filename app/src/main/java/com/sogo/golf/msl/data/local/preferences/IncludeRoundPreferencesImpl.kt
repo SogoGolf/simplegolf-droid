@@ -16,6 +16,7 @@ class IncludeRoundPreferencesImpl @Inject constructor(
     companion object {
         private const val INCLUDE_ROUND_PREFS = "include_round_preferences"
         private const val KEY_INCLUDE_ROUND = "include_round_on_sogo"
+        private const val KEY_ROUND_COST = "round_cost"
     }
 
     private val masterKey = MasterKey.Builder(context)
@@ -41,10 +42,22 @@ class IncludeRoundPreferencesImpl @Inject constructor(
     }
 
     override suspend fun getIncludeRound(): Boolean {
-        return prefs.getBoolean(KEY_INCLUDE_ROUND, false)
+        return prefs.getBoolean(KEY_INCLUDE_ROUND, true)
     }
 
     override suspend fun clearIncludeRound() {
         prefs.edit().remove(KEY_INCLUDE_ROUND).apply()
+    }
+
+    override suspend fun setRoundCost(cost: Double) {
+        prefs.edit().putFloat(KEY_ROUND_COST, cost.toFloat()).apply()
+    }
+
+    override suspend fun getRoundCost(): Double {
+        return prefs.getFloat(KEY_ROUND_COST, 1.0f).toDouble()
+    }
+
+    override suspend fun clearRoundCost() {
+        prefs.edit().remove(KEY_ROUND_COST).apply()
     }
 }
