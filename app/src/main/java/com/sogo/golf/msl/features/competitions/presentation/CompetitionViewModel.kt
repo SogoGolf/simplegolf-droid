@@ -107,11 +107,11 @@ class CompetitionViewModel @Inject constructor(
         val matchingFees = fees.filter { fee -> 
             fee.numberHoles == holes && fee.entityName == "msl" && !fee.isWaived 
         }
-        matchingFees.firstOrNull()?.cost ?: 1.0
+        matchingFees.firstOrNull()?.cost ?: 0.0
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = 1.0
+        initialValue = 0.0
     )
 
 
@@ -170,10 +170,15 @@ class CompetitionViewModel @Inject constructor(
                 if (include) fee else 0.0
             }.collect { newCost ->
                 _tokenCost.value = newCost
+                
+                // ✅ SAVE the calculated fee to preferences so other ViewModels can access it
+                includeRoundPreferences.setRoundCost(calculatedFee.value)
+                
                 android.util.Log.d("CompetitionViewModel", "=== TOKEN COST UPDATED ===")
                 android.util.Log.d("CompetitionViewModel", "Include round: ${_includeRound.value}")
                 android.util.Log.d("CompetitionViewModel", "Game holes: ${localGame.value?.numberOfHoles}")
                 android.util.Log.d("CompetitionViewModel", "Calculated fee: ${calculatedFee.value}")
+                android.util.Log.d("CompetitionViewModel", "Saved to preferences: ${calculatedFee.value}")
                 android.util.Log.d("CompetitionViewModel", "New token cost: $newCost")
             }
         }

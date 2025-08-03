@@ -1,5 +1,6 @@
 package com.sogo.golf.msl.features.playing_partner.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.revenuecat.purchases.paywalls.components.common.ComponentOverride
@@ -131,12 +132,12 @@ class PlayingPartnerViewModel @Inject constructor(
         )
 
     // Observe MSL fees from Room database
-    val mslFees = getFeesUseCase.getFeesByEntityName("msl")
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+//    val mslFees = getFeesUseCase.getFeesByEntityName("msl")
+//        .stateIn(
+//            scope = viewModelScope,
+//            started = SharingStarted.WhileSubscribed(5000),
+//            initialValue = emptyList()
+//        )
 
     // Include round state - load from SharedPreferences
     private val _includeRound = MutableStateFlow(true)
@@ -150,21 +151,12 @@ class PlayingPartnerViewModel @Inject constructor(
         // Load include round preference and token cost on initialization
         viewModelScope.launch {
             _includeRound.value = includeRoundPreferences.getIncludeRound()
+            val test = includeRoundPreferences.getRoundCost()
+            Log.d("cc", test.toString())
             _tokenCost.value = if (_includeRound.value) {
                 includeRoundPreferences.getRoundCost()
             } else {
                 0.0
-            }
-        }
-        
-        // Update token cost when include round changes
-        viewModelScope.launch {
-            _includeRound.collect { include ->
-                _tokenCost.value = if (include) {
-                    includeRoundPreferences.getRoundCost()
-                } else {
-                    0.0
-                }
             }
         }
     }
