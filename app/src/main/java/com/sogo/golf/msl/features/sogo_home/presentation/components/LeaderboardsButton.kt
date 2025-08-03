@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Trophy
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
+import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 
 @Composable
 fun LeaderboardsButton(
@@ -32,7 +33,7 @@ fun LeaderboardsButton(
         modifier = Modifier
             .height(80.dp)
             .padding(8.dp),
-        color = mslBlue,
+        color = mslYellow,
         shape = MaterialTheme.shapes.medium,
         onClick = onClick
     ) {
@@ -46,13 +47,13 @@ fun LeaderboardsButton(
             Icon(
                 imageVector = Lucide.Trophy,
                 contentDescription = null,
-                tint = Color.White,
+             //   tint = Color.White,
                 modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = title,
-                color = Color.White,
+               // color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = MaterialTheme.typography.bodyLarge.fontSize,
             )

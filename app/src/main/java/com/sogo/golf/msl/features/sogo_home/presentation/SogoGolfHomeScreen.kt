@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SportsGolf
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,12 +77,17 @@ fun SogoGolfHomeScreen(
             .fillMaxSize()
             .background(mslBlue)
     ) {
-        Image(
-            painter = painterResource(id = R.drawable.simple_golf_transparent),
-            contentDescription = "Background",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(R.drawable.home_background_image)
+                .memoryCacheKey("home_background")
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
         )
+
 
         Column(
             modifier = Modifier
@@ -104,110 +111,76 @@ fun SogoGolfHomeScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            currentGolfer?.let { golfer ->
-                Text(
-                    text = "Welcome ${golfer.firstName} ${golfer.surname}",
-                    fontSize = MaterialTheme.typography.headlineSmall.fontSize,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center
-                )
-
-                sogoGolfer?.let { sogo ->
-                    Text(
-                        text = "Token Balance: ${sogo.tokenBalance ?: 0}",
-                        fontSize = MaterialTheme.typography.bodyLarge.fontSize,
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
             LeaderboardsButton(
                 onClick = {
                     viewModel.trackLeaderboardsButtonClicked()
-                    navController.navigate("leaderboards")
+                    //navController.navigate("leaderboards")
                 },
                 title = "NATIONAL LEADERBOARDS"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
+            SogoTopicButton(
+                title = "MY ROUNDS",
+                subTitle = "",
+                icon = Icons.Filled.SportsGolf,
                 onClick = {
-                    viewModel.trackRoundsButtonClicked()
-                    navController.navigate("rounds")
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.9f),
-                    contentColor = Color.DarkGray
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = "ROUNDS",
-                    fontSize = MaterialTheme.typography.bodyLarge.fontSize,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+                }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    viewModel.trackPurchaseTokensButtonClicked()
-                    navController.navigate("purchase_tokens")
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White.copy(alpha = 0.9f),
-                    contentColor = Color.DarkGray
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = "PURCHASE TOKENS",
-                    fontSize = MaterialTheme.typography.bodyLarge.fontSize,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                SogoTopicButton(
-                    onClick = {
-                        viewModel.trackAboutSogoButtonClicked()
-                        showSogoInfoDialog = true
-                    },
-                    icon = Lucide.Info,
-                    title = "ABOUT SOGO GOLF & PRIZES"
-                )
-
+                currentGolfer?.let { golfer ->
+                    sogoGolfer?.let { sogo ->
+                        SogoTopicButton(
+                            title = "PURCHASE TOKENS",
+                            subTitle = "Balance: ${sogo.tokenBalance} Tokens",
+                            imageResId = R.drawable.token_icon,
+                            onClick = {
+                            }
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.width(16.dp))
-
                 SogoTopicButton(
+                    title = "SOGO T&C",
+                    subTitle = "",
+                    imageResId = R.drawable.info_icon,
                     onClick = {
-                        viewModel.trackTokensAccountButtonClicked()
-                        navController.navigate("tokens_account")
-                    },
-                    imageResId = R.drawable.simple_golf_transparent,
-                    title = "TOKENS & ACCOUNT"
+                        showSogoInfoDialog = true
+                    }
                 )
             }
+
+
+
+
+//            Button(
+//                onClick = {
+//                    viewModel.trackPurchaseTokensButtonClicked()
+//                    navController.navigate("purchase_tokens")
+//                },
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(56.dp)
+//                    .padding(horizontal = 8.dp),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = Color.White.copy(alpha = 0.9f),
+//                    contentColor = Color.DarkGray
+//                ),
+//                shape = RoundedCornerShape(8.dp)
+//            ) {
+//                Text(
+//                    text = "PURCHASE TOKENS",
+//                    fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+//                    fontWeight = FontWeight.Bold
+//                )
+//            }
 
             Spacer(modifier = Modifier.height(32.dp))
         }
