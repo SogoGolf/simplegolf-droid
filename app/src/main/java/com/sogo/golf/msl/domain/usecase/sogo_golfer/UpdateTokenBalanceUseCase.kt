@@ -13,13 +13,42 @@ class UpdateTokenBalanceUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         currentBalance: Int,
-        storeTransaction: StoreTransaction,
+        storeTransaction: StoreTransaction?,
         sogoGolfer: SogoGolfer?
     ): Result<SogoGolfer> {
         return try {
-            val purchasedTokens = extractTokenAmountFromTransaction(storeTransaction)
-            val newBalance = currentBalance + purchasedTokens
+            val newBalance = if (storeTransaction != null) {
+                val purchasedTokens = extractTokenAmountFromTransaction(storeTransaction)
+                currentBalance + purchasedTokens
+            } else {
+                currentBalance
+            }
             
+            val updateResult = sogoMongoRepository.updateGolferTokenBalance(
+                sogoGolfer?.golfLinkNo ?: "", 
+                newBalance
+            )
+            
+            when (updateResult) {
+                is NetworkResult.Success -> {
+                    sogoGolferRepository.saveSogoGolfer(updateResult.data)
+                    Result.success(updateResult.data)
+                }
+                is NetworkResult.Error -> {
+                    Result.failure(Exception(updateResult.error.toUserMessage()))
+                }
+                else -> Result.failure(Exception("Unexpected result"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend operator fun invoke(
+        newBalance: Int,
+        sogoGolfer: SogoGolfer?
+    ): Result<SogoGolfer> {
+        return try {
             val updateResult = sogoMongoRepository.updateGolferTokenBalance(
                 sogoGolfer?.golfLinkNo ?: "", 
                 newBalance

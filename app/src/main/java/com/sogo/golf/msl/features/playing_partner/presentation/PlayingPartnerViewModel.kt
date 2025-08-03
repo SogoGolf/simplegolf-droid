@@ -67,7 +67,8 @@ class PlayingPartnerViewModel @Inject constructor(
     private val createRoundUseCase: CreateRoundUseCase,
     private val checkExistingTransactionUseCase: CheckExistingTransactionUseCase,
     private val createTransactionUseCase: CreateTransactionUseCase,
-    private val includeRoundPreferences: IncludeRoundPreferences
+    private val includeRoundPreferences: IncludeRoundPreferences,
+    private val updateTokenBalanceUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -550,10 +551,22 @@ class PlayingPartnerViewModel @Inject constructor(
                                     onSuccess = {
                                         android.util.Log.d("PlayingPartnerVM", "✅ Transaction created successfully")
                                         
-                                        // Update token balance
+                                        // Update token balance locally and on server
                                         val newBalance = sogoGolferData.tokenBalance - currentTokenCost.toInt()
-                                        // Note: Token balance update would typically be handled by the backend
-                                        // but we may need to refresh the local data
+                                        android.util.Log.d("PlayingPartnerVM", "💰 Updating token balance: ${sogoGolferData.tokenBalance} -> $newBalance")
+                                        
+                                        viewModelScope.launch {
+                                            updateTokenBalanceUseCase(newBalance, sogoGolferData).fold(
+                                                onSuccess = { updatedGolfer ->
+                                                    android.util.Log.d("PlayingPartnerVM", "✅ Token balance updated successfully to ${updatedGolfer.tokenBalance}")
+                                                },
+                                                onFailure = { balanceError ->
+                                                    android.util.Log.e("PlayingPartnerVM", "❌ Failed to update token balance: ${balanceError.message}")
+                                                    // Continue with round creation even if balance update fails
+                                                    // The transaction was already created successfully
+                                                }
+                                            )
+                                        }
                                     },
                                     onFailure = { error ->
                                         android.util.Log.e("PlayingPartnerVM", "❌ Failed to create transaction: ${error.message}")
