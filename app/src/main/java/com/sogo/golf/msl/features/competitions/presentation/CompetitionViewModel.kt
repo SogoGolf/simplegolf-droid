@@ -107,6 +107,12 @@ class CompetitionViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    private val _includeRound = MutableStateFlow(true)
+    val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
+
+    private val _tokenCost = MutableStateFlow(0.0)
+    val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
+
     init {
         // ✅ DEBUG: Log fee data when it loads
         viewModelScope.launch {
@@ -310,15 +316,6 @@ class CompetitionViewModel @Inject constructor(
             )
         }
     }
-
-    // ✅ NEW: Include round state - load from SharedPreferences
-    private val _includeRound = MutableStateFlow(true)
-    val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
-
-    // ✅ NEW: Token cost from SharedPreferences
-    private val _tokenCost = MutableStateFlow(0.0)
-    val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
-
 
     // ✅ NEW: Can proceed calculation as StateFlow
     val canProceed = combine(
