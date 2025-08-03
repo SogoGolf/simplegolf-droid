@@ -142,37 +142,30 @@ class PlayingPartnerViewModel @Inject constructor(
     private val _includeRound = MutableStateFlow(true)
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
 
-    // Token cost calculation based on game holes and fees
-    val tokenCost = combine(
-        localGame,
-        mslFees,
-        _includeRound
-    ) { game, fees, include ->
-        if (!include) {
-            android.util.Log.d("PlayingPartnerVM", "Include round disabled - cost: 0.0")
-            0.0
-        } else {
-            val holes = game?.numberOfHoles ?: 18
-            val matchingFees = fees.filter { fee ->
-                fee.numberHoles == holes && fee.entityName == "msl" && !fee.isWaived
-            }
-            val cost = matchingFees.firstOrNull()?.cost ?: 1.0
-            android.util.Log.d("PlayingPartnerVM", "=== DYNAMIC FEE CALCULATION ===")
-            android.util.Log.d("PlayingPartnerVM", "Game holes: $holes")
-            android.util.Log.d("PlayingPartnerVM", "Matching fees: ${matchingFees.size}")
-            android.util.Log.d("PlayingPartnerVM", "Calculated cost: $cost")
-            cost
-        }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = 1.0
-    )
+    // Token cost from SharedPreferences
+    private val _tokenCost = MutableStateFlow(0.0)
+    val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
 
     init {
-        // Load include round preference on initialization
+        // Load include round preference and token cost on initialization
         viewModelScope.launch {
             _includeRound.value = includeRoundPreferences.getIncludeRound()
+            _tokenCost.value = if (_includeRound.value) {
+                includeRoundPreferences.getRoundCost()
+            } else {
+                0.0
+            }
+        }
+        
+        // Update token cost when include round changes
+        viewModelScope.launch {
+            _includeRound.collect { include ->
+                _tokenCost.value = if (include) {
+                    includeRoundPreferences.getRoundCost()
+                } else {
+                    0.0
+                }
+            }
         }
     }
 
@@ -245,6 +238,12 @@ class PlayingPartnerViewModel @Inject constructor(
         _includeRound.value = include
         viewModelScope.launch {
             includeRoundPreferences.setIncludeRound(include)
+            // Update token cost when include round changes
+            _tokenCost.value = if (include) {
+                includeRoundPreferences.getRoundCost()
+            } else {
+                0.0
+            }
         }
     }
 
