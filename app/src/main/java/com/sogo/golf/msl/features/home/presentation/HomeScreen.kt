@@ -32,6 +32,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.sogo.golf.msl.R
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
+import com.sogo.golf.msl.ui.theme.MSLColors
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import com.sogo.golf.msl.ui.theme.MSLColors.mslWhite
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow

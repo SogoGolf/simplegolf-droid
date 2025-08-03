@@ -2,6 +2,7 @@
     package com.sogo.golf.msl.features.home.presentation
 
     import android.util.Log
+    import android.util.Patterns
     import androidx.activity.result.ActivityResult
     import androidx.activity.result.ActivityResultLauncher
     import androidx.activity.result.IntentSenderRequest
@@ -333,4 +334,26 @@
                 appendLine("🏆 MSL Competition: ${if (competition != null) "✅ ${competition.players.size} players" else "❌ Not loaded"}")
             }
         }
+
+        fun isValidAustralianPostcode(postcode: String): Boolean {
+            // Australian postcodes are 4 digits long
+            // They generally start with a number from 0-8 for states and territories
+            // 9 is reserved for special purposes
+            val postcodeRegex = "^[0-8]\\d{3}$".toRegex()
+            return postcodeRegex.matches(postcode)
+        }
+
+        fun isValidMobileNumber(mobile: String): Boolean {
+            val trimmedMobile = mobile.trim()
+
+            // Regular expression for Australian mobile numbers, allowing spaces
+            val mobileRegex = """^04\d{2}(\s?\d{3}){2}$|^\+614\d{2}(\s?\d{3}){2}$|^614\d{2}(\s?\d{3}){2}$""".toRegex()
+
+            return mobileRegex.matches(trimmedMobile)
+        }
+
+        fun isValidEmail(email: String): Boolean {
+            return Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        }
+
     }
