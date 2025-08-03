@@ -38,6 +38,9 @@ class CheckExistingTransactionUseCase @Inject constructor(
                 mainCompetitionId = mainCompetitionId
             )
 
+            android.util.Log.d("CheckExistingTransactionUseCase", "💳 golferId = $golferId, startOfDay = $startOfDay, endOfDay = $endOfDay, mainCompetitionId = $mainCompetitionId")
+
+
             if (localTransactionCount > 0) {
                 Result.success(true)
             } else {

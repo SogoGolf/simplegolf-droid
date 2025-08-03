@@ -167,7 +167,7 @@ fun HomeScreen(
                         .align(Alignment.Start)
                 )
 
-                Spacer(modifier = Modifier.height(36.dp))
+                Spacer(modifier = Modifier.height(30.dp))
 
                 // Start Competition Round button
                 Button(
