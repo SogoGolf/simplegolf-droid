@@ -16,7 +16,8 @@ class CreateTransactionUseCase @Inject constructor(
         transactionTypeVal: String,
         debitCreditTypeVal: String,
         commentVal: String,
-        statusVal: String
+        statusVal: String,
+        mainCompetitionId: Int? = null
     ): Result<Unit> {
         return try {
             val result = sogoMongoRepository.createTransaction(
@@ -28,7 +29,8 @@ class CreateTransactionUseCase @Inject constructor(
                 transactionType = transactionTypeVal,
                 debitCreditType = debitCreditTypeVal,
                 comment = commentVal,
-                status = statusVal
+                status = statusVal,
+                mainCompetitionId = mainCompetitionId
             )
             
             when (result) {

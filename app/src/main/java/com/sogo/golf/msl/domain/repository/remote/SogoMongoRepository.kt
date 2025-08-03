@@ -38,6 +38,13 @@ interface SogoMongoRepository {
         transactionType: String,
         debitCreditType: String,
         comment: String,
-        status: String
+        status: String,
+        mainCompetitionId: Int? = null
     ): NetworkResult<Unit>
+
+    suspend fun getTransactionsByGolferDateCompetition(
+        golferId: String,
+        date: String,
+        mainCompetitionId: Int
+    ): NetworkResult<List<com.sogo.golf.msl.data.network.dto.mongodb.TransactionDto>>
 }

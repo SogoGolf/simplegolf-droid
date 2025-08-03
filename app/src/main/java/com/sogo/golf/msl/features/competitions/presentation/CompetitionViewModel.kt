@@ -12,6 +12,7 @@ import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
+import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.revenuecat.purchases.models.StoreTransaction
 import android.util.Log
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,7 +41,8 @@ class CompetitionViewModel @Inject constructor(
     private val fetchAndSaveSogoGolferUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase,
     private val getMslClubAndTenantIdsUseCase: com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase,
     private val updateTokenBalanceUseCase: UpdateTokenBalanceUseCase,
-    private val createTransactionUseCase: CreateTransactionUseCase
+    private val createTransactionUseCase: CreateTransactionUseCase,
+    private val includeRoundPreferences: IncludeRoundPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompetitionUiState())
@@ -280,9 +282,16 @@ class CompetitionViewModel @Inject constructor(
         }
     }
 
-    // ✅ NEW: Include round state
+    // ✅ NEW: Include round state - load from SharedPreferences
     private val _includeRound = MutableStateFlow(true)
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
+
+    init {
+        // Load include round preference on initialization
+        viewModelScope.launch {
+            _includeRound.value = includeRoundPreferences.getIncludeRound()
+        }
+    }
 
     // ✅ NEW: Token cost calculation as StateFlow
     val tokenCost = combine(
@@ -325,6 +334,9 @@ class CompetitionViewModel @Inject constructor(
     // ✅ NEW: Update include round state
     fun setIncludeRound(include: Boolean) {
         _includeRound.value = include
+        viewModelScope.launch {
+            includeRoundPreferences.setIncludeRound(include)
+        }
     }
 
     // ✅ NEW: Check if user has sufficient tokens

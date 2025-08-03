@@ -42,6 +42,9 @@ import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.round.CreateRoundUseCase
+import com.sogo.golf.msl.domain.usecase.transaction.CheckExistingTransactionUseCase
+import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
+import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import kotlinx.coroutines.launch
 
@@ -61,7 +64,10 @@ class PlayingPartnerViewModel @Inject constructor(
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
     private val roundRepository: RoundLocalDbRepository,
-    private val createRoundUseCase: CreateRoundUseCase
+    private val createRoundUseCase: CreateRoundUseCase,
+    private val checkExistingTransactionUseCase: CheckExistingTransactionUseCase,
+    private val createTransactionUseCase: CreateTransactionUseCase,
+    private val includeRoundPreferences: IncludeRoundPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -131,10 +137,16 @@ class PlayingPartnerViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    // Include round state
-    //todo: isnt this stored in state ?
+    // Include round state - load from SharedPreferences
     private val _includeRound = MutableStateFlow(true)
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
+
+    init {
+        // Load include round preference on initialization
+        viewModelScope.launch {
+            _includeRound.value = includeRoundPreferences.getIncludeRound()
+        }
+    }
 
     // Token cost calculation based on game holes and fees
     val tokenCost = combine(
@@ -224,6 +236,9 @@ class PlayingPartnerViewModel @Inject constructor(
 
     fun setIncludeRound(include: Boolean) {
         _includeRound.value = include
+        viewModelScope.launch {
+            includeRoundPreferences.setIncludeRound(include)
+        }
     }
 
     // Method to select a playing partner
@@ -476,17 +491,100 @@ class PlayingPartnerViewModel @Inject constructor(
                 val freshCompetitionData = localCompetition.value
                 android.util.Log.d("PlayingPartnerVM", "Fresh competition data: ${freshCompetitionData?.players?.size ?: 0} players")
 
-                // Step 4: Create Round object using fresh Room data
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 4: Creating Round object from fresh Room data...")
+                // Step 4: Handle fee charging with duplicate prevention
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 4: Checking for duplicate transactions and handling fees...")
+                val includeRoundValue = _includeRound.value
+                val currentTokenCost = tokenCost.value
+                
+                if (includeRoundValue && currentTokenCost > 0) {
+                    android.util.Log.d("PlayingPartnerVM", "💰 Fee required: $currentTokenCost tokens")
+                    
+                    // Get mainCompetitionId from game data
+                    val mainCompetitionId = gameData.mainCompetitionId
+                    if (mainCompetitionId == null) {
+                        android.util.Log.e("PlayingPartnerVM", "❌ No mainCompetitionId found in game data")
+                        _uiState.value = _uiState.value.copy(
+                            isLetsPlayLoading = false,
+                            errorMessage = "Game data missing competition ID. Please refresh and try again."
+                        )
+                        return@launch
+                    }
+                    
+                    // Check for existing transactions
+                    android.util.Log.d("PlayingPartnerVM", "🔍 Checking for existing transactions for golfer ${sogoGolferData.id}, competition $mainCompetitionId")
+                    checkExistingTransactionUseCase(sogoGolferData.id, mainCompetitionId).fold(
+                        onSuccess = { hasExistingTransaction ->
+                            if (hasExistingTransaction) {
+                                android.util.Log.d("PlayingPartnerVM", "✅ Existing transaction found - skipping fee charge")
+                            } else {
+                                android.util.Log.d("PlayingPartnerVM", "💳 No existing transaction - charging fee")
+                                
+                                // Check sufficient balance
+                                if (sogoGolferData.tokenBalance < currentTokenCost) {
+                                    android.util.Log.e("PlayingPartnerVM", "❌ Insufficient token balance: ${sogoGolferData.tokenBalance} < $currentTokenCost")
+                                    _uiState.value = _uiState.value.copy(
+                                        isLetsPlayLoading = false,
+                                        errorMessage = "Insufficient token balance. Please purchase more tokens."
+                                    )
+                                    return@launch
+                                }
+                                
+                                // Create transaction
+                                val transactionId = ObjectIdUtils.generateObjectId()
+                                createTransactionUseCase(
+                                    tokens = currentTokenCost.toInt(),
+                                    entityIdVal = sogoGolferData.entityId,
+                                    transId = transactionId,
+                                    sogoGolfer = sogoGolferData,
+                                    transactionTypeVal = "ROUND_FEE",
+                                    debitCreditTypeVal = "DEBIT",
+                                    commentVal = "Round fee for competition $mainCompetitionId",
+                                    statusVal = "completed",
+                                    mainCompetitionId = mainCompetitionId
+                                ).fold(
+                                    onSuccess = {
+                                        android.util.Log.d("PlayingPartnerVM", "✅ Transaction created successfully")
+                                        
+                                        // Update token balance
+                                        val newBalance = sogoGolferData.tokenBalance - currentTokenCost.toInt()
+                                        // Note: Token balance update would typically be handled by the backend
+                                        // but we may need to refresh the local data
+                                    },
+                                    onFailure = { error ->
+                                        android.util.Log.e("PlayingPartnerVM", "❌ Failed to create transaction: ${error.message}")
+                                        _uiState.value = _uiState.value.copy(
+                                            isLetsPlayLoading = false,
+                                            errorMessage = "Failed to process payment: ${error.message}"
+                                        )
+                                        return@launch
+                                    }
+                                )
+                            }
+                        },
+                        onFailure = { error ->
+                            android.util.Log.e("PlayingPartnerVM", "❌ Failed to check existing transactions: ${error.message}")
+                            _uiState.value = _uiState.value.copy(
+                                isLetsPlayLoading = false,
+                                errorMessage = "Failed to verify payment status: ${error.message}"
+                            )
+                            return@launch
+                        }
+                    )
+                } else {
+                    android.util.Log.d("PlayingPartnerVM", "ℹ️ No fee required (include round: $includeRoundValue, cost: $currentTokenCost)")
+                }
+
+                // Step 5: Create Round object using fresh Room data
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 5: Creating Round object from fresh Room data...")
                 val round = createRoundFromRoomData(selectedPartner, currentGolferData, gameData, sogoGolferData, freshCompetitionData, selectedClub)
 
-                // Step 4: Save Round to Room
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 4: Saving Round to database...")
+                // Step 6: Save Round to Room
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 6: Saving Round to database...")
                 roundRepository.saveRound(round)
                 android.util.Log.d("PlayingPartnerVM", "✅ Round saved to database")
 
-                // Step 5: Save Round to MongoDB API
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 5: Syncing Round to MongoDB...")
+                // Step 7: Save Round to MongoDB API
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 7: Syncing Round to MongoDB...")
                 when (val createRoundResult = createRoundUseCase(round)) {
                     is NetworkResult.Success -> {
                         android.util.Log.d("PlayingPartnerVM", "✅ Round synced to MongoDB successfully")
@@ -504,8 +602,8 @@ class PlayingPartnerViewModel @Inject constructor(
                     successMessage = "Ready to play!"
                 )
 
-                // Step 6: Navigate to PlayRound screen
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 6: Navigating to PlayRound screen...")
+                // Step 8: Navigate to PlayRound screen
+                android.util.Log.d("PlayingPartnerVM", "🔄 Step 8: Navigating to PlayRound screen...")
                 onNavigateToPlayRound()
 
             } catch (e: Exception) {

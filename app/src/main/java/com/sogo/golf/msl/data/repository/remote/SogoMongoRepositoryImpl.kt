@@ -9,7 +9,7 @@ import com.sogo.golf.msl.data.network.api.BulkHoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.api.RoundUpdatePayload
 import com.sogo.golf.msl.data.network.api.RoundSubmissionUpdatePayload
 import com.sogo.golf.msl.data.network.api.TokenBalanceUpdatePayload
-import com.sogo.golf.msl.data.network.api.TransactionDto
+import com.sogo.golf.msl.data.network.dto.mongodb.TransactionDto
 import com.sogo.golf.msl.data.network.dto.mongodb.toDomainModel
 import com.sogo.golf.msl.data.network.dto.mongodb.toDto
 import com.sogo.golf.msl.data.repository.BaseRepository
@@ -268,23 +268,46 @@ class SogoMongoRepositoryImpl @Inject constructor(
         transactionType: String,
         debitCreditType: String,
         comment: String,
-        status: String
+        status: String,
+        mainCompetitionId: Int?
     ): NetworkResult<Unit> {
         return try {
             val transactionDto = TransactionDto(
                 entityId = entityId,
                 transactionId = transactionId,
-                golferId = golferId,
+                golferId = golferId ?: "",
                 golferEmail = golferEmail,
                 amount = amount,
                 transactionType = transactionType,
                 debitCreditType = debitCreditType,
                 comment = comment,
-                status = status
+                status = status,
+                mainCompetitionId = mainCompetitionId
             )
             val response = sogoMongoApiService.createTransaction(transactionDto)
             if (response.isSuccessful) {
                 NetworkResult.Success(Unit)
+            } else {
+                NetworkResult.Error(NetworkError.ServerError)
+            }
+        } catch (e: Exception) {
+            NetworkResult.Error(NetworkError.Unknown(e.message ?: "Network error"))
+        }
+    }
+
+    override suspend fun getTransactionsByGolferDateCompetition(
+        golferId: String,
+        date: String,
+        mainCompetitionId: Int
+    ): NetworkResult<List<com.sogo.golf.msl.data.network.dto.mongodb.TransactionDto>> {
+        return try {
+            val response = sogoMongoApiService.getTransactionsByGolferDateCompetition(
+                golferId = golferId,
+                date = date,
+                mainCompetitionId = mainCompetitionId
+            )
+            if (response.isSuccessful) {
+                NetworkResult.Success(response.body() ?: emptyList())
             } else {
                 NetworkResult.Error(NetworkError.ServerError)
             }
