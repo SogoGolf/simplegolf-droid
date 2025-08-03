@@ -29,6 +29,7 @@ import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.features.playing_partner.presentation.PlayingPartnerScreen
 import com.sogo.golf.msl.features.competitions.presentation.CompetitionsScreen
 import com.sogo.golf.msl.features.home.presentation.HomeScreen
+import com.sogo.golf.msl.features.sogo_home.presentation.SogoGolfHomeScreen
 import com.sogo.golf.msl.features.login.presentation.LoginScreen
 import com.sogo.golf.msl.features.login.presentation.WebAuthScreen
 import com.sogo.golf.msl.features.play.presentation.PlayRoundScreen
@@ -157,6 +158,10 @@ class MainActivity : ComponentActivity() {
                         composable("webauth") {
                             SetPortraitOrientation()
                             WebAuthScreen(navController)
+                        }
+                        composable("sogogolfhomescreen") {
+                            SetPortraitOrientation()
+                            SogoGolfHomeScreen(navController)
                         }
                     }
                 }
