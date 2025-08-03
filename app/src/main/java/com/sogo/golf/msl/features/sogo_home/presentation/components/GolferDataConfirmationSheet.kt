@@ -1,6 +1,6 @@
 package com.sogo.golf.msl.features.sogo_home.presentation.components
 
-import CustomCheckbox
+import com.sogo.golf.msl.shared_components.ui.components.CustomCheckbox
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,7 +68,6 @@ import org.threeten.bp.Instant
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 import java.util.Locale
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.MenuAnchorType
 
 
@@ -107,8 +106,7 @@ fun GolferDataConfirmationSheet(
     val isEmailError = remember { mutableStateOf(false) }
     val emailErrorMessage = remember { mutableStateOf("") }
 
-    var state by remember { mutableStateOf(golferData?.state) }
-    var mslState by remember { mutableStateOf(mslGolfer.state) }
+    var state by remember { mutableStateOf(mslGolfer.state) }
 
     var postcode by remember { mutableStateOf(mslGolfer.postCode) }
     val isPostcodeError = remember { mutableStateOf(false) }
@@ -144,16 +142,8 @@ fun GolferDataConfirmationSheet(
 
     val uriHandler = LocalUriHandler.current
 
-    val states = countryDataState.country?.states
-
-    // Initial state selection
-    LaunchedEffect(states, mslState) { // Add states to the LaunchedEffect dependencies
-        if (states != null && mslState != null) {
-            val normalizedMslState = normalizeState(mslState)
-            val matchingState = states.find { normalizeState(it.shortName) == normalizedMslState }
-            state = matchingState
-        }
-    }
+    // Australian states list
+    val australianStates = listOf("NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT")
 
     // Initial validation using LaunchedEffect
     LaunchedEffect(firstName, lastName, email, postcode, mobile, gender) {
@@ -186,7 +176,7 @@ fun GolferDataConfirmationSheet(
         (firstName?.isNotBlank() == true) && !isFirstNameError.value &&
                 (lastName?.isNotBlank() == true) && !isLastNameError.value &&
                 (email?.isNotBlank() == true) && !isEmailError.value &&
-                (state?.shortName?.isNotBlank() == true) && // Check for null and blank state
+                (state?.isNotBlank() == true) && // Check for null and blank state
                 (postcode?.isNotBlank() == true) && !isPostcodeError.value &&
                 (mobile?.isNotBlank() == true) && !isMobileError.value && // Check for null and blank mobile
                 (gender?.isNotBlank() == true && !isGenderError.value) && // Check for null and blank gender
@@ -305,7 +295,7 @@ fun GolferDataConfirmationSheet(
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = state?.shortName ?: "",
+                value = state ?: "",
                 onValueChange = {},
                 readOnly = true,
                 maxLines = 1,
@@ -321,16 +311,14 @@ fun GolferDataConfirmationSheet(
                 onDismissRequest = { expanded = false },
                 modifier = Modifier.background(Color.White)
             ) {
-                states?.sortedBy { it.name }?.forEach { stateOption ->
-                    if (!stateOption.shortName.isNullOrEmpty()) {
-                        DropdownMenuItem(
-                            text = { Text(stateOption.shortName!!) },
-                            onClick = {
-                                state = stateOption
-                                expanded = false
-                            }
-                        )
-                    }
+                australianStates.forEach { stateOption ->
+                    DropdownMenuItem(
+                        text = { Text(stateOption) },
+                        onClick = {
+                            state = stateOption
+                            expanded = false
+                        }
+                    )
                 }
             }
         }

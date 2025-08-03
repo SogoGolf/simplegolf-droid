@@ -18,6 +18,8 @@
     import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
     import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
     import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
+    import com.sogo.golf.msl.features.sogo_home.presentation.state.CountryDataState
+    import com.sogo.golf.msl.features.sogo_home.presentation.state.SogoGolferDataState
     import dagger.hilt.android.lifecycle.HiltViewModel
     import kotlinx.coroutines.flow.MutableStateFlow
     import kotlinx.coroutines.flow.SharingStarted
@@ -45,6 +47,12 @@
         companion object {
             private const val TAG = "HomeViewModel"
         }
+
+        private val _sogoGolferDataState = MutableStateFlow(SogoGolferDataState())
+        val sogoGolferDataState: StateFlow<SogoGolferDataState> = _sogoGolferDataState.asStateFlow()
+
+        private val _countryDataState = MutableStateFlow(CountryDataState())
+        val countryDataState: StateFlow<CountryDataState> = _countryDataState.asStateFlow()
 
         // NEW: UI State for loading and error handling
         private val _uiState = MutableStateFlow(HomeUiState())
