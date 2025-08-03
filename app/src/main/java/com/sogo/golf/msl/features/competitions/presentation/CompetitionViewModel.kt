@@ -107,6 +107,12 @@ class CompetitionViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    private val _includeRound = MutableStateFlow(true)
+    val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
+
+    private val _tokenCost = MutableStateFlow(0.0)
+    val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
+
     init {
         // ✅ DEBUG: Log fee data when it loads
         viewModelScope.launch {
@@ -134,6 +140,35 @@ class CompetitionViewModel @Inject constructor(
                         android.util.Log.d("CompetitionViewModel", "Token Balance: ${sogoGolfer?.tokenBalance}")
                     }
                 }
+            }
+        }
+        
+        // Load include round preference and token cost on initialization
+        viewModelScope.launch {
+            _includeRound.value = includeRoundPreferences.getIncludeRound()
+            _tokenCost.value = if (_includeRound.value) {
+                includeRoundPreferences.getRoundCost()
+            } else {
+                0.0
+            }
+            
+            android.util.Log.d("CompetitionViewModel", "=== TOKEN COST INITIALIZATION ===")
+            android.util.Log.d("CompetitionViewModel", "Include round: ${_includeRound.value}")
+            android.util.Log.d("CompetitionViewModel", "Token cost: ${_tokenCost.value}")
+        }
+        
+        // Update token cost when include round changes
+        viewModelScope.launch {
+            _includeRound.collect { include ->
+                val newCost = if (include) {
+                    includeRoundPreferences.getRoundCost()
+                } else {
+                    0.0
+                }
+                _tokenCost.value = newCost
+                android.util.Log.d("CompetitionViewModel", "=== TOKEN COST UPDATED ===")
+                android.util.Log.d("CompetitionViewModel", "Include round: $include")
+                android.util.Log.d("CompetitionViewModel", "New token cost: $newCost")
             }
         }
     }
@@ -282,37 +317,6 @@ class CompetitionViewModel @Inject constructor(
         }
     }
 
-    // ✅ NEW: Include round state - load from SharedPreferences
-    private val _includeRound = MutableStateFlow(true)
-    val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
-
-    // ✅ NEW: Token cost from SharedPreferences
-    private val _tokenCost = MutableStateFlow(0.0)
-    val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
-
-    init {
-        // Load include round preference and token cost on initialization
-        viewModelScope.launch {
-            _includeRound.value = includeRoundPreferences.getIncludeRound()
-            _tokenCost.value = if (_includeRound.value) {
-                includeRoundPreferences.getRoundCost()
-            } else {
-                0.0
-            }
-        }
-        
-        // Update token cost when include round changes
-        viewModelScope.launch {
-            _includeRound.collect { include ->
-                _tokenCost.value = if (include) {
-                    includeRoundPreferences.getRoundCost()
-                } else {
-                    0.0
-                }
-            }
-        }
-    }
-
     // ✅ NEW: Can proceed calculation as StateFlow
     val canProceed = combine(
         localGame,
@@ -347,11 +351,15 @@ class CompetitionViewModel @Inject constructor(
     // ✅ NEW: Set round cost in SharedPreferences
     fun setRoundCost(cost: Double) {
         viewModelScope.launch {
+            // First save to SharedPreferences
             includeRoundPreferences.setRoundCost(cost)
-            // Update token cost if include round is enabled
+            // Then update token cost if include round is enabled
             if (_includeRound.value) {
                 _tokenCost.value = cost
             }
+            android.util.Log.d("CompetitionViewModel", "=== ROUND COST SET ===")
+            android.util.Log.d("CompetitionViewModel", "New round cost: $cost")
+            android.util.Log.d("CompetitionViewModel", "Updated token cost: ${_tokenCost.value}")
         }
     }
 
