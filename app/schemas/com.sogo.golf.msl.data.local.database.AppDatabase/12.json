@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 12,
-    "identityHash": "787cc0760845c9c528e415c5ab2d3af6",
+    "identityHash": "8c3e1bf1825f676a2c3db73778b26abe",
     "entities": [
       {
         "tableName": "competitions",
@@ -318,7 +318,7 @@
       },
       {
         "tableName": "sogo_golfers",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `entityId` TEXT, `golfLinkNo` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `email` TEXT, `phone` TEXT, `dateOfBirth` TEXT, `handicap` REAL, `club` TEXT, `membershipType` TEXT, `isActive` INTEGER NOT NULL, `createdAt` TEXT, `updatedAt` TEXT, `tokenBalance` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `entityId` TEXT, `golfLinkNo` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `email` TEXT, `phone` TEXT, `dateOfBirth` TEXT, `handicap` REAL, `club` TEXT, `membershipType` TEXT, `isActive` INTEGER NOT NULL, `createdAt` TEXT, `updatedAt` TEXT, `tokenBalance` INTEGER NOT NULL, `isAcceptedSogoTermsAndConditions` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -398,6 +398,12 @@
           {
             "fieldPath": "tokenBalance",
             "columnName": "tokenBalance",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isAcceptedSogoTermsAndConditions",
+            "columnName": "isAcceptedSogoTermsAndConditions",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -851,7 +857,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '787cc0760845c9c528e415c5ab2d3af6')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8c3e1bf1825f676a2c3db73778b26abe')"
     ]
   }
 }

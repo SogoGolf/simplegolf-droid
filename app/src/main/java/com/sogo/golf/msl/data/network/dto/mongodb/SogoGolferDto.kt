@@ -2,6 +2,7 @@ package com.sogo.golf.msl.data.network.dto.mongodb
 
 import com.google.gson.annotations.SerializedName
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
+import com.sogo.golf.msl.domain.model.mongodb.AppSettings
 
 data class SogoGolferDto(
     @SerializedName("id")
@@ -47,7 +48,15 @@ data class SogoGolferDto(
     val updatedAt: String? = null,
 
     @SerializedName("tokenBalance")
-    val tokenBalance: Int = 0
+    val tokenBalance: Int = 0,
+
+    @SerializedName("appSettings")
+    val appSettings: AppSettingsDto? = null
+)
+
+data class AppSettingsDto(
+    @SerializedName("isAcceptedSogoTermsAndConditions")
+    val isAcceptedSogoTermsAndConditions: Boolean = false
 )
 
 fun SogoGolferDto.toDomainModel(): SogoGolfer {
@@ -66,6 +75,7 @@ fun SogoGolferDto.toDomainModel(): SogoGolfer {
         isActive = isActive,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        tokenBalance = tokenBalance
+        tokenBalance = tokenBalance,
+        appSettings = appSettings?.let { AppSettings(it.isAcceptedSogoTermsAndConditions) }
     )
 }

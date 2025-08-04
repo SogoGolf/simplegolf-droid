@@ -36,6 +36,7 @@ import com.sogo.golf.msl.ui.theme.MSLColors
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import com.sogo.golf.msl.ui.theme.MSLColors.mslWhite
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
+import com.sogo.golf.msl.features.sogo_home.presentation.components.GolferDataConfirmationSheet
 
 @Composable
 fun HomeScreen(
@@ -53,6 +54,7 @@ fun HomeScreen(
     val currentGolfer by homeViewModel.currentGolfer.collectAsState()
     val localGame by homeViewModel.localGame.collectAsState()
     val localCompetition by homeViewModel.localCompetition.collectAsState()
+    val sogoGolfer by homeViewModel.sogoGolfer.collectAsState()
 
     // Collect the updateState properly
     val updateState by homeViewModel.updateState.collectAsState()
@@ -67,6 +69,7 @@ fun HomeScreen(
     val activity = context as Activity
 
     var shouldStartCompetition by remember { mutableStateOf(false) }
+    var showGolferDataConfirmationSheet by remember { mutableStateOf(false) }
 
     val updateLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
@@ -173,19 +176,25 @@ fun HomeScreen(
                 // Start Competition Round button
                 Button(
                     onClick = {
-                        shouldStartCompetition = true
-                        // Call the modified method with both callbacks
-                        homeViewModel.checkForUpdatesAndStartCompetition(
-                            activity = activity,
-                            activityResultLauncher = updateLauncher,
-                            onUpdateCheckComplete = {
-                                // Update check completed - if we reach here, update was required
-                                // UI should show loading state until update finishes
-                            },
-                            onNoUpdateRequired = {
-                                // This is handled in LaunchedEffect above
-                            }
-                        )
+                        // ✅ NEW: Check terms acceptance before version update
+                        val termsAccepted = sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions ?: false
+                        if (!termsAccepted) {
+                            showGolferDataConfirmationSheet = true
+                        } else {
+                            shouldStartCompetition = true
+                            // Call the modified method with both callbacks
+                            homeViewModel.checkForUpdatesAndStartCompetition(
+                                activity = activity,
+                                activityResultLauncher = updateLauncher,
+                                onUpdateCheckComplete = {
+                                    // Update check completed - if we reach here, update was required
+                                    // UI should show loading state until update finishes
+                                },
+                                onNoUpdateRequired = {
+                                    // This is handled in LaunchedEffect above
+                                }
+                            )
+                        }
                     },
                     enabled = !updateState.isCheckingForUpdate, // Disable while checking
                     modifier = Modifier
@@ -327,6 +336,25 @@ fun HomeScreen(
                     modifier = Modifier
                         .width(screenWidth * 0.9f)
                         .padding(top = 15.dp)
+                )
+            }
+
+            // ✅ NEW: Show GolferDataConfirmationSheet when terms not accepted
+            if (showGolferDataConfirmationSheet) {
+                GolferDataConfirmationSheet(
+                    viewModel = homeViewModel,
+                    mslGolfer = currentGolfer ?: return@ScreenWithDrawer,
+                    onDismiss = { 
+                        showGolferDataConfirmationSheet = false
+                        // After terms are accepted, proceed with competition start
+                        shouldStartCompetition = true
+                        homeViewModel.checkForUpdatesAndStartCompetition(
+                            activity = activity,
+                            activityResultLauncher = updateLauncher,
+                            onUpdateCheckComplete = { },
+                            onNoUpdateRequired = { }
+                        )
+                    }
                 )
             }
         }

@@ -3,6 +3,7 @@ package com.sogo.golf.msl.data.local.database.entities.mongodb
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
+import com.sogo.golf.msl.domain.model.mongodb.AppSettings
 
 @Entity(tableName = "sogo_golfers")
 data class SogoGolferEntity(
@@ -22,6 +23,7 @@ data class SogoGolferEntity(
     val createdAt: String?,
     val updatedAt: String?,
     val tokenBalance: Int, // ✅ NEW: Token balance field
+    val isAcceptedSogoTermsAndConditions: Boolean = false, // ✅ NEW: Terms acceptance field
     val lastUpdated: Long = System.currentTimeMillis()
 ){
     fun toDomainModel(): SogoGolfer {
@@ -40,7 +42,8 @@ data class SogoGolferEntity(
             isActive = isActive,
             createdAt = createdAt,
             updatedAt = updatedAt,
-            tokenBalance = tokenBalance // ✅ NEW: Map token balance
+            tokenBalance = tokenBalance, // ✅ NEW: Map token balance
+            appSettings = AppSettings(isAcceptedSogoTermsAndConditions = isAcceptedSogoTermsAndConditions)
         )
     }
 
@@ -61,7 +64,8 @@ data class SogoGolferEntity(
                 isActive = sogoGolfer.isActive,
                 createdAt = sogoGolfer.createdAt,
                 updatedAt = sogoGolfer.updatedAt,
-                tokenBalance = sogoGolfer.tokenBalance
+                tokenBalance = sogoGolfer.tokenBalance,
+                isAcceptedSogoTermsAndConditions = sogoGolfer.appSettings?.isAcceptedSogoTermsAndConditions ?: false
             )
         }
     }

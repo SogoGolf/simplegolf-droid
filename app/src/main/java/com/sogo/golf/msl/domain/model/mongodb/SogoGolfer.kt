@@ -15,5 +15,10 @@ data class SogoGolfer(
     val isActive: Boolean,
     val createdAt: String?, // ISO date string
     val updatedAt: String?, // ISO date string
-    val tokenBalance: Int = 0
+    val tokenBalance: Int = 0,
+    val appSettings: AppSettings? = null
+)
+
+data class AppSettings(
+    val isAcceptedSogoTermsAndConditions: Boolean = false
 )

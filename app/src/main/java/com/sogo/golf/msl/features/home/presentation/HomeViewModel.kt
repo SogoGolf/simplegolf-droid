@@ -26,6 +26,8 @@
     import kotlinx.coroutines.flow.StateFlow
     import kotlinx.coroutines.flow.asStateFlow
     import kotlinx.coroutines.flow.stateIn
+    import kotlinx.coroutines.flow.flatMapLatest
+    import kotlinx.coroutines.flow.flowOf
     import kotlinx.coroutines.launch
     import javax.inject.Inject
 
@@ -41,13 +43,14 @@
         private val appUpdateManager: com.sogo.golf.msl.app.update.AppUpdateManager,
         private val fetchAndSaveFeesUseCase: FetchAndSaveFeesUseCase, // ✅ ADD THIS
         private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
-        private val getLocalSogoGolferUseCase: GetSogoGolferUseCase,
+        private val getSogoGolferUseCase: GetSogoGolferUseCase,
     ) : ViewModel() {
 
         companion object {
             private const val TAG = "HomeViewModel"
         }
 
+        // ✅ ADD REQUIRED STATE FOR GOLFER DATA CONFIRMATION SHEET
         private val _sogoGolferDataState = MutableStateFlow(SogoGolferDataState())
         val sogoGolferDataState: StateFlow<SogoGolferDataState> = _sogoGolferDataState.asStateFlow()
 
@@ -83,6 +86,21 @@
             )
 
         val updateState = appUpdateManager.updateState
+
+        // ✅ SOGO GOLFER ACCESS - Similar to SogoGolfHomeViewModel pattern
+        val sogoGolfer = currentGolfer
+            .flatMapLatest { golfer ->
+                if (golfer?.golfLinkNo != null) {
+                    getSogoGolferUseCase(golfer.golfLinkNo)
+                } else {
+                    flowOf(null)
+                }
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = null
+            )
 
         init {
             // ✅ NEW: Automatically fetch data when HomeViewModel is created
