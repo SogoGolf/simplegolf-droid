@@ -111,7 +111,7 @@ class GolfApiAuthInterceptor @Inject constructor(
                     ?: return null
 
                 val response = runBlocking {
-                    mpsAuthApiService.refreshToken(PostRefreshTokenRequestDto("Bearer ${currentTokens.refreshToken}"))
+                    mpsAuthApiService.refreshToken(PostRefreshTokenRequestDto(currentTokens.refreshToken))
                 }
 
                 if (response.isSuccessful) {
