@@ -19,7 +19,7 @@ class GolfApiAuthInterceptor @Inject constructor(
 
     companion object {
         private const val TAG = "GolfApiAuthInterceptor"
-        private val refreshLock = Any()
+        private val refreshLock = Object()
         private var isRefreshing = false
     }
 
@@ -27,118 +27,106 @@ class GolfApiAuthInterceptor @Inject constructor(
         val originalRequest = chain.request()
         val url = originalRequest.url
 
-        Log.d(TAG, "=== INTERCEPTOR DEBUG ===")
-        Log.d(TAG, "Request URL: $url")
-        Log.d(TAG, "Host: ${url.host}")
-        Log.d(TAG, "Contains golf-api.micropower.com.au: ${url.host.contains("golf-api.micropower.com.au")}")
-
-        // Check if this is a golf API request
-        if (url.host.contains("golf-api.micropower.com.au")) {
-            Log.d(TAG, "✅ This is a golf API request - adding headers")
-
-            val memberToken = mslTokenManager.getAuthorizationHeader()
-            Log.d(TAG, "Member token available: ${memberToken != null}")
-            Log.d(TAG, "SOGO_AUTHORIZATION: ${BuildConfig.SOGO_AUTHORIZATION.take(20)}...")
-            if (memberToken != null) {
-                Log.d(TAG, "Member token: ${memberToken.take(20)}...")
-            }
-
-            val newRequest = originalRequest.newBuilder()
-                .addHeader("Authorization", BuildConfig.SOGO_AUTHORIZATION)
-                .apply {
-                    if (memberToken != null) {
-                        addHeader("X-Member-Token", memberToken)
-                    }
-                }
-                .build()
-
-            Log.d(TAG, "Headers added to request:")
-            newRequest.headers.forEach { (name, value) ->
-                Log.d(TAG, "$name: ${if (name.contains("Auth") || name.contains("Token")) value.take(20) + "..." else value}")
-            }
-
-            val response = chain.proceed(newRequest)
-
-            // Check if we got a 401 and need to refresh token
-            if (response.code == 401 && memberToken != null) {
-                Log.d(TAG, "🔄 Received 401, attempting token refresh")
-                response.close()
-
-                val refreshedToken = refreshTokenIfNeeded()
-                if (refreshedToken != null) {
-                    Log.d(TAG, "✅ Token refreshed successfully, retrying request")
-                    
-                    // Retry with new token
-                    val retryRequest = originalRequest.newBuilder()
-                        .addHeader("Authorization", BuildConfig.SOGO_AUTHORIZATION)
-                        .addHeader("X-Member-Token", refreshedToken)
-                        .build()
-                    
-                    return chain.proceed(retryRequest)
-                } else {
-                    Log.e(TAG, "❌ Token refresh failed")
-                }
-            }
-
-            return response
-        } else {
-            Log.d(TAG, "❌ Not a golf API request - proceeding without headers")
+        // Only apply to golf API requests
+        if (!url.host.contains("golf-api.micropower.com.au")) {
             return chain.proceed(originalRequest)
         }
+
+        // Build request with current tokens
+        val memberToken = mslTokenManager.getAuthorizationHeader()
+        val requestWithAuth = originalRequest.newBuilder()
+            .addHeader("Authorization", BuildConfig.SOGO_AUTHORIZATION)
+            .apply {
+                if (memberToken != null) addHeader("X-Member-Token", memberToken)
+            }
+            .build()
+
+        var response = chain.proceed(requestWithAuth)
+
+        if (response.code == 401 && memberToken != null) {
+            Log.d(TAG, "🔄 Received 401, attempting forced token refresh")
+            response.close()
+
+            val refreshedToken = refreshTokenIfNeeded(force = true)
+            if (refreshedToken != null && refreshedToken != memberToken) {
+                Log.d(TAG, "✅ Token actually refreshed, retrying request with new token")
+                val retryRequest = originalRequest.newBuilder()
+                    .addHeader("Authorization", BuildConfig.SOGO_AUTHORIZATION)
+                    .addHeader("X-Member-Token", refreshedToken)
+                    .build()
+                return chain.proceed(retryRequest)
+            } else {
+                Log.e(TAG, "❌ Token refresh did not yield a new token; not retrying or retrying would be futile")
+            }
+        }
+
+        return response
     }
 
-    private fun refreshTokenIfNeeded(): String? {
+    private fun refreshTokenIfNeeded(force: Boolean = false): String? {
         synchronized(refreshLock) {
-            // Check if another thread already refreshed the token
-            val currentToken = mslTokenManager.getAuthorizationHeader()
+            val currentHeader = mslTokenManager.getAuthorizationHeader()
             val tokens = mslTokenManager.getTokens()
-            if (currentToken != null && tokens != null && !tokens.isExpired()) {
-                Log.d(TAG, "Token already refreshed by another thread")
-                return currentToken
+
+            tokens?.accessToken?.let { Log.d(TAG, it) }
+            Log.d(TAG, "**************************************")
+            tokens?.refreshToken?.let { Log.d(TAG, it) }
+
+            if (!force && currentHeader != null && tokens != null && !tokens.isExpired()) {
+                Log.d(TAG, "Token already valid; skipping refresh")
+                return currentHeader
             }
 
             if (isRefreshing) {
-                Log.d(TAG, "Token refresh already in progress, waiting...")
-                // Wait for refresh to complete (simple approach)
-                Thread.sleep(1000)
+                Log.d(TAG, "Another thread is refreshing token; waiting...")
+                // Wait until the other refresh finishes (with timeout to avoid deadlock)
+                try {
+                    (refreshLock as java.lang.Object).wait(2000)
+                } catch (ie: InterruptedException) {
+                    Log.w(TAG, "Interrupted while waiting for token refresh")
+                }
+                // Return whatever is now stored (could still be old)
                 return mslTokenManager.getAuthorizationHeader()
             }
 
+            // We're the one to refresh
             isRefreshing = true
-            try {
-                Log.d(TAG, "Starting token refresh...")
-                val currentTokens = mslTokenManager.getTokens()
-                    ?: return null
+        }
 
-                val response = runBlocking {
-                    mpsAuthApiService.refreshToken(PostRefreshTokenRequestDto(currentTokens.refreshToken))
-                }
+        try {
+            Log.d(TAG, "Starting token refresh...")
+            val currentTokens = mslTokenManager.getTokens() ?: return null
 
-                if (response.isSuccessful) {
-                    val newTokens = response.body()?.toDomainModel()
-                        ?: return null
+            val response = runBlocking {
+                mpsAuthApiService.refreshToken(
+                    PostRefreshTokenRequestDto(currentTokens.refreshToken)
+                )
+            }
 
-                    // Save new tokens
-                    val mslTokens = MslTokens(
-                        accessToken = newTokens.accessToken,
-                        refreshToken = newTokens.refreshToken,
-                        tokenType = newTokens.tokenType,
-                        expiresIn = newTokens.expiresIn,
-                        issuedAt = newTokens.issuedAt
-                    )
-                    mslTokenManager.saveTokens(mslTokens)
+            if (response.isSuccessful) {
+                val newTokensDto = response.body()?.toDomainModel() ?: return null
 
-                    Log.d(TAG, "✅ Token refresh successful")
-                    return mslTokenManager.getAuthorizationHeader()
-                } else {
-                    Log.e(TAG, "❌ Token refresh failed: ${response.code()} - ${response.message()}")
-                    return null
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ Token refresh exception: ${e.message}")
+                val mslTokens = MslTokens(
+                    accessToken = newTokensDto.accessToken,
+                    refreshToken = newTokensDto.refreshToken,
+                    tokenType = newTokensDto.tokenType,
+                    expiresIn = newTokensDto.expiresIn,
+                    issuedAt = newTokensDto.issuedAt
+                )
+                mslTokenManager.saveTokens(mslTokens)
+                Log.d(TAG, "✅ Token refresh successful")
+                return mslTokenManager.getAuthorizationHeader()
+            } else {
+                Log.e(TAG, "❌ Token refresh failed: ${response.code()} - ${response.message()}")
                 return null
-            } finally {
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Token refresh exception: ${e.message}")
+            return null
+        } finally {
+            synchronized(refreshLock) {
                 isRefreshing = false
+                (refreshLock as java.lang.Object).notifyAll()
             }
         }
     }
