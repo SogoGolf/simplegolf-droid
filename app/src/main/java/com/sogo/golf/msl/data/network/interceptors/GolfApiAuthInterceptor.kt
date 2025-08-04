@@ -35,7 +35,7 @@ class GolfApiAuthInterceptor @Inject constructor(
         // Build request with current tokens
         val memberToken = mslTokenManager.getAuthorizationHeader()
         val requestWithAuth = originalRequest.newBuilder()
-            .addHeader("Authorization", BuildConfig.SOGO_AUTHORIZATION)
+            .addHeader("Authorization", "Basic cQpOkQ6bpFaeZzI5biibIaok0oWEoY9AtSFltMUzcR7jkTFm2ePMlO/TTR8flSdWk/i5PTQJ6NeGHZY3s2AxgWZZEwCcuynkpivjZsuVlBGEiiu8OwnDtEblNkuoYGkKAqDy6q2DfcL4tJhoSKKZ6bxpc5tVFExmB9SPPwS5nC4=")
             .apply {
                 if (memberToken != null) addHeader("X-Member-Token", memberToken)
             }
@@ -51,7 +51,7 @@ class GolfApiAuthInterceptor @Inject constructor(
             if (refreshedToken != null && refreshedToken != memberToken) {
                 Log.d(TAG, "✅ Token actually refreshed, retrying request with new token")
                 val retryRequest = originalRequest.newBuilder()
-                    .addHeader("Authorization", BuildConfig.SOGO_AUTHORIZATION)
+                    .addHeader("Authorization", "Basic cQpOkQ6bpFaeZzI5biibIaok0oWEoY9AtSFltMUzcR7jkTFm2ePMlO/TTR8flSdWk/i5PTQJ6NeGHZY3s2AxgWZZEwCcuynkpivjZsuVlBGEiiu8OwnDtEblNkuoYGkKAqDy6q2DfcL4tJhoSKKZ6bxpc5tVFExmB9SPPwS5nC4=")
                     .addHeader("X-Member-Token", refreshedToken)
                     .build()
                 return chain.proceed(retryRequest)
