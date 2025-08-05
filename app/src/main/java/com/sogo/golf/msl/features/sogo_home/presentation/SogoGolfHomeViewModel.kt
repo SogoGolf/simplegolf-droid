@@ -11,6 +11,7 @@ import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.revenuecat.purchases.models.StoreTransaction
+import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -104,42 +105,99 @@ class SogoGolfHomeViewModel @Inject constructor(
         Log.d(TAG, "Tokens account button clicked")
     }
 
-    fun updateTokenBalance(transaction: StoreTransaction) {
-        viewModelScope.launch {
-            try {
-                _purchaseTokenState.value = _purchaseTokenState.value.copy(isLoading = true)
-                
-                val currentBalance = sogoGolfer.value?.tokenBalance ?: 0
-                val result = updateTokenBalanceUseCase(currentBalance, transaction, sogoGolfer.value)
-                
-                result.fold(
-                    onSuccess = { updatedGolfer ->
-                        _purchaseTokenState.value = _purchaseTokenState.value.copy(
-                            isLoading = false,
-                            isSuccess = true
-                        )
-                        Log.d(TAG, "Token balance updated successfully to ${updatedGolfer.tokenBalance}")
-                    },
-                    onFailure = { error ->
-                        _purchaseTokenState.value = _purchaseTokenState.value.copy(
-                            isLoading = false,
-                            errorMessage = "Failed to update token balance: ${error.message}"
-                        )
-                        Log.e(TAG, "Failed to update token balance", error)
-                    }
-                )
-            } catch (e: Exception) {
-                _purchaseTokenState.value = _purchaseTokenState.value.copy(
-                    isLoading = false,
-                    errorMessage = "Failed to update token balance: ${e.message}"
-                )
-                Log.e(TAG, "Exception updating token balance", e)
-            }
+    suspend fun updateTokenBalance(transaction: StoreTransaction) {
+        try {
+            _purchaseTokenState.value = _purchaseTokenState.value.copy(isLoading = true)
+
+            val currentBalance = sogoGolfer.value?.tokenBalance ?: 0
+
+            val result = updateTokenBalanceUseCase(currentBalance, transaction, sogoGolfer.value)
+
+            result.fold(
+                onSuccess = { updatedGolfer ->
+                    _purchaseTokenState.value = _purchaseTokenState.value.copy(
+                        isLoading = false,
+                        isSuccess = true
+                    )
+
+                    createTransaction(transaction)
+
+                    Log.d(TAG, "Token balance updated successfully to ${updatedGolfer.tokenBalance}")
+                },
+                onFailure = { error ->
+                    _purchaseTokenState.value = _purchaseTokenState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Failed to update token balance: ${error.message}"
+                    )
+                    Log.e(TAG, "Failed to update token balance", error)
+                }
+            )
+        } catch (e: Exception) {
+            _purchaseTokenState.value = _purchaseTokenState.value.copy(
+                isLoading = false,
+                errorMessage = "Failed to update token balance: ${e.message}"
+            )
+            Log.e(TAG, "Exception updating token balance", e)
         }
     }
 
+    enum class TransactionType {
+        PURCHASE, ON_SIGN_UP, PLAY_ROUND // Add other transaction types as needed
+    }
+
+    enum class DebitCreditType {
+        DEBIT, CREDIT // Add other debit/credit types as needed
+    }
+
+    suspend fun createTransaction(transaction: StoreTransaction) {
+
+        val sogoGolferData = sogoGolfer.value ?: throw Exception("SogoGolfer is null")
+
+        val transactionId = ObjectIdUtils.generateObjectId()
+
+        val packageid = transaction.productIds.firstOrNull() ?: throw Exception("Package ID not found")
+
+        //for now just hardcode the products to get the amount of the transaction
+        val numTokens = when (packageid) {
+            "com.sogo.golf.msl.5token" -> 5
+            "com.sogo.golf.msl.10token" -> 10
+            "com.sogo.golf.msl.20token" -> 20
+            else -> {0}
+        }
+
+        createTransactionUseCase(
+            tokens = numTokens,
+            entityIdVal = sogoGolferData.entityId,
+            transId = transactionId,
+            sogoGolfer = sogoGolferData,
+            transactionTypeVal = TransactionType.PURCHASE.toString(),
+            debitCreditTypeVal = DebitCreditType.CREDIT.toString(),
+            commentVal = "Purchase tokens",
+            statusVal = "completed",
+            mainCompetitionId = null
+        ).fold(
+            onSuccess = {
+                android.util.Log.d("PlayingPartnerVM", "✅ Transaction created successfully")
+            },
+            onFailure = { error ->
+                android.util.Log.e("PlayingPartnerVM", "❌ Failed to create transaction: ${error.message}")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Failed to process payment: ${error.message}"
+                )
+                return
+            }
+        )
+    }
+
+
+
     fun clearPurchaseTokenState() {
         _purchaseTokenState.value = PurchaseTokenState()
+    }
+
+    fun setPurchaseTokensState(isInProgress: Boolean) {
+        _purchaseTokenState.value = _purchaseTokenState.value.copy(isLoading = isInProgress)
     }
 }
 

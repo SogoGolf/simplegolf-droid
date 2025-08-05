@@ -5,6 +5,7 @@ import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,9 +20,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -32,10 +36,13 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.sogo.golf.msl.R
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
+import com.sogo.golf.msl.ui.theme.MSLColors
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import com.sogo.golf.msl.ui.theme.MSLColors.mslWhite
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
+import com.sogo.golf.msl.features.sogo_home.presentation.components.GolferDataConfirmationSheet
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
@@ -52,6 +59,7 @@ fun HomeScreen(
     val currentGolfer by homeViewModel.currentGolfer.collectAsState()
     val localGame by homeViewModel.localGame.collectAsState()
     val localCompetition by homeViewModel.localCompetition.collectAsState()
+    val sogoGolfer by homeViewModel.sogoGolfer.collectAsState()
 
     // Collect the updateState properly
     val updateState by homeViewModel.updateState.collectAsState()
@@ -66,6 +74,7 @@ fun HomeScreen(
     val activity = context as Activity
 
     var shouldStartCompetition by remember { mutableStateOf(false) }
+    var showGolferDataConfirmationSheet by remember { mutableStateOf(false) }
 
     val updateLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
@@ -172,19 +181,25 @@ fun HomeScreen(
                 // Start Competition Round button
                 Button(
                     onClick = {
-                        shouldStartCompetition = true
-                        // Call the modified method with both callbacks
-                        homeViewModel.checkForUpdatesAndStartCompetition(
-                            activity = activity,
-                            activityResultLauncher = updateLauncher,
-                            onUpdateCheckComplete = {
-                                // Update check completed - if we reach here, update was required
-                                // UI should show loading state until update finishes
-                            },
-                            onNoUpdateRequired = {
-                                // This is handled in LaunchedEffect above
-                            }
-                        )
+                        // ✅ NEW: Check terms acceptance before version update
+                        val termsAccepted = sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions ?: false
+                        if (!termsAccepted) {
+                            showGolferDataConfirmationSheet = true
+                        } else {
+                            shouldStartCompetition = true
+                            // Call the modified method with both callbacks
+                            homeViewModel.checkForUpdatesAndStartCompetition(
+                                activity = activity,
+                                activityResultLauncher = updateLauncher,
+                                onUpdateCheckComplete = {
+                                    // Update check completed - if we reach here, update was required
+                                    // UI should show loading state until update finishes
+                                },
+                                onNoUpdateRequired = {
+                                    // This is handled in LaunchedEffect above
+                                }
+                            )
+                        }
                     },
                     enabled = !updateState.isCheckingForUpdate, // Disable while checking
                     modifier = Modifier
@@ -327,6 +342,40 @@ fun HomeScreen(
                         .width(screenWidth * 0.9f)
                         .padding(top = 15.dp)
                 )
+            }
+
+            // ✅ NEW: Show GolferDataConfirmationSheet when terms not accepted
+            @OptIn(ExperimentalMaterial3Api::class)
+            currentGolfer?.let { golfer ->
+                if (showGolferDataConfirmationSheet) {
+                    val bottomSheetState = rememberModalBottomSheetState(
+                        skipPartiallyExpanded = true
+                    )
+
+                    ModalBottomSheet(
+                        onDismissRequest = {
+                            showGolferDataConfirmationSheet = false
+                        },
+                        sheetState = bottomSheetState,
+                    ) {
+                        GolferDataConfirmationSheet(
+                            viewModel = homeViewModel,
+                            mslGolfer = golfer,
+                            sogoGolfer = sogoGolfer, // Pass existing SOGO golfer data
+                            onDismiss = {
+                                showGolferDataConfirmationSheet = false
+                                // After terms are accepted, proceed with competition start
+                                shouldStartCompetition = true
+                                homeViewModel.checkForUpdatesAndStartCompetition(
+                                    activity = activity,
+                                    activityResultLauncher = updateLauncher,
+                                    onUpdateCheckComplete = { },
+                                    onNoUpdateRequired = { }
+                                )
+                            }
+                        )
+                    }
+                }
             }
         }
     }

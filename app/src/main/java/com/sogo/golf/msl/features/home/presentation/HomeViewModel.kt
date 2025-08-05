@@ -2,6 +2,7 @@
     package com.sogo.golf.msl.features.home.presentation
 
     import android.util.Log
+    import android.util.Patterns
     import androidx.activity.result.ActivityResult
     import androidx.activity.result.ActivityResultLauncher
     import androidx.activity.result.IntentSenderRequest
@@ -17,12 +18,16 @@
     import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
     import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
     import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
+    import com.sogo.golf.msl.features.sogo_home.presentation.state.CountryDataState
+    import com.sogo.golf.msl.features.sogo_home.presentation.state.SogoGolferDataState
     import dagger.hilt.android.lifecycle.HiltViewModel
     import kotlinx.coroutines.flow.MutableStateFlow
     import kotlinx.coroutines.flow.SharingStarted
     import kotlinx.coroutines.flow.StateFlow
     import kotlinx.coroutines.flow.asStateFlow
     import kotlinx.coroutines.flow.stateIn
+    import kotlinx.coroutines.flow.flatMapLatest
+    import kotlinx.coroutines.flow.flowOf
     import kotlinx.coroutines.launch
     import javax.inject.Inject
 
@@ -38,12 +43,19 @@
         private val appUpdateManager: com.sogo.golf.msl.app.update.AppUpdateManager,
         private val fetchAndSaveFeesUseCase: FetchAndSaveFeesUseCase, // ✅ ADD THIS
         private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
-        private val getLocalSogoGolferUseCase: GetSogoGolferUseCase,
+        private val getSogoGolferUseCase: GetSogoGolferUseCase,
     ) : ViewModel() {
 
         companion object {
             private const val TAG = "HomeViewModel"
         }
+
+        // ✅ ADD REQUIRED STATE FOR GOLFER DATA CONFIRMATION SHEET
+        private val _sogoGolferDataState = MutableStateFlow(SogoGolferDataState())
+        val sogoGolferDataState: StateFlow<SogoGolferDataState> = _sogoGolferDataState.asStateFlow()
+
+        private val _countryDataState = MutableStateFlow(CountryDataState())
+        val countryDataState: StateFlow<CountryDataState> = _countryDataState.asStateFlow()
 
         // NEW: UI State for loading and error handling
         private val _uiState = MutableStateFlow(HomeUiState())
@@ -74,6 +86,21 @@
             )
 
         val updateState = appUpdateManager.updateState
+
+        // ✅ SOGO GOLFER ACCESS - Similar to SogoGolfHomeViewModel pattern
+        val sogoGolfer = currentGolfer
+            .flatMapLatest { golfer ->
+                if (golfer?.golfLinkNo != null) {
+                    getSogoGolferUseCase(golfer.golfLinkNo)
+                } else {
+                    flowOf(null)
+                }
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = null
+            )
 
         init {
             // ✅ NEW: Automatically fetch data when HomeViewModel is created
@@ -333,4 +360,105 @@
                 appendLine("🏆 MSL Competition: ${if (competition != null) "✅ ${competition.players.size} players" else "❌ Not loaded"}")
             }
         }
+
+        fun isValidAustralianPostcode(postcode: String): Boolean {
+            // Australian postcodes are 4 digits long
+            // They generally start with a number from 0-8 for states and territories
+            // 9 is reserved for special purposes
+            val postcodeRegex = "^[0-8]\\d{3}$".toRegex()
+            return postcodeRegex.matches(postcode)
+        }
+
+        fun isValidMobileNumber(mobile: String): Boolean {
+            val trimmedMobile = mobile.trim()
+
+            // Regular expression for Australian mobile numbers, allowing spaces
+            val mobileRegex = """^04\d{2}(\s?\d{3}){2}$|^\+614\d{2}(\s?\d{3}){2}$|^614\d{2}(\s?\d{3}){2}$""".toRegex()
+
+            return mobileRegex.matches(trimmedMobile)
+        }
+
+        fun isValidEmail(email: String): Boolean {
+            return Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        }
+
+        /**
+         * Validates if the given postcode matches the selected Australian state
+         * @param postcode 4-digit Australian postcode
+         * @param state Australian state abbreviation (NSW, VIC, QLD, WA, SA, TAS, ACT, NT)
+         * @return true if postcode matches the state, false otherwise
+         */
+        fun isPostcodeValidForState(postcode: String, state: String): Boolean {
+            if (!isValidAustralianPostcode(postcode)) return false
+            
+            val postcodeInt = postcode.toIntOrNull() ?: return false
+            
+            return when (state.uppercase()) {
+                "NSW" -> postcodeInt in 1000..2599 || postcodeInt in 2619..2899 || postcodeInt in 2921..2999
+                "ACT" -> postcodeInt in 2600..2618 || postcodeInt in 2900..2920
+                "VIC" -> postcodeInt in 3000..3999 || postcodeInt in 8000..8999
+                "QLD" -> postcodeInt in 4000..4999 || postcodeInt in 9000..9999
+                "SA" -> postcodeInt in 5000..5999
+                "WA" -> postcodeInt in 6000..6797 || postcodeInt in 6800..6999
+                "TAS" -> postcodeInt in 7000..7999
+                "NT" -> postcodeInt in 800..999
+                else -> false
+            }
+        }
+
     }
+
+    /*
+    {
+    "_id" : ObjectId("68381f5f82fdc4366e596446"),
+    "authSystemUid" : "00134",
+    "country" : "australia",
+    "dateOfBirth" : ISODate("2003-05-04T00:00:00.000+0000"),
+    "deviceManufacturer" : "samsung",
+    "deviceModel" : "SM-G965N",
+    "deviceOS" : "Android",
+    "deviceOSVersion" : "10",
+    "deviceToken" : "ekUhPbxLSlKs7sAmlB9fru:APA91bEkEOuwumVGG_5hnyjTy9y7pKHH-iwdrVM0dY_2gMQ-v2DhI1D30TMN-LHHqsMr74tYldy9BxOPtUQCmnq95L4YbnhxHb83NpMfoX-E_sQ_961plNw",
+    "email" : "d@s.mm",
+    "entityId" : ObjectId("662dce226858d77ea54fa9bd"),
+    "firstName" : "Daffy",
+    "gender" : "m",
+    "glDuplicateFlag" : null,
+    "golfLinkHandicap" : -2.0,
+    "golfLinkId" : null,
+    "golflinkCardPhotoUrl" : null,
+    "golflinkNo" : "0001200134",
+    "handicap" : -2,
+    "isConfirmedMslGolferData" : true,
+    "isInactive" : false,
+    "lastAppOpen" : ISODate("2025-05-29T08:48:31.410+0000"),
+    "lastName" : "Duck",
+    "location" : null,
+    "memberSince" : ISODate("2025-05-29T08:48:31.407+0000"),
+    "mobileNo" : "0444444444",
+    "photoUrl" : null,
+    "playFirstGame" : false,
+    "postCode" : "2222",
+    "refCode" : "",
+    "refGolferCode" : null,
+    "refGolferId" : null,
+    "signUpAppCode" : 0,
+    "signupStatus" : "COMPLETE",
+    "sogoAppVersion" : "3.0.3 #1751511870",
+    "tokenBalance" : 10,
+    "userType" : "silver",
+    "uuid" : null,
+    "vendorPushId" : null,
+    "appSettings" : {
+        "isAcceptedSogoTermsAndConditions" : false,
+        "isEnabledAutoTokenPayments" : false,
+        "notificationFlags" : null
+    },
+    "state" : {
+        "alpha2" : "AU",
+        "name" : "New South Wales",
+        "shortName" : "NSW"
+    }
+}
+
+     */

@@ -143,6 +143,54 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
     }
 }
 
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Recreate the sogo_golfers table with the correct schema including appSettings
+        database.execSQL("""
+            CREATE TABLE sogo_golfers_new (
+                id TEXT NOT NULL PRIMARY KEY,
+                entityId TEXT,
+                golfLinkNo TEXT NOT NULL,
+                firstName TEXT NOT NULL,
+                lastName TEXT NOT NULL,
+                email TEXT,
+                phone TEXT,
+                dateOfBirth TEXT,
+                handicap REAL,
+                club TEXT,
+                membershipType TEXT,
+                isActive INTEGER NOT NULL,
+                createdAt TEXT,
+                updatedAt TEXT,
+                tokenBalance INTEGER NOT NULL,
+                appSettings TEXT,
+                lastUpdated INTEGER NOT NULL
+            )
+        """.trimIndent())
+        
+        // Copy data from old table to new table (excluding any problematic columns)
+        database.execSQL("""
+            INSERT INTO sogo_golfers_new (id, entityId, golfLinkNo, firstName, lastName, email, phone, dateOfBirth, handicap, club, membershipType, isActive, createdAt, updatedAt, tokenBalance, lastUpdated)
+            SELECT id, entityId, golfLinkNo, firstName, lastName, email, phone, dateOfBirth, handicap, club, membershipType, isActive, createdAt, updatedAt, tokenBalance, lastUpdated
+            FROM sogo_golfers
+        """.trimIndent())
+        
+        // Drop old table and rename new table
+        database.execSQL("DROP TABLE sogo_golfers")
+        database.execSQL("ALTER TABLE sogo_golfers_new RENAME TO sogo_golfers")
+    }
+}
+
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Add new fields to sogo_golfers table
+        database.execSQL("ALTER TABLE sogo_golfers ADD COLUMN mobileNo TEXT")
+        database.execSQL("ALTER TABLE sogo_golfers ADD COLUMN postCode TEXT")
+        database.execSQL("ALTER TABLE sogo_golfers ADD COLUMN state TEXT")
+        database.execSQL("ALTER TABLE sogo_golfers ADD COLUMN gender TEXT")
+    }
+}
+
 @Database(
     entities = [
         CompetitionEntity::class,
@@ -153,7 +201,7 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
         RoundEntity::class,
         TransactionEntity::class,
     ],
-    version = 12,
+    version = 14,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

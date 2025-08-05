@@ -2,7 +2,10 @@
 package com.sogo.golf.msl.shared.utils
 
 import org.threeten.bp.LocalDate
+import org.threeten.bp.Period
+import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
+import java.util.Calendar
 
 object DateUtils {
     private const val DATE_FORMAT = "yyyy-MM-dd"
@@ -89,5 +92,20 @@ object DateUtils {
     fun clearDebugDate() {
         debugDate = null
         android.util.Log.d("DateUtils", "🔧 DEBUG: Cleared debug date, using real date")
+    }
+
+    fun getLocalDateFromMillis(millis: Long): LocalDate {
+        val calendar = Calendar.getInstance().apply { timeInMillis = millis }
+        return LocalDate.of(
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH) + 1, // Months are 0-based in Calendar
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+    }
+
+    fun isAgeBetween10And110(age: LocalDate): Boolean {
+        val currentDate = LocalDate.now(ZoneId.systemDefault())
+        val age = Period.between(age, currentDate).years
+        return age in 10..110
     }
 }
