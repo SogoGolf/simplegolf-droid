@@ -609,16 +609,17 @@ fun GolferDataConfirmationSheet(
                         dateOfBirth = java.util.Date(dateOfBirthMillis!!),
                         currentPostcode = postcode ?: "",
                         currentMobile = mobile ?: "",
-                        sogoGender = if (gender == "Male") "m" else "f"
+                        sogoGender = if (gender == "Male") "m" else "f",
+                        existingSogoGolfer = sogoGolfer
                     )
                     loading = false
 
                     if (success) {
-                        Toast.makeText(context, "Golfer created successfully!", Toast.LENGTH_LONG)
+                        Toast.makeText(context, if (sogoGolfer != null) "Golfer updated successfully!" else "Golfer created successfully!", Toast.LENGTH_LONG)
                             .show()
                         onDismiss()
                     } else {
-                        Toast.makeText(context, "Failed to create golfer. Please try again.", Toast.LENGTH_LONG)
+                        Toast.makeText(context, if (sogoGolfer != null) "Failed to update golfer. Please try again." else "Failed to create golfer. Please try again.", Toast.LENGTH_LONG)
                             .show()
                     }
                 }

@@ -1,6 +1,7 @@
 package com.sogo.golf.msl.domain.repository
 
 import com.sogo.golf.msl.data.network.api.CreateGolferRequestDto
+import com.sogo.golf.msl.data.network.api.UpdateGolferRequestDto
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import kotlinx.coroutines.flow.Flow
@@ -17,4 +18,6 @@ interface SogoGolferLocalDbRepository {
     suspend fun clearAllSogoGolfers()
     suspend fun hasSogoGolferByGolfLinkNo(golfLinkNo: String): Boolean
     suspend fun createAndSaveGolfer(request: CreateGolferRequestDto): NetworkResult<SogoGolfer>
+    
+    suspend fun updateAndSaveGolfer(golflinkNo: String, request: UpdateGolferRequestDto): NetworkResult<SogoGolfer>
 }

@@ -16,10 +16,13 @@ import com.sogo.golf.msl.domain.usecase.fees.FetchAndSaveFeesUseCase
 import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.data.network.api.CreateGolferRequestDto
+import com.sogo.golf.msl.data.network.api.UpdateGolferRequestDto
+import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.CreateGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
+import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateGolferUseCase
 import com.sogo.golf.msl.features.sogo_home.presentation.state.CountryDataState
 import com.sogo.golf.msl.features.sogo_home.presentation.state.SogoGolferDataState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,6 +50,7 @@ class HomeViewModel @Inject constructor(
         private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
         private val getSogoGolferUseCase: GetSogoGolferUseCase,
         private val createGolferUseCase: CreateGolferUseCase,
+        private val updateGolferUseCase: UpdateGolferUseCase,
     ) : ViewModel() {
 
         companion object {
@@ -417,59 +421,103 @@ class HomeViewModel @Inject constructor(
         dateOfBirth: java.util.Date,
         currentPostcode: String,
         currentMobile: String,
-        sogoGender: String
+        sogoGender: String,
+        existingSogoGolfer: SogoGolfer? = null
     ): Boolean {
         return try {
             val currentMslGolfer = currentGolfer.value
                 ?: throw Exception("No MSL golfer data available")
             
-            val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-            val dateOfBirthString = dateFormat.format(dateOfBirth)
-            
-            val deviceManufacturer = android.os.Build.MANUFACTURER
-            val deviceModel = android.os.Build.MODEL
-            val deviceOS = "Android"
-            val deviceOSVersion = android.os.Build.VERSION.RELEASE
-            
-            val sogoAppVersion = com.sogo.golf.msl.BuildConfig.VERSION_NAME
-            
-            val request = CreateGolferRequestDto(
-                authSystemUid = currentMslGolfer.golfLinkNo,
-                country = "australia",
-                dateOfBirth = dateOfBirthString,
-                deviceManufacturer = deviceManufacturer,
-                deviceModel = deviceModel,
-                deviceOS = deviceOS,
-                deviceOSVersion = deviceOSVersion,
-                deviceToken = null,
-                email = currentEmail,
-                firstName = firstName,
-                gender = sogoGender,
-                golflinkNo = currentMslGolfer.golfLinkNo,
-                isAcceptedSogoTermsAndConditions = true,
-                lastName = lastName,
-                mobileNo = currentMobile,
-                postCode = currentPostcode,
-                sogoAppVersion = sogoAppVersion,
-                state = state.uppercase()
-            )
-            
-            when (val result = createGolferUseCase(request)) {
-                is NetworkResult.Success -> {
-                    Log.d(TAG, "✅ Golfer created successfully")
-                    fetchAndSaveSogoGolferUseCase(currentMslGolfer.golfLinkNo)
-                    true
+            if (existingSogoGolfer != null) {
+                Log.d(TAG, "Updating existing golfer: ${existingSogoGolfer.firstName} ${existingSogoGolfer.lastName}")
+                
+                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                val dateOfBirthString = dateFormat.format(dateOfBirth)
+                
+                val deviceManufacturer = android.os.Build.MANUFACTURER
+                val deviceModel = android.os.Build.MODEL
+                val deviceOS = "Android"
+                val deviceOSVersion = android.os.Build.VERSION.RELEASE
+                val sogoAppVersion = com.sogo.golf.msl.BuildConfig.VERSION_NAME
+                
+                val updateRequest = UpdateGolferRequestDto(
+                    firstName = firstName,
+                    lastName = lastName,
+                    email = currentEmail,
+                    state = state.uppercase(),
+                    dateOfBirth = dateOfBirthString,
+                    postCode = currentPostcode,
+                    mobileNo = currentMobile,
+                    gender = sogoGender,
+                    deviceManufacturer = deviceManufacturer,
+                    deviceModel = deviceModel,
+                    deviceOS = deviceOS,
+                    deviceOSVersion = deviceOSVersion,
+                    sogoAppVersion = sogoAppVersion,
+                    isAcceptedSogoTermsAndConditions = true
+                )
+                
+                when (val result = updateGolferUseCase(currentMslGolfer.golfLinkNo, updateRequest)) {
+                    is NetworkResult.Success -> {
+                        Log.d(TAG, "✅ Golfer updated successfully")
+                        true
+                    }
+                    is NetworkResult.Error -> {
+                        Log.e(TAG, "❌ Failed to update golfer: ${result.error}")
+                        false
+                    }
+                    is NetworkResult.Loading -> {
+                        false
+                    }
                 }
-                is NetworkResult.Error -> {
-                    Log.e(TAG, "❌ Failed to create golfer: ${result.error}")
-                    false
-                }
-                is NetworkResult.Loading -> {
-                    false
+            } else {
+                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                val dateOfBirthString = dateFormat.format(dateOfBirth)
+                
+                val deviceManufacturer = android.os.Build.MANUFACTURER
+                val deviceModel = android.os.Build.MODEL
+                val deviceOS = "Android"
+                val deviceOSVersion = android.os.Build.VERSION.RELEASE
+                val sogoAppVersion = com.sogo.golf.msl.BuildConfig.VERSION_NAME
+                
+                val request = CreateGolferRequestDto(
+                    authSystemUid = currentMslGolfer.golfLinkNo,
+                    country = "australia",
+                    dateOfBirth = dateOfBirthString,
+                    deviceManufacturer = deviceManufacturer,
+                    deviceModel = deviceModel,
+                    deviceOS = deviceOS,
+                    deviceOSVersion = deviceOSVersion,
+                    deviceToken = null,
+                    email = currentEmail,
+                    firstName = firstName,
+                    gender = sogoGender,
+                    golflinkNo = currentMslGolfer.golfLinkNo,
+                    isAcceptedSogoTermsAndConditions = true,
+                    lastName = lastName,
+                    mobileNo = currentMobile,
+                    postCode = currentPostcode,
+                    sogoAppVersion = sogoAppVersion,
+                    state = state.uppercase()
+                )
+                
+                when (val result = createGolferUseCase(request)) {
+                    is NetworkResult.Success -> {
+                        Log.d(TAG, "✅ Golfer created successfully")
+                        fetchAndSaveSogoGolferUseCase(currentMslGolfer.golfLinkNo)
+                        true
+                    }
+                    is NetworkResult.Error -> {
+                        Log.e(TAG, "❌ Failed to create golfer: ${result.error}")
+                        false
+                    }
+                    is NetworkResult.Loading -> {
+                        false
+                    }
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Exception creating golfer", e)
+            Log.e(TAG, "❌ Exception processing golfer confirmation data", e)
             false
         }
     }

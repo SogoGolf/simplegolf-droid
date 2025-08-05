@@ -5,6 +5,7 @@ import com.sogo.golf.msl.data.local.database.dao.mongodb.SogoGolferDao
 import com.sogo.golf.msl.data.local.database.entities.mongodb.SogoGolferEntity
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.data.network.api.CreateGolferRequestDto
+import com.sogo.golf.msl.data.network.api.UpdateGolferRequestDto
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
@@ -149,6 +150,31 @@ class SogoGolferLocalDbRepositoryImpl @Inject constructor(
                 is NetworkResult.Error -> {
                     Log.e(TAG, "API call failed: ${result.error}")
                     throw Exception("Failed to create SogoGolfer: ${result.error.toUserMessage()}")
+                }
+                is NetworkResult.Loading -> {
+                    throw Exception("Unexpected loading state")
+                }
+            }
+        }
+    }
+
+    override suspend fun updateAndSaveGolfer(golflinkNo: String, request: UpdateGolferRequestDto): NetworkResult<SogoGolfer> {
+        Log.d(TAG, "updateAndSaveGolfer called for: $golflinkNo")
+        
+        return safeNetworkCall {
+            when (val result = sogoMongoRepository.updateGolferData(golflinkNo, request)) {
+                is NetworkResult.Success -> {
+                    val sogoGolfer = result.data
+                    Log.d(TAG, "API updated SogoGolfer: ${sogoGolfer.firstName} ${sogoGolfer.lastName}")
+                    
+                    saveSogoGolferToDatabase(sogoGolfer)
+                    
+                    Log.d(TAG, "SogoGolfer updated and saved successfully in database")
+                    sogoGolfer
+                }
+                is NetworkResult.Error -> {
+                    Log.e(TAG, "API call failed: ${result.error}")
+                    throw Exception("Failed to update SogoGolfer: ${result.error.toUserMessage()}")
                 }
                 is NetworkResult.Loading -> {
                     throw Exception("Unexpected loading state")

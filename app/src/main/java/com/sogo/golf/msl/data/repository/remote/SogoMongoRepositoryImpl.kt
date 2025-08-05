@@ -3,6 +3,7 @@ package com.sogo.golf.msl.data.repository.remote
 import android.util.Log
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.data.network.api.CreateGolferRequestDto
+import com.sogo.golf.msl.data.network.api.UpdateGolferRequestDto
 import com.sogo.golf.msl.data.network.api.SogoMongoApiService
 import com.sogo.golf.msl.data.network.api.HoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.api.HoleScoreData
@@ -335,6 +336,28 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 Log.e(TAG, "Failed to create golfer: ${response.code()} - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to create golfer: ${response.message()}")
+            }
+        }
+    }
+
+    override suspend fun updateGolferData(golflinkNo: String, request: UpdateGolferRequestDto): NetworkResult<SogoGolfer> {
+        return safeNetworkCall {
+            Log.d(TAG, "Updating golfer data in SOGO Mongo API: $golflinkNo")
+            
+            val response = sogoMongoApiService.updateGolferData(golflinkNo, request)
+            
+            if (response.isSuccessful) {
+                val updatedGolferDto = response.body()
+                    ?: throw Exception("Empty golfer response")
+                
+                val sogoGolfer = updatedGolferDto.toDomainModel()
+                Log.d(TAG, "Successfully updated golfer: ${sogoGolfer.firstName} ${sogoGolfer.lastName}")
+                
+                sogoGolfer
+            } else {
+                Log.e(TAG, "Failed to update golfer: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to update golfer: ${response.message()}")
             }
         }
     }

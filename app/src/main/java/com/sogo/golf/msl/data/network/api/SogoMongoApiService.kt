@@ -81,6 +81,12 @@ interface SogoMongoApiService {
     suspend fun createGolfer(
         @Body request: CreateGolferRequestDto
     ): Response<SogoGolferDto>
+
+    @PATCH("golfers/{golflinkNo}")
+    suspend fun updateGolferData(
+        @Path("golflinkNo") golflinkNo: String,
+        @Body request: UpdateGolferRequestDto
+    ): Response<SogoGolferDto>
 }
 
 data class TokenBalanceUpdatePayload(
@@ -148,4 +154,24 @@ data class CreateGolferRequestDto(
     val postCode: String,
     val sogoAppVersion: String,
     val state: String
+)
+
+data class UpdateGolferRequestDto(
+    val authSystemUid: String? = null,
+    val country: String? = null,
+    val dateOfBirth: String? = null,
+    val deviceManufacturer: String? = null,
+    val deviceModel: String? = null,
+    val deviceOS: String? = null,
+    val deviceOSVersion: String? = null,
+    val deviceToken: String? = null,
+    val email: String? = null,
+    val firstName: String? = null,
+    val gender: String? = null,
+    val lastName: String? = null,
+    val mobileNo: String? = null,
+    val postCode: String? = null,
+    val sogoAppVersion: String? = null,
+    val state: String? = null,
+    val isAcceptedSogoTermsAndConditions: Boolean? = null
 )
