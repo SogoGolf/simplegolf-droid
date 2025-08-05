@@ -24,7 +24,6 @@ data class SogoGolfer(
 )
 
 data class AppSettings(
-    val id: String? = null,
     val notificationFlags: List<NotificationFlag>? = null,
     val isEnabledAutoTokenPayments: Boolean? = null,
     val isAcceptedSogoTermsAndConditions: Boolean? = null

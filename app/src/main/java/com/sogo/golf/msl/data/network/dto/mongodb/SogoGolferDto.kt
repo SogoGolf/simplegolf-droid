@@ -68,9 +68,6 @@ data class SogoGolferDto(
 )
 
 data class AppSettingsDto(
-    @SerializedName("id")
-    val id: String? = null,
-
     @SerializedName("notificationFlags")
     val notificationFlags: List<NotificationFlagDto>? = null,
 
@@ -120,7 +117,6 @@ fun SogoGolferDto.toDomainModel(): SogoGolfer {
         tokenBalance = tokenBalance,
         appSettings = appSettings?.let { dto ->
             AppSettings(
-                id = dto.id,
                 notificationFlags = dto.notificationFlags?.map { flagDto ->
                     com.sogo.golf.msl.domain.model.mongodb.NotificationFlag(
                         type = flagDto.type,
