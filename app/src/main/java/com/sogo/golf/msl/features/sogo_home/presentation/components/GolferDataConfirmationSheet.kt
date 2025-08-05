@@ -81,6 +81,7 @@ import androidx.compose.material3.MenuAnchorType
 fun GolferDataConfirmationSheet(
     viewModel: HomeViewModel = hiltViewModel(),
     mslGolfer: MslGolfer, //this is from SOGO's database. however its data was populated via MSL's API
+    sogoGolfer: com.sogo.golf.msl.domain.model.mongodb.SogoGolfer? = null, // Existing SOGO golfer data from Room
     onDismiss: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -93,35 +94,101 @@ fun GolferDataConfirmationSheet(
     val golferData = sogoGolferDataState.sogoGolfer
     val countryDataState by viewModel.countryDataState.collectAsState()
 
-    var firstName by remember { mutableStateOf(mslGolfer.firstName) }
+    // 🎯 INTELLIGENT FIELD POPULATION
+    // Priority: SOGO golfer data > MSL golfer data
+    
+    var firstName by remember { 
+        mutableStateOf(
+            sogoGolfer?.firstName?.takeIf { it.isNotBlank() } ?: mslGolfer.firstName
+        ) 
+    }
     val isFirstNameError = remember { mutableStateOf(false) }
     val firstNameErrorMessage = remember { mutableStateOf("") }
 
-
-    var lastName by remember { mutableStateOf(mslGolfer.surname) }
+    var lastName by remember { 
+        mutableStateOf(
+            sogoGolfer?.lastName?.takeIf { it.isNotBlank() } ?: mslGolfer.surname
+        ) 
+    }
     val isLastNameError = remember { mutableStateOf(false) }
     val lastNameErrorMessage = remember { mutableStateOf("") }
 
-    var email by remember { mutableStateOf(mslGolfer.email) }
+    var email by remember { 
+        mutableStateOf(
+            sogoGolfer?.email?.takeIf { it.isNotBlank() } ?: mslGolfer.email
+        ) 
+    }
     val isEmailError = remember { mutableStateOf(false) }
     val emailErrorMessage = remember { mutableStateOf("") }
 
-    var state by remember { mutableStateOf(mslGolfer.state) }
+    // Use SOGO golfer state.shortName if available, otherwise MSL golfer data
+    var state by remember { 
+        mutableStateOf(
+            sogoGolfer?.state?.shortName?.takeIf { it.isNotBlank() } ?: mslGolfer.state
+        ) 
+    }
 
-    var postcode by remember { mutableStateOf(mslGolfer.postCode) }
+    // Use SOGO golfer postCode if available, otherwise MSL golfer data  
+    var postcode by remember { 
+        mutableStateOf(
+            sogoGolfer?.postCode?.takeIf { it.isNotBlank() } ?: mslGolfer.postCode
+        ) 
+    }
     val isPostcodeError = remember { mutableStateOf(false) }
     val postcodeErrorMessage = remember { mutableStateOf("") }
 
-    var mobile by remember { mutableStateOf(mslGolfer.mobileNo) }
+    var mobile by remember { 
+        mutableStateOf(
+            sogoGolfer?.mobileNo?.takeIf { it.isNotBlank() } 
+                ?: sogoGolfer?.phone?.takeIf { it.isNotBlank() } 
+                ?: mslGolfer.mobileNo
+        ) 
+    }
     val isMobileError = remember { mutableStateOf(false) }
     val mobileErrorMessage = remember { mutableStateOf("") }
 
-    var gender by remember { mutableStateOf(mslGolfer.gender) }
+    // Use SOGO golfer gender if available, otherwise MSL golfer data
+    // Convert SOGO gender format: "m" -> "Male", "f" -> "Female"
+    var gender by remember { 
+        mutableStateOf(
+            when (sogoGolfer?.gender?.takeIf { it.isNotBlank() }) {
+                "m" -> "Male"
+                "f" -> "Female"
+                else -> mslGolfer.gender
+            }
+        ) 
+    }
     val isGenderError = remember { mutableStateOf(false) }
     val genderErrorMessage = remember { mutableStateOf("") }
 
-    var dateOfBirthMillis by remember { mutableStateOf<Long?>(null) }
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+    // 🎯 INTELLIGENT DATE OF BIRTH POPULATION
+    // Try to parse date from sogoGolfer first, then mslGolfer
+    val initialDateMillis = remember {
+        // Try SOGO golfer date first (ISO format: "1990-05-15T00:00:00.000Z")
+        sogoGolfer?.dateOfBirth?.let { isoDate ->
+            try {
+                val instant = Instant.parse(isoDate)
+                instant.toEpochMilli()
+            } catch (e: Exception) {
+                null
+            }
+        } ?:
+        // Fallback to MSL golfer date (format: "15/05/1990")
+        mslGolfer.dateOfBirth.let { ddMmYyyy ->
+            try {
+                val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+                val localDate = org.threeten.bp.LocalDate.parse(ddMmYyyy, formatter)
+                localDate.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+    
+    var dateOfBirthMillis by remember { mutableStateOf(initialDateMillis) }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDateMillis ?: System.currentTimeMillis()
+    )
     val openDialog = remember { mutableStateOf(false) }
 
     val formattedDateOfBirth = remember {

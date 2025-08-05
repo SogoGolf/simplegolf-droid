@@ -3,6 +3,7 @@ package com.sogo.golf.msl.data.network.dto.mongodb
 import com.google.gson.annotations.SerializedName
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.domain.model.mongodb.AppSettings
+import com.sogo.golf.msl.domain.model.mongodb.SogoState
 
 data class SogoGolferDto(
     @SerializedName("id")
@@ -25,6 +26,9 @@ data class SogoGolferDto(
 
     @SerializedName("phone")
     val phone: String? = null,
+
+    @SerializedName("mobileNo")
+    val mobileNo: String? = null,
 
     @SerializedName("dateOfBirth")
     val dateOfBirth: String? = null,
@@ -51,7 +55,16 @@ data class SogoGolferDto(
     val tokenBalance: Int = 0,
 
     @SerializedName("appSettings")
-    val appSettings: AppSettingsDto? = null
+    val appSettings: AppSettingsDto? = null,
+
+    @SerializedName("postCode")
+    val postCode: String? = null,
+
+    @SerializedName("state")
+    val state: SogoStateDto? = null,
+
+    @SerializedName("gender")
+    val gender: String? = null
 )
 
 data class AppSettingsDto(
@@ -76,6 +89,17 @@ data class NotificationFlagDto(
     val enabled: Boolean = false
 )
 
+data class SogoStateDto(
+    @SerializedName("alpha2")
+    val alpha2: String? = null,
+
+    @SerializedName("name")
+    val name: String? = null,
+
+    @SerializedName("shortName")
+    val shortName: String? = null
+)
+
 fun SogoGolferDto.toDomainModel(): SogoGolfer {
     return SogoGolfer(
         id = id,
@@ -85,6 +109,7 @@ fun SogoGolferDto.toDomainModel(): SogoGolfer {
         lastName = lastName,
         email = email,
         phone = phone,
+        mobileNo = mobileNo,
         dateOfBirth = dateOfBirth,
         handicap = handicap,
         club = club,
@@ -105,6 +130,15 @@ fun SogoGolferDto.toDomainModel(): SogoGolfer {
                 isEnabledAutoTokenPayments = dto.isEnabledAutoTokenPayments,
                 isAcceptedSogoTermsAndConditions = dto.isAcceptedSogoTermsAndConditions
             )
-        }
+        },
+        postCode = postCode,
+        state = state?.let { stateDto ->
+            SogoState(
+                alpha2 = stateDto.alpha2,
+                name = stateDto.name,
+                shortName = stateDto.shortName
+            )
+        },
+        gender = gender
     )
 }

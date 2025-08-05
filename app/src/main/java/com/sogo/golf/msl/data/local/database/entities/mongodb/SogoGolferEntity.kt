@@ -5,6 +5,7 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.domain.model.mongodb.AppSettings
+import com.sogo.golf.msl.domain.model.mongodb.SogoState
 
 @Entity(tableName = "sogo_golfers")
 @TypeConverters(SogoGolferConverters::class)
@@ -17,6 +18,7 @@ data class SogoGolferEntity(
     val lastName: String,
     val email: String?,
     val phone: String?,
+    val mobileNo: String?,
     val dateOfBirth: String?,
     val handicap: Double?,
     val club: String?,
@@ -26,6 +28,9 @@ data class SogoGolferEntity(
     val updatedAt: String?,
     val tokenBalance: Int, // ✅ Token balance field
     val appSettings: AppSettings?, // ✅ Store as JSON instead of flat column
+    val postCode: String?,
+    val state: SogoState?,
+    val gender: String?,
     val lastUpdated: Long = System.currentTimeMillis()
 ) {
     fun toDomainModel(): SogoGolfer {
@@ -37,6 +42,7 @@ data class SogoGolferEntity(
             lastName = lastName,
             email = email,
             phone = phone,
+            mobileNo = mobileNo,
             dateOfBirth = dateOfBirth,
             handicap = handicap,
             club = club,
@@ -45,7 +51,10 @@ data class SogoGolferEntity(
             createdAt = createdAt,
             updatedAt = updatedAt,
             tokenBalance = tokenBalance,
-            appSettings = appSettings // ✅ Use the appSettings field directly
+            appSettings = appSettings, // ✅ Use the appSettings field directly
+            postCode = postCode,
+            state = state,
+            gender = gender
         )
     }
 
@@ -59,6 +68,7 @@ data class SogoGolferEntity(
                 lastName = sogoGolfer.lastName,
                 email = sogoGolfer.email,
                 phone = sogoGolfer.phone,
+                mobileNo = sogoGolfer.mobileNo,
                 dateOfBirth = sogoGolfer.dateOfBirth,
                 handicap = sogoGolfer.handicap,
                 club = sogoGolfer.club,
@@ -67,7 +77,10 @@ data class SogoGolferEntity(
                 createdAt = sogoGolfer.createdAt,
                 updatedAt = sogoGolfer.updatedAt,
                 tokenBalance = sogoGolfer.tokenBalance,
-                appSettings = sogoGolfer.appSettings // ✅ Use appSettings directly
+                appSettings = sogoGolfer.appSettings, // ✅ Use appSettings directly
+                postCode = sogoGolfer.postCode,
+                state = sogoGolfer.state,
+                gender = sogoGolfer.gender
             )
         }
     }

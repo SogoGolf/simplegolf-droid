@@ -407,3 +407,58 @@
         }
 
     }
+
+    /*
+    {
+    "_id" : ObjectId("68381f5f82fdc4366e596446"),
+    "authSystemUid" : "00134",
+    "country" : "australia",
+    "dateOfBirth" : ISODate("2003-05-04T00:00:00.000+0000"),
+    "deviceManufacturer" : "samsung",
+    "deviceModel" : "SM-G965N",
+    "deviceOS" : "Android",
+    "deviceOSVersion" : "10",
+    "deviceToken" : "ekUhPbxLSlKs7sAmlB9fru:APA91bEkEOuwumVGG_5hnyjTy9y7pKHH-iwdrVM0dY_2gMQ-v2DhI1D30TMN-LHHqsMr74tYldy9BxOPtUQCmnq95L4YbnhxHb83NpMfoX-E_sQ_961plNw",
+    "email" : "d@s.mm",
+    "entityId" : ObjectId("662dce226858d77ea54fa9bd"),
+    "firstName" : "Daffy",
+    "gender" : "m",
+    "glDuplicateFlag" : null,
+    "golfLinkHandicap" : -2.0,
+    "golfLinkId" : null,
+    "golflinkCardPhotoUrl" : null,
+    "golflinkNo" : "0001200134",
+    "handicap" : -2,
+    "isConfirmedMslGolferData" : true,
+    "isInactive" : false,
+    "lastAppOpen" : ISODate("2025-05-29T08:48:31.410+0000"),
+    "lastName" : "Duck",
+    "location" : null,
+    "memberSince" : ISODate("2025-05-29T08:48:31.407+0000"),
+    "mobileNo" : "0444444444",
+    "photoUrl" : null,
+    "playFirstGame" : false,
+    "postCode" : "2222",
+    "refCode" : "",
+    "refGolferCode" : null,
+    "refGolferId" : null,
+    "signUpAppCode" : 0,
+    "signupStatus" : "COMPLETE",
+    "sogoAppVersion" : "3.0.3 #1751511870",
+    "tokenBalance" : 10,
+    "userType" : "silver",
+    "uuid" : null,
+    "vendorPushId" : null,
+    "appSettings" : {
+        "isAcceptedSogoTermsAndConditions" : false,
+        "isEnabledAutoTokenPayments" : false,
+        "notificationFlags" : null
+    },
+    "state" : {
+        "alpha2" : "AU",
+        "name" : "New South Wales",
+        "shortName" : "NSW"
+    }
+}
+
+     */

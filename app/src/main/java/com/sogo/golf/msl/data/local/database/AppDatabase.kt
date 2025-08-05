@@ -181,6 +181,16 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
     }
 }
 
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // Add new fields to sogo_golfers table
+        database.execSQL("ALTER TABLE sogo_golfers ADD COLUMN mobileNo TEXT")
+        database.execSQL("ALTER TABLE sogo_golfers ADD COLUMN postCode TEXT")
+        database.execSQL("ALTER TABLE sogo_golfers ADD COLUMN state TEXT")
+        database.execSQL("ALTER TABLE sogo_golfers ADD COLUMN gender TEXT")
+    }
+}
+
 @Database(
     entities = [
         CompetitionEntity::class,
@@ -191,7 +201,7 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
         RoundEntity::class,
         TransactionEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

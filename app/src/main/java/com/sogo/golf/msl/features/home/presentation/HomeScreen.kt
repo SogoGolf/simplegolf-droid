@@ -361,6 +361,7 @@ fun HomeScreen(
                         GolferDataConfirmationSheet(
                             viewModel = homeViewModel,
                             mslGolfer = golfer,
+                            sogoGolfer = sogoGolfer, // Pass existing SOGO golfer data
                             onDismiss = {
                                 showGolferDataConfirmationSheet = false
                                 // After terms are accepted, proceed with competition start
