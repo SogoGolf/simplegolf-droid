@@ -158,6 +158,18 @@ data class CreateGolferRequestDto(
 
 data class UpdateGolferRequestDto(
     val appSettings: AppSettingsDto? = null,
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val postCode: String? = null,
+    val mobileNo: String? = null,
+    val gender: String? = null,
+    val deviceModel: String? = null,
+    val email: String,
+    val dateOfBirth: String,
+    val deviceManufacturer: String? = null,
+    val deviceOS: String? = null,
+    val deviceOSVersion: String? = null,
+    val sogoAppVersion: String? = null,
 )
 
 data class AppSettingsDto(
