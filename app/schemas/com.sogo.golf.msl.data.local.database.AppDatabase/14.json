@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 12,
-    "identityHash": "8c3e1bf1825f676a2c3db73778b26abe",
+    "version": 14,
+    "identityHash": "226bd9ec8827d8bc87759b3818b11a59",
     "entities": [
       {
         "tableName": "competitions",
@@ -318,7 +318,7 @@
       },
       {
         "tableName": "sogo_golfers",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `entityId` TEXT, `golfLinkNo` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `email` TEXT, `phone` TEXT, `dateOfBirth` TEXT, `handicap` REAL, `club` TEXT, `membershipType` TEXT, `isActive` INTEGER NOT NULL, `createdAt` TEXT, `updatedAt` TEXT, `tokenBalance` INTEGER NOT NULL, `isAcceptedSogoTermsAndConditions` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `entityId` TEXT, `golfLinkNo` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `email` TEXT, `phone` TEXT, `mobileNo` TEXT, `dateOfBirth` TEXT, `handicap` REAL, `club` TEXT, `membershipType` TEXT, `isActive` INTEGER NOT NULL, `createdAt` TEXT, `updatedAt` TEXT, `tokenBalance` INTEGER NOT NULL, `appSettings` TEXT, `postCode` TEXT, `state` TEXT, `gender` TEXT, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -357,6 +357,11 @@
           {
             "fieldPath": "phone",
             "columnName": "phone",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "mobileNo",
+            "columnName": "mobileNo",
             "affinity": "TEXT"
           },
           {
@@ -402,10 +407,24 @@
             "notNull": true
           },
           {
-            "fieldPath": "isAcceptedSogoTermsAndConditions",
-            "columnName": "isAcceptedSogoTermsAndConditions",
-            "affinity": "INTEGER",
-            "notNull": true
+            "fieldPath": "appSettings",
+            "columnName": "appSettings",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "postCode",
+            "columnName": "postCode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "gender",
+            "columnName": "gender",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "lastUpdated",
@@ -857,7 +876,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8c3e1bf1825f676a2c3db73778b26abe')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '226bd9ec8827d8bc87759b3818b11a59')"
     ]
   }
 }

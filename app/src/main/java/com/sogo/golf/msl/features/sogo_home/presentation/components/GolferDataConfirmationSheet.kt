@@ -1,6 +1,6 @@
 package com.sogo.golf.msl.features.sogo_home.presentation.components
 
-import CustomCheckbox
+import com.sogo.golf.msl.shared_components.ui.components.CustomCheckbox
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,7 +68,6 @@ import org.threeten.bp.Instant
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 import java.util.Locale
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.MenuAnchorType
 
 
@@ -82,6 +81,7 @@ import androidx.compose.material3.MenuAnchorType
 fun GolferDataConfirmationSheet(
     viewModel: HomeViewModel = hiltViewModel(),
     mslGolfer: MslGolfer, //this is from SOGO's database. however its data was populated via MSL's API
+    sogoGolfer: com.sogo.golf.msl.domain.model.mongodb.SogoGolfer? = null, // Existing SOGO golfer data from Room
     onDismiss: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -94,36 +94,101 @@ fun GolferDataConfirmationSheet(
     val golferData = sogoGolferDataState.sogoGolfer
     val countryDataState by viewModel.countryDataState.collectAsState()
 
-    var firstName by remember { mutableStateOf(mslGolfer.firstName) }
+    // 🎯 INTELLIGENT FIELD POPULATION
+    // Priority: SOGO golfer data > MSL golfer data
+    
+    var firstName by remember { 
+        mutableStateOf(
+            sogoGolfer?.firstName?.takeIf { it.isNotBlank() } ?: mslGolfer.firstName
+        ) 
+    }
     val isFirstNameError = remember { mutableStateOf(false) }
     val firstNameErrorMessage = remember { mutableStateOf("") }
 
-
-    var lastName by remember { mutableStateOf(mslGolfer.surname) }
+    var lastName by remember { 
+        mutableStateOf(
+            sogoGolfer?.lastName?.takeIf { it.isNotBlank() } ?: mslGolfer.surname
+        ) 
+    }
     val isLastNameError = remember { mutableStateOf(false) }
     val lastNameErrorMessage = remember { mutableStateOf("") }
 
-    var email by remember { mutableStateOf(mslGolfer.email) }
+    var email by remember { 
+        mutableStateOf(
+            sogoGolfer?.email?.takeIf { it.isNotBlank() } ?: mslGolfer.email
+        ) 
+    }
     val isEmailError = remember { mutableStateOf(false) }
     val emailErrorMessage = remember { mutableStateOf("") }
 
-    var state by remember { mutableStateOf(golferData?.state) }
-    var mslState by remember { mutableStateOf(mslGolfer.state) }
+    // Use SOGO golfer state.shortName if available, otherwise MSL golfer data
+    var state by remember { 
+        mutableStateOf(
+            sogoGolfer?.state?.shortName?.takeIf { it.isNotBlank() } ?: mslGolfer.state
+        ) 
+    }
 
-    var postcode by remember { mutableStateOf(mslGolfer.postCode) }
+    // Use SOGO golfer postCode if available, otherwise MSL golfer data  
+    var postcode by remember { 
+        mutableStateOf(
+            sogoGolfer?.postCode?.takeIf { it.isNotBlank() } ?: mslGolfer.postCode
+        ) 
+    }
     val isPostcodeError = remember { mutableStateOf(false) }
     val postcodeErrorMessage = remember { mutableStateOf("") }
 
-    var mobile by remember { mutableStateOf(mslGolfer.mobileNo) }
+    var mobile by remember { 
+        mutableStateOf(
+            sogoGolfer?.mobileNo?.takeIf { it.isNotBlank() } 
+                ?: sogoGolfer?.phone?.takeIf { it.isNotBlank() } 
+                ?: mslGolfer.mobileNo
+        ) 
+    }
     val isMobileError = remember { mutableStateOf(false) }
     val mobileErrorMessage = remember { mutableStateOf("") }
 
-    var gender by remember { mutableStateOf(mslGolfer.gender) }
+    // Use SOGO golfer gender if available, otherwise MSL golfer data
+    // Convert SOGO gender format: "m" -> "Male", "f" -> "Female"
+    var gender by remember { 
+        mutableStateOf(
+            when (sogoGolfer?.gender?.takeIf { it.isNotBlank() }) {
+                "m" -> "Male"
+                "f" -> "Female"
+                else -> mslGolfer.gender
+            }
+        ) 
+    }
     val isGenderError = remember { mutableStateOf(false) }
     val genderErrorMessage = remember { mutableStateOf("") }
 
-    var dateOfBirthMillis by remember { mutableStateOf<Long?>(null) }
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
+    // 🎯 INTELLIGENT DATE OF BIRTH POPULATION
+    // Try to parse date from sogoGolfer first, then mslGolfer
+    val initialDateMillis = remember {
+        // Try SOGO golfer date first (ISO format: "1990-05-15T00:00:00.000Z")
+        sogoGolfer?.dateOfBirth?.let { isoDate ->
+            try {
+                val instant = Instant.parse(isoDate)
+                instant.toEpochMilli()
+            } catch (e: Exception) {
+                null
+            }
+        } ?:
+        // Fallback to MSL golfer date (format: "15/05/1990")
+        mslGolfer.dateOfBirth.let { ddMmYyyy ->
+            try {
+                val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+                val localDate = org.threeten.bp.LocalDate.parse(ddMmYyyy, formatter)
+                localDate.atStartOfDay(ZoneId.of("UTC")).toInstant().toEpochMilli()
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+    
+    var dateOfBirthMillis by remember { mutableStateOf(initialDateMillis) }
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = initialDateMillis ?: System.currentTimeMillis()
+    )
     val openDialog = remember { mutableStateOf(false) }
 
     val formattedDateOfBirth = remember {
@@ -144,16 +209,8 @@ fun GolferDataConfirmationSheet(
 
     val uriHandler = LocalUriHandler.current
 
-    val states = countryDataState.country?.states
-
-    // Initial state selection
-    LaunchedEffect(states, mslState) { // Add states to the LaunchedEffect dependencies
-        if (states != null && mslState != null) {
-            val normalizedMslState = normalizeState(mslState)
-            val matchingState = states.find { normalizeState(it.shortName) == normalizedMslState }
-            state = matchingState
-        }
-    }
+    // Australian states list
+    val australianStates = listOf("ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA")
 
     // Initial validation using LaunchedEffect
     LaunchedEffect(firstName, lastName, email, postcode, mobile, gender) {
@@ -186,7 +243,7 @@ fun GolferDataConfirmationSheet(
         (firstName?.isNotBlank() == true) && !isFirstNameError.value &&
                 (lastName?.isNotBlank() == true) && !isLastNameError.value &&
                 (email?.isNotBlank() == true) && !isEmailError.value &&
-                (state?.shortName?.isNotBlank() == true) && // Check for null and blank state
+                (state?.isNotBlank() == true) && // Check for null and blank state
                 (postcode?.isNotBlank() == true) && !isPostcodeError.value &&
                 (mobile?.isNotBlank() == true) && !isMobileError.value && // Check for null and blank mobile
                 (gender?.isNotBlank() == true && !isGenderError.value) && // Check for null and blank gender
@@ -211,12 +268,11 @@ fun GolferDataConfirmationSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(1f)
             .background(Color.White)
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text("Confirm Your Details", style = MaterialTheme.typography.headlineLarge, color = mslBlue)
+        Text("Confirm Your Details", style = MaterialTheme.typography.headlineMedium, color = mslBlue)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -284,7 +340,7 @@ fun GolferDataConfirmationSheet(
             modifier = Modifier.fillMaxWidth(),
             isError = isEmailError.value, // Access the value here
             supportingText = { if (isEmailError.value) Text(emailErrorMessage.value, color = MaterialTheme.colorScheme.error) },
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = {focusManager.moveFocus(FocusDirection.Down)}),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = mslBlack,
@@ -305,7 +361,7 @@ fun GolferDataConfirmationSheet(
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = state?.shortName ?: "",
+                value = state ?: "",
                 onValueChange = {},
                 readOnly = true,
                 maxLines = 1,
@@ -321,16 +377,14 @@ fun GolferDataConfirmationSheet(
                 onDismissRequest = { expanded = false },
                 modifier = Modifier.background(Color.White)
             ) {
-                states?.sortedBy { it.name }?.forEach { stateOption ->
-                    if (!stateOption.shortName.isNullOrEmpty()) {
-                        DropdownMenuItem(
-                            text = { Text(stateOption.shortName!!) },
-                            onClick = {
-                                state = stateOption
-                                expanded = false
-                            }
-                        )
-                    }
+                australianStates.forEach { stateOption ->
+                    DropdownMenuItem(
+                        text = { Text(stateOption) },
+                        onClick = {
+                            state = stateOption
+                            expanded = false
+                        }
+                    )
                 }
             }
         }
@@ -531,6 +585,20 @@ fun GolferDataConfirmationSheet(
             textStyle = MaterialTheme.typography.bodyLarge,
             enabled = isFormValid && !loading,
             onClick = {
+                // Validate postcode-state combination before saving
+                val currentPostcode = postcode
+                val currentState = state
+                if (!currentPostcode.isNullOrBlank() && !currentState.isNullOrBlank()) {
+                    if (!viewModel.isPostcodeValidForState(currentPostcode, currentState)) {
+                        Toast.makeText(
+                            context, 
+                            "Postcode $currentPostcode does not match state $currentState. Please check your details.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return@CenteredYellowButton
+                    }
+                }
+                
                 loading = true
                 viewModel.viewModelScope.launch {
 //                    val success = viewModel.processGolferConfirmationData(

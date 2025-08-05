@@ -1,4 +1,6 @@
 
+package com.sogo.golf.msl.shared_components.ui.components
+
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults

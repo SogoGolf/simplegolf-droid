@@ -110,7 +110,6 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.common)
-    implementation(libs.androidx.material3.jvmstubs)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
