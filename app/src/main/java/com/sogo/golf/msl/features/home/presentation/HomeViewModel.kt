@@ -441,22 +441,16 @@ class HomeViewModel @Inject constructor(
                 val sogoAppVersion = com.sogo.golf.msl.BuildConfig.VERSION_NAME
                 
                 val updateRequest = UpdateGolferRequestDto(
-                    firstName = firstName,
-                    lastName = lastName,
-                    email = currentEmail,
-                    state = state.uppercase(),
-                    dateOfBirth = dateOfBirthString,
-                    postCode = currentPostcode,
-                    mobileNo = currentMobile,
-                    gender = sogoGender,
-                    deviceManufacturer = deviceManufacturer,
-                    deviceModel = deviceModel,
-                    deviceOS = deviceOS,
-                    deviceOSVersion = deviceOSVersion,
-                    sogoAppVersion = sogoAppVersion,
-                    isAcceptedSogoTermsAndConditions = true
+                    appSettings = com.sogo.golf.msl.data.network.api.AppSettingsDto(
+                        isAcceptedSogoTermsAndConditions = false
+                    ),
+//                    deviceModel = deviceModel
+//                    email = currentEmail,
+
+                    //dateOfBirth = dateOfBirthString
                 )
-                
+
+
                 when (val result = updateGolferUseCase(currentMslGolfer.golfLinkNo, updateRequest)) {
                     is NetworkResult.Success -> {
                         Log.d(TAG, "✅ Golfer updated successfully")

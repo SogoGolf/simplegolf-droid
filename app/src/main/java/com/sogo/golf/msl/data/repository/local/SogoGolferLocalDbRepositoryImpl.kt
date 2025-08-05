@@ -160,6 +160,7 @@ class SogoGolferLocalDbRepositoryImpl @Inject constructor(
 
     override suspend fun updateAndSaveGolfer(golflinkNo: String, request: UpdateGolferRequestDto): NetworkResult<SogoGolfer> {
         Log.d(TAG, "updateAndSaveGolfer called for: $golflinkNo")
+        Log.d(TAG, "Update request payload: $request")
         
         return safeNetworkCall {
             when (val result = sogoMongoRepository.updateGolferData(golflinkNo, request)) {
@@ -174,6 +175,7 @@ class SogoGolferLocalDbRepositoryImpl @Inject constructor(
                 }
                 is NetworkResult.Error -> {
                     Log.e(TAG, "API call failed: ${result.error}")
+                    Log.e(TAG, "Failed request was: golflinkNo=$golflinkNo, payload=$request")
                     throw Exception("Failed to update SogoGolfer: ${result.error.toUserMessage()}")
                 }
                 is NetworkResult.Loading -> {
