@@ -64,7 +64,97 @@ data class SogoGolferDto(
     val state: SogoStateDto? = null,
 
     @SerializedName("gender")
-    val gender: String? = null
+    val gender: String? = null,
+
+    @SerializedName("authSystemUid")
+    val authSystemUid: String? = null,
+
+    @SerializedName("deviceManufacturer")
+    val deviceManufacturer: String? = null,
+
+    @SerializedName("deviceModel")
+    val deviceModel: String? = null,
+
+    @SerializedName("deviceOS")
+    val deviceOS: String? = null,
+
+    @SerializedName("deviceOSVersion")
+    val deviceOSVersion: String? = null,
+
+    @SerializedName("deviceToken")
+    val deviceToken: String? = null,
+
+    @SerializedName("sogoAppVersion")
+    val sogoAppVersion: String? = null,
+
+    @SerializedName("country")
+    val country: String? = null,
+
+    @SerializedName("userType")
+    val userType: String? = null,
+
+    @SerializedName("isInactive")
+    val isInactive: Boolean? = null,
+
+    @SerializedName("memberSince")
+    val memberSince: String? = null,
+
+    @SerializedName("glDuplicateFlag")
+    val glDuplicateFlag: String? = null,
+
+    @SerializedName("golfLinkHandicap")
+    val golfLinkHandicap: Double? = null,
+
+    @SerializedName("golfLinkId")
+    val golfLinkId: String? = null,
+
+    @SerializedName("golflinkCardPhotoUrl")
+    val golflinkCardPhotoUrl: String? = null,
+
+    @SerializedName("isConfirmedMslGolferData")
+    val isConfirmedMslGolferData: Boolean? = null,
+
+    @SerializedName("lastAppOpen")
+    val lastAppOpen: String? = null,
+
+    @SerializedName("location")
+    val location: String? = null,
+
+    @SerializedName("photoUrl")
+    val photoUrl: String? = null,
+
+    @SerializedName("playFirstGame")
+    val playFirstGame: Boolean? = null,
+
+    @SerializedName("refCode")
+    val refCode: String? = null,
+
+    @SerializedName("refGolferCode")
+    val refGolferCode: String? = null,
+
+    @SerializedName("refGolferId")
+    val refGolferId: String? = null,
+
+    @SerializedName("signUpAppCode")
+    val signUpAppCode: Int? = null,
+
+    @SerializedName("signupStatus")
+    val signupStatus: String? = null,
+
+    @SerializedName("uuid")
+    val uuid: String? = null,
+
+    @SerializedName("vendorPushId")
+    val vendorPushId: String? = null,
+
+    @SerializedName("markers")
+    val markers: String? = null,
+
+    @SerializedName("gaMemberId")
+    val gaMemberId: String? = null,
+
+    @SerializedName("entityGolferPayload")
+    val entityGolferPayload: String? = null
 )
 
 data class AppSettingsDto(
@@ -139,6 +229,36 @@ fun SogoGolferDto.toDomainModel(): SogoGolfer {
                 shortName = stateDto.shortName
             )
         },
-        gender = gender
+        gender = gender,
+        authSystemUid = authSystemUid,
+        deviceManufacturer = deviceManufacturer,
+        deviceModel = deviceModel,
+        deviceOS = deviceOS,
+        deviceOSVersion = deviceOSVersion,
+        deviceToken = deviceToken,
+        sogoAppVersion = sogoAppVersion,
+        country = country,
+        userType = userType,
+        isInactive = isInactive,
+        memberSince = memberSince,
+        glDuplicateFlag = glDuplicateFlag,
+        golfLinkHandicap = golfLinkHandicap,
+        golfLinkId = golfLinkId,
+        golflinkCardPhotoUrl = golflinkCardPhotoUrl,
+        isConfirmedMslGolferData = isConfirmedMslGolferData,
+        lastAppOpen = lastAppOpen,
+        location = location,
+        photoUrl = photoUrl,
+        playFirstGame = playFirstGame,
+        refCode = refCode,
+        refGolferCode = refGolferCode,
+        refGolferId = refGolferId,
+        signUpAppCode = signUpAppCode,
+        signupStatus = signupStatus,
+        uuid = uuid,
+        vendorPushId = vendorPushId,
+        markers = markers,
+        gaMemberId = gaMemberId,
+        entityGolferPayload = entityGolferPayload
     )
 }

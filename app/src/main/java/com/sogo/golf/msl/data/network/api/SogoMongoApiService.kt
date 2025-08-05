@@ -76,6 +76,11 @@ interface SogoMongoApiService {
         @Query("date") date: String,
         @Query("mainCompetitionId") mainCompetitionId: Int
     ): Response<List<TransactionDto>>
+
+    @POST("golfers")
+    suspend fun createGolfer(
+        @Body golferDto: CreateGolferDto
+    ): Response<SogoGolferDto>
 }
 
 data class TokenBalanceUpdatePayload(
@@ -122,4 +127,24 @@ data class RoundUpdatePayload(
 data class RoundSubmissionUpdatePayload(
     val isSubmitted: Boolean,
     val submittedTime: String
+)
+
+data class CreateGolferDto(
+    val authSystemUid: String,
+    val country: String,
+    val dateOfBirth: String,
+    val deviceManufacturer: String?,
+    val deviceModel: String?,
+    val deviceOS: String?,
+    val deviceOSVersion: String?,
+    val deviceToken: String?,
+    val email: String,
+    val firstName: String,
+    val gender: String,
+    val golflinkNo: String,
+    val lastName: String,
+    val mobileNo: String,
+    val postCode: String,
+    val sogoAppVersion: String,
+    val state: String
 )
