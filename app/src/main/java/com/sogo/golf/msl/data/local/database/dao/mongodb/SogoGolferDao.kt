@@ -40,7 +40,9 @@ interface SogoGolferDao {
 
     @Transaction
     suspend fun replaceSogoGolfer(sogoGolfer: SogoGolferEntity) {
-        // Single golfer replace - just insert with REPLACE strategy
+        // Delete any existing golfer with the same golfLinkNo to ensure only one record per golfer
+        deleteSogoGolferByGolfLinkNo(sogoGolfer.golfLinkNo)
+        // Insert the new golfer data
         insertSogoGolfer(sogoGolfer)
     }
 
