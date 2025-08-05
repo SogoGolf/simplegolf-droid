@@ -55,8 +55,25 @@ data class SogoGolferDto(
 )
 
 data class AppSettingsDto(
+    @SerializedName("id")
+    val id: String? = null,
+
+    @SerializedName("notificationFlags")
+    val notificationFlags: List<NotificationFlagDto>? = null,
+
+    @SerializedName("isEnabledAutoTokenPayments")
+    val isEnabledAutoTokenPayments: Boolean? = null,
+
     @SerializedName("isAcceptedSogoTermsAndConditions")
-    val isAcceptedSogoTermsAndConditions: Boolean = false
+    val isAcceptedSogoTermsAndConditions: Boolean? = null
+)
+
+data class NotificationFlagDto(
+    @SerializedName("type")
+    val type: String? = null,
+
+    @SerializedName("enabled")
+    val enabled: Boolean = false
 )
 
 fun SogoGolferDto.toDomainModel(): SogoGolfer {
@@ -76,6 +93,18 @@ fun SogoGolferDto.toDomainModel(): SogoGolfer {
         createdAt = createdAt,
         updatedAt = updatedAt,
         tokenBalance = tokenBalance,
-        appSettings = appSettings?.let { AppSettings(it.isAcceptedSogoTermsAndConditions) }
+        appSettings = appSettings?.let { dto ->
+            AppSettings(
+                id = dto.id,
+                notificationFlags = dto.notificationFlags?.map { flagDto ->
+                    com.sogo.golf.msl.domain.model.mongodb.NotificationFlag(
+                        type = flagDto.type,
+                        enabled = flagDto.enabled
+                    )
+                },
+                isEnabledAutoTokenPayments = dto.isEnabledAutoTokenPayments,
+                isAcceptedSogoTermsAndConditions = dto.isAcceptedSogoTermsAndConditions
+            )
+        }
     )
 }
