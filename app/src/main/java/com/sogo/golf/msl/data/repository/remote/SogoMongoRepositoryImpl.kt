@@ -2,6 +2,7 @@ package com.sogo.golf.msl.data.repository.remote
 
 import android.util.Log
 import com.sogo.golf.msl.data.network.NetworkChecker
+import com.sogo.golf.msl.data.network.api.CreateGolferDto
 import com.sogo.golf.msl.data.network.api.SogoMongoApiService
 import com.sogo.golf.msl.data.network.api.HoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.api.HoleScoreData
@@ -308,6 +309,21 @@ class SogoMongoRepositoryImpl @Inject constructor(
             )
             if (response.isSuccessful) {
                 NetworkResult.Success(response.body() ?: emptyList())
+            } else {
+                NetworkResult.Error(NetworkError.ServerError)
+            }
+        } catch (e: Exception) {
+            NetworkResult.Error(NetworkError.Unknown(e.message ?: "Network error"))
+        }
+    }
+
+    override suspend fun createGolfer(createGolferDto: CreateGolferDto): NetworkResult<SogoGolfer> {
+        return try {
+            val response = sogoMongoApiService.createGolfer(createGolferDto)
+            if (response.isSuccessful) {
+                response.body()?.let { sogoGolferDto ->
+                    NetworkResult.Success(sogoGolferDto.toDomainModel())
+                } ?: NetworkResult.Error(NetworkError.Unknown("Empty response body"))
             } else {
                 NetworkResult.Error(NetworkError.ServerError)
             }

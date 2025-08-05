@@ -20,7 +20,18 @@ data class SogoGolfer(
     val appSettings: AppSettings? = null,
     val postCode: String?, // Postcode field from MongoDB
     val state: SogoState?, // State object from MongoDB
-    val gender: String? // Gender field from MongoDB
+    val gender: String?, // Gender field from MongoDB
+    val authSystemUid: String? = null,
+    val deviceManufacturer: String? = null,
+    val deviceModel: String? = null,
+    val deviceOS: String? = null,
+    val deviceOSVersion: String? = null,
+    val deviceToken: String? = null,
+    val sogoAppVersion: String? = null,
+    val country: String? = null,
+    val userType: String? = null,
+    val isInactive: Boolean? = null,
+    val memberSince: String? = null
 )
 
 data class AppSettings(

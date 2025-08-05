@@ -64,7 +64,40 @@ data class SogoGolferDto(
     val state: SogoStateDto? = null,
 
     @SerializedName("gender")
-    val gender: String? = null
+    val gender: String? = null,
+
+    @SerializedName("authSystemUid")
+    val authSystemUid: String? = null,
+
+    @SerializedName("deviceManufacturer")
+    val deviceManufacturer: String? = null,
+
+    @SerializedName("deviceModel")
+    val deviceModel: String? = null,
+
+    @SerializedName("deviceOS")
+    val deviceOS: String? = null,
+
+    @SerializedName("deviceOSVersion")
+    val deviceOSVersion: String? = null,
+
+    @SerializedName("deviceToken")
+    val deviceToken: String? = null,
+
+    @SerializedName("sogoAppVersion")
+    val sogoAppVersion: String? = null,
+
+    @SerializedName("country")
+    val country: String? = null,
+
+    @SerializedName("userType")
+    val userType: String? = null,
+
+    @SerializedName("isInactive")
+    val isInactive: Boolean? = null,
+
+    @SerializedName("memberSince")
+    val memberSince: String? = null
 )
 
 data class AppSettingsDto(
@@ -139,6 +172,17 @@ fun SogoGolferDto.toDomainModel(): SogoGolfer {
                 shortName = stateDto.shortName
             )
         },
-        gender = gender
+        gender = gender,
+        authSystemUid = authSystemUid,
+        deviceManufacturer = deviceManufacturer,
+        deviceModel = deviceModel,
+        deviceOS = deviceOS,
+        deviceOSVersion = deviceOSVersion,
+        deviceToken = deviceToken,
+        sogoAppVersion = sogoAppVersion,
+        country = country,
+        userType = userType,
+        isInactive = isInactive,
+        memberSince = memberSince
     )
 }
