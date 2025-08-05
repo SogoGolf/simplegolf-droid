@@ -601,26 +601,26 @@ fun GolferDataConfirmationSheet(
                 
                 loading = true
                 viewModel.viewModelScope.launch {
-//                    val success = viewModel.processGolferConfirmationData(
-//                        firstName = firstName ?: "",
-//                        lastName = lastName ?: "",
-//                        currentEmail = email ?: "",
-//                        state = state!!,
-//                        dateOfBirth = Date(dateOfBirthMillis!!),
-//                        currentPostcode = postcode ?: "",
-//                        currentMobile = mobile ?: "",
-//                        sogoGender = if (gender == "Male") "m" else "f"
-//                    )
-//                    loading = false
-//
-//                    if (success) {
-//                        Toast.makeText(context, "Golfer updated successfully!", Toast.LENGTH_LONG)
-//                            .show()
-//                        onDismiss() // Close sheet on success
-//                    } else {
-//                        Toast.makeText(context, "Failed to update golfer. Try again.", Toast.LENGTH_LONG)
-//                            .show()
-//                    }
+                    val success = viewModel.processGolferConfirmationData(
+                        firstName = firstName ?: "",
+                        lastName = lastName ?: "",
+                        currentEmail = email ?: "",
+                        state = state!!,
+                        dateOfBirth = java.util.Date(dateOfBirthMillis!!),
+                        currentPostcode = postcode ?: "",
+                        currentMobile = mobile ?: "",
+                        sogoGender = if (gender == "Male") "m" else "f"
+                    )
+                    loading = false
+
+                    if (success) {
+                        Toast.makeText(context, "Golfer created successfully!", Toast.LENGTH_LONG)
+                            .show()
+                        onDismiss()
+                    } else {
+                        Toast.makeText(context, "Failed to create golfer. Please try again.", Toast.LENGTH_LONG)
+                            .show()
+                    }
                 }
             }
         )

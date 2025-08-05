@@ -4,6 +4,7 @@ import android.util.Log
 import com.sogo.golf.msl.data.local.database.dao.mongodb.SogoGolferDao
 import com.sogo.golf.msl.data.local.database.entities.mongodb.SogoGolferEntity
 import com.sogo.golf.msl.data.network.NetworkChecker
+import com.sogo.golf.msl.data.network.api.CreateGolferRequestDto
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
@@ -129,5 +130,30 @@ class SogoGolferLocalDbRepositoryImpl @Inject constructor(
         val count = sogoGolferDao.hasSogoGolferByGolfLinkNo(golfLinkNo)
         Log.d(TAG, "hasSogoGolferByGolfLinkNo: $count golfers found for $golfLinkNo")
         return count > 0
+    }
+
+    override suspend fun createAndSaveGolfer(request: CreateGolferRequestDto): NetworkResult<SogoGolfer> {
+        Log.d(TAG, "createAndSaveGolfer called for: ${request.firstName} ${request.lastName}")
+        
+        return safeNetworkCall {
+            when (val result = sogoMongoRepository.createGolfer(request)) {
+                is NetworkResult.Success -> {
+                    val sogoGolfer = result.data
+                    Log.d(TAG, "API created SogoGolfer: ${sogoGolfer.firstName} ${sogoGolfer.lastName}")
+                    
+                    saveSogoGolferToDatabase(sogoGolfer)
+                    
+                    Log.d(TAG, "SogoGolfer created and saved successfully in database")
+                    sogoGolfer
+                }
+                is NetworkResult.Error -> {
+                    Log.e(TAG, "API call failed: ${result.error}")
+                    throw Exception("Failed to create SogoGolfer: ${result.error.toUserMessage()}")
+                }
+                is NetworkResult.Loading -> {
+                    throw Exception("Unexpected loading state")
+                }
+            }
+        }
     }
 }

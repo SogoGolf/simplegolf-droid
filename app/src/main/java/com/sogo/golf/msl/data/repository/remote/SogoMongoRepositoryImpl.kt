@@ -2,6 +2,7 @@ package com.sogo.golf.msl.data.repository.remote
 
 import android.util.Log
 import com.sogo.golf.msl.data.network.NetworkChecker
+import com.sogo.golf.msl.data.network.api.CreateGolferRequestDto
 import com.sogo.golf.msl.data.network.api.SogoMongoApiService
 import com.sogo.golf.msl.data.network.api.HoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.api.HoleScoreData
@@ -313,6 +314,28 @@ class SogoMongoRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             NetworkResult.Error(NetworkError.Unknown(e.message ?: "Network error"))
+        }
+    }
+
+    override suspend fun createGolfer(request: CreateGolferRequestDto): NetworkResult<SogoGolfer> {
+        return safeNetworkCall {
+            Log.d(TAG, "Creating golfer in SOGO Mongo API: ${request.firstName} ${request.lastName}")
+            
+            val response = sogoMongoApiService.createGolfer(request)
+            
+            if (response.isSuccessful) {
+                val createdGolferDto = response.body()
+                    ?: throw Exception("Empty golfer response")
+                
+                val sogoGolfer = createdGolferDto.toDomainModel()
+                Log.d(TAG, "Successfully created golfer: ${sogoGolfer.firstName} ${sogoGolfer.lastName}")
+                
+                sogoGolfer
+            } else {
+                Log.e(TAG, "Failed to create golfer: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to create golfer: ${response.message()}")
+            }
         }
     }
 }

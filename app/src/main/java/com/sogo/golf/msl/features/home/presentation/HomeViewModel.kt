@@ -1,38 +1,40 @@
-    // app/src/main/java/com/sogo/golf/msl/features/home/presentation/HomeViewModel.kt
-    package com.sogo.golf.msl.features.home.presentation
+// app/src/main/java/com/sogo/golf/msl/features/home/presentation/HomeViewModel.kt
+package com.sogo.golf.msl.features.home.presentation
 
-    import android.util.Log
-    import android.util.Patterns
-    import androidx.activity.result.ActivityResult
-    import androidx.activity.result.ActivityResultLauncher
-    import androidx.activity.result.IntentSenderRequest
-    import androidx.lifecycle.ViewModel
-    import androidx.lifecycle.viewModelScope
-    import com.sogo.golf.msl.domain.model.NetworkResult
-    import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
-    import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
-    import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
-    import com.sogo.golf.msl.domain.usecase.fees.FetchAndSaveFeesUseCase
-    import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
-    import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
-    import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
-    import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
-    import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
-    import com.sogo.golf.msl.features.sogo_home.presentation.state.CountryDataState
-    import com.sogo.golf.msl.features.sogo_home.presentation.state.SogoGolferDataState
-    import dagger.hilt.android.lifecycle.HiltViewModel
-    import kotlinx.coroutines.flow.MutableStateFlow
-    import kotlinx.coroutines.flow.SharingStarted
-    import kotlinx.coroutines.flow.StateFlow
-    import kotlinx.coroutines.flow.asStateFlow
-    import kotlinx.coroutines.flow.stateIn
-    import kotlinx.coroutines.flow.flatMapLatest
-    import kotlinx.coroutines.flow.flowOf
-    import kotlinx.coroutines.launch
-    import javax.inject.Inject
+import android.util.Log
+import android.util.Patterns
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.sogo.golf.msl.domain.model.NetworkResult
+import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.fees.FetchAndSaveFeesUseCase
+import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
+import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
+import com.sogo.golf.msl.data.network.api.CreateGolferRequestDto
+import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
+import com.sogo.golf.msl.domain.usecase.sogo_golfer.CreateGolferUseCase
+import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
+import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
+import com.sogo.golf.msl.features.sogo_home.presentation.state.CountryDataState
+import com.sogo.golf.msl.features.sogo_home.presentation.state.SogoGolferDataState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-    @HiltViewModel
-    class HomeViewModel @Inject constructor(
+@HiltViewModel
+class HomeViewModel @Inject constructor(
         val getMslGolferUseCase: GetMslGolferUseCase,
         private val getLocalGameUseCase: GetLocalGameUseCase,
         private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
@@ -44,6 +46,7 @@
         private val fetchAndSaveFeesUseCase: FetchAndSaveFeesUseCase, // ✅ ADD THIS
         private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
         private val getSogoGolferUseCase: GetSogoGolferUseCase,
+        private val createGolferUseCase: CreateGolferUseCase,
     ) : ViewModel() {
 
         companion object {
@@ -406,59 +409,68 @@
             }
         }
 
-    }
-
-    /*
-    {
-    "_id" : ObjectId("68381f5f82fdc4366e596446"),
-    "authSystemUid" : "00134",
-    "country" : "australia",
-    "dateOfBirth" : ISODate("2003-05-04T00:00:00.000+0000"),
-    "deviceManufacturer" : "samsung",
-    "deviceModel" : "SM-G965N",
-    "deviceOS" : "Android",
-    "deviceOSVersion" : "10",
-    "deviceToken" : "ekUhPbxLSlKs7sAmlB9fru:APA91bEkEOuwumVGG_5hnyjTy9y7pKHH-iwdrVM0dY_2gMQ-v2DhI1D30TMN-LHHqsMr74tYldy9BxOPtUQCmnq95L4YbnhxHb83NpMfoX-E_sQ_961plNw",
-    "email" : "d@s.mm",
-    "entityId" : ObjectId("662dce226858d77ea54fa9bd"),
-    "firstName" : "Daffy",
-    "gender" : "m",
-    "glDuplicateFlag" : null,
-    "golfLinkHandicap" : -2.0,
-    "golfLinkId" : null,
-    "golflinkCardPhotoUrl" : null,
-    "golflinkNo" : "0001200134",
-    "handicap" : -2,
-    "isConfirmedMslGolferData" : true,
-    "isInactive" : false,
-    "lastAppOpen" : ISODate("2025-05-29T08:48:31.410+0000"),
-    "lastName" : "Duck",
-    "location" : null,
-    "memberSince" : ISODate("2025-05-29T08:48:31.407+0000"),
-    "mobileNo" : "0444444444",
-    "photoUrl" : null,
-    "playFirstGame" : false,
-    "postCode" : "2222",
-    "refCode" : "",
-    "refGolferCode" : null,
-    "refGolferId" : null,
-    "signUpAppCode" : 0,
-    "signupStatus" : "COMPLETE",
-    "sogoAppVersion" : "3.0.3 #1751511870",
-    "tokenBalance" : 10,
-    "userType" : "silver",
-    "uuid" : null,
-    "vendorPushId" : null,
-    "appSettings" : {
-        "isAcceptedSogoTermsAndConditions" : false,
-        "isEnabledAutoTokenPayments" : false,
-        "notificationFlags" : null
-    },
-    "state" : {
-        "alpha2" : "AU",
-        "name" : "New South Wales",
-        "shortName" : "NSW"
+    suspend fun processGolferConfirmationData(
+        firstName: String,
+        lastName: String,
+        currentEmail: String,
+        state: String,
+        dateOfBirth: java.util.Date,
+        currentPostcode: String,
+        currentMobile: String,
+        sogoGender: String
+    ): Boolean {
+        return try {
+            val currentMslGolfer = currentGolfer.value
+                ?: throw Exception("No MSL golfer data available")
+            
+            val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+            val dateOfBirthString = dateFormat.format(dateOfBirth)
+            
+            val deviceManufacturer = android.os.Build.MANUFACTURER
+            val deviceModel = android.os.Build.MODEL
+            val deviceOS = "Android"
+            val deviceOSVersion = android.os.Build.VERSION.RELEASE
+            
+            val sogoAppVersion = com.sogo.golf.msl.BuildConfig.VERSION_NAME
+            
+            val request = CreateGolferRequestDto(
+                authSystemUid = currentMslGolfer.golfLinkNo,
+                country = "australia",
+                dateOfBirth = dateOfBirthString,
+                deviceManufacturer = deviceManufacturer,
+                deviceModel = deviceModel,
+                deviceOS = deviceOS,
+                deviceOSVersion = deviceOSVersion,
+                deviceToken = null,
+                email = currentEmail,
+                firstName = firstName,
+                gender = sogoGender,
+                golflinkNo = currentMslGolfer.golfLinkNo,
+                isAcceptedSogoTermsAndConditions = true,
+                lastName = lastName,
+                mobileNo = currentMobile,
+                postCode = currentPostcode,
+                sogoAppVersion = sogoAppVersion,
+                state = state.uppercase()
+            )
+            
+            when (val result = createGolferUseCase(request)) {
+                is NetworkResult.Success -> {
+                    Log.d(TAG, "✅ Golfer created successfully")
+                    fetchAndSaveSogoGolferUseCase(currentMslGolfer.golfLinkNo)
+                    true
+                }
+                is NetworkResult.Error -> {
+                    Log.e(TAG, "❌ Failed to create golfer: ${result.error}")
+                    false
+                }
+                is NetworkResult.Loading -> {
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Exception creating golfer", e)
+            false
+        }
     }
 }
-
-     */

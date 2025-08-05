@@ -1,5 +1,6 @@
 package com.sogo.golf.msl.domain.repository.remote
 
+import com.sogo.golf.msl.data.network.api.CreateGolferRequestDto
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.mongodb.Fee
@@ -47,4 +48,6 @@ interface SogoMongoRepository {
         date: String,
         mainCompetitionId: Int
     ): NetworkResult<List<com.sogo.golf.msl.data.network.dto.mongodb.TransactionDto>>
+    
+    suspend fun createGolfer(request: CreateGolferRequestDto): NetworkResult<SogoGolfer>
 }
