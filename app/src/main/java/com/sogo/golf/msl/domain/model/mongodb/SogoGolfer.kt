@@ -31,7 +31,26 @@ data class SogoGolfer(
     val country: String? = null,
     val userType: String? = null,
     val isInactive: Boolean? = null,
-    val memberSince: String? = null
+    val memberSince: String? = null,
+    val glDuplicateFlag: String? = null,
+    val golfLinkHandicap: Double? = null,
+    val golfLinkId: String? = null,
+    val golflinkCardPhotoUrl: String? = null,
+    val isConfirmedMslGolferData: Boolean? = null,
+    val lastAppOpen: String? = null,
+    val location: String? = null,
+    val photoUrl: String? = null,
+    val playFirstGame: Boolean? = null,
+    val refCode: String? = null,
+    val refGolferCode: String? = null,
+    val refGolferId: String? = null,
+    val signUpAppCode: Int? = null,
+    val signupStatus: String? = null,
+    val uuid: String? = null,
+    val vendorPushId: String? = null,
+    val markers: String? = null,
+    val gaMemberId: String? = null,
+    val entityGolferPayload: String? = null
 )
 
 data class AppSettings(
