@@ -442,12 +442,20 @@ class HomeViewModel @Inject constructor(
                 
                 val updateRequest = UpdateGolferRequestDto(
                     appSettings = com.sogo.golf.msl.data.network.api.AppSettingsDto(
-                        isAcceptedSogoTermsAndConditions = false
+                        isAcceptedSogoTermsAndConditions = true
                     ),
-//                    deviceModel = deviceModel
-//                    email = currentEmail,
-
-                    //dateOfBirth = dateOfBirthString
+                    firstName = firstName,
+                    lastName = lastName,
+                    postCode = currentPostcode,
+                    mobileNo = currentMobile,
+                    gender = sogoGender,
+                    email = currentEmail,
+                    dateOfBirth = dateOfBirthString,
+                    deviceModel = deviceModel,
+                    deviceManufacturer = deviceManufacturer,
+                    deviceOS = deviceOS,
+                    deviceOSVersion = deviceOSVersion,
+                    sogoAppVersion = sogoAppVersion,
                 )
 
 
