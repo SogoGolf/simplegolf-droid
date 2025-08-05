@@ -181,9 +181,13 @@ fun HomeScreen(
                 // Start Competition Round button
                 Button(
                     onClick = {
-                        // ✅ NEW: Check terms acceptance before version update
-                        val termsAccepted = sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions ?: false
-                        if (!termsAccepted) {
+                        // Check if golfer confirmation sheet should be shown:
+                        // 1. No SogoGolfer exists in MongoDB (sogoGolfer is null), OR
+                        // 2. SogoGolfer exists but hasn't accepted terms
+                        val shouldShowConfirmationSheet = sogoGolfer == null || 
+                            sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions != true
+                        
+                        if (shouldShowConfirmationSheet) {
                             showGolferDataConfirmationSheet = true
                         } else {
                             shouldStartCompetition = true
