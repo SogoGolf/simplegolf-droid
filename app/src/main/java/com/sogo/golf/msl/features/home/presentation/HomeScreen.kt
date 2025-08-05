@@ -5,6 +5,7 @@ import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,9 +20,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -38,6 +42,7 @@ import com.sogo.golf.msl.ui.theme.MSLColors.mslWhite
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 import com.sogo.golf.msl.features.sogo_home.presentation.components.GolferDataConfirmationSheet
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
@@ -340,22 +345,36 @@ fun HomeScreen(
             }
 
             // ✅ NEW: Show GolferDataConfirmationSheet when terms not accepted
-            if (showGolferDataConfirmationSheet) {
-                GolferDataConfirmationSheet(
-                    viewModel = homeViewModel,
-                    mslGolfer = currentGolfer ?: return@ScreenWithDrawer,
-                    onDismiss = { 
-                        showGolferDataConfirmationSheet = false
-                        // After terms are accepted, proceed with competition start
-                        shouldStartCompetition = true
-                        homeViewModel.checkForUpdatesAndStartCompetition(
-                            activity = activity,
-                            activityResultLauncher = updateLauncher,
-                            onUpdateCheckComplete = { },
-                            onNoUpdateRequired = { }
+            @OptIn(ExperimentalMaterial3Api::class)
+            currentGolfer?.let { golfer ->
+                if (showGolferDataConfirmationSheet) {
+                    val bottomSheetState = rememberModalBottomSheetState(
+                        skipPartiallyExpanded = true
+                    )
+
+                    ModalBottomSheet(
+                        onDismissRequest = {
+                            showGolferDataConfirmationSheet = false
+                        },
+                        sheetState = bottomSheetState,
+                    ) {
+                        GolferDataConfirmationSheet(
+                            viewModel = homeViewModel,
+                            mslGolfer = golfer,
+                            onDismiss = {
+                                showGolferDataConfirmationSheet = false
+                                // After terms are accepted, proceed with competition start
+                                shouldStartCompetition = true
+                                homeViewModel.checkForUpdatesAndStartCompetition(
+                                    activity = activity,
+                                    activityResultLauncher = updateLauncher,
+                                    onUpdateCheckComplete = { },
+                                    onNoUpdateRequired = { }
+                                )
+                            }
                         )
                     }
-                )
+                }
             }
         }
     }

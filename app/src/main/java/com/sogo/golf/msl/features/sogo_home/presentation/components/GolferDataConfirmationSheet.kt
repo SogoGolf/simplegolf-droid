@@ -143,7 +143,7 @@ fun GolferDataConfirmationSheet(
     val uriHandler = LocalUriHandler.current
 
     // Australian states list
-    val australianStates = listOf("NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT")
+    val australianStates = listOf("ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA")
 
     // Initial validation using LaunchedEffect
     LaunchedEffect(firstName, lastName, email, postcode, mobile, gender) {
@@ -201,12 +201,11 @@ fun GolferDataConfirmationSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight(1f)
             .background(Color.White)
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text("Confirm Your Details", style = MaterialTheme.typography.headlineLarge, color = mslBlue)
+        Text("Confirm Your Details", style = MaterialTheme.typography.headlineMedium, color = mslBlue)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -274,7 +273,7 @@ fun GolferDataConfirmationSheet(
             modifier = Modifier.fillMaxWidth(),
             isError = isEmailError.value, // Access the value here
             supportingText = { if (isEmailError.value) Text(emailErrorMessage.value, color = MaterialTheme.colorScheme.error) },
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = {focusManager.moveFocus(FocusDirection.Down)}),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = mslBlack,
@@ -519,6 +518,20 @@ fun GolferDataConfirmationSheet(
             textStyle = MaterialTheme.typography.bodyLarge,
             enabled = isFormValid && !loading,
             onClick = {
+                // Validate postcode-state combination before saving
+                val currentPostcode = postcode
+                val currentState = state
+                if (!currentPostcode.isNullOrBlank() && !currentState.isNullOrBlank()) {
+                    if (!viewModel.isPostcodeValidForState(currentPostcode, currentState)) {
+                        Toast.makeText(
+                            context, 
+                            "Postcode $currentPostcode does not match state $currentState. Please check your details.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return@CenteredYellowButton
+                    }
+                }
+                
                 loading = true
                 viewModel.viewModelScope.launch {
 //                    val success = viewModel.processGolferConfirmationData(

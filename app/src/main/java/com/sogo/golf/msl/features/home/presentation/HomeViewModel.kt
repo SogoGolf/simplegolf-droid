@@ -382,4 +382,28 @@
             return Patterns.EMAIL_ADDRESS.matcher(email).matches()
         }
 
+        /**
+         * Validates if the given postcode matches the selected Australian state
+         * @param postcode 4-digit Australian postcode
+         * @param state Australian state abbreviation (NSW, VIC, QLD, WA, SA, TAS, ACT, NT)
+         * @return true if postcode matches the state, false otherwise
+         */
+        fun isPostcodeValidForState(postcode: String, state: String): Boolean {
+            if (!isValidAustralianPostcode(postcode)) return false
+            
+            val postcodeInt = postcode.toIntOrNull() ?: return false
+            
+            return when (state.uppercase()) {
+                "NSW" -> postcodeInt in 1000..2599 || postcodeInt in 2619..2899 || postcodeInt in 2921..2999
+                "ACT" -> postcodeInt in 2600..2618 || postcodeInt in 2900..2920
+                "VIC" -> postcodeInt in 3000..3999 || postcodeInt in 8000..8999
+                "QLD" -> postcodeInt in 4000..4999 || postcodeInt in 9000..9999
+                "SA" -> postcodeInt in 5000..5999
+                "WA" -> postcodeInt in 6000..6797 || postcodeInt in 6800..6999
+                "TAS" -> postcodeInt in 7000..7999
+                "NT" -> postcodeInt in 800..999
+                else -> false
+            }
+        }
+
     }
