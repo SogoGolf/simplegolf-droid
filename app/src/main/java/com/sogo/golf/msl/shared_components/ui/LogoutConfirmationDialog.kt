@@ -21,6 +21,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.sogo.golf.msl.ui.theme.MSLColors
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlack
 import com.sogo.golf.msl.ui.theme.MSLColors.mslRed
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
@@ -30,19 +31,15 @@ fun LogoutConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
-    val textColor = if (isDarkTheme) Color.White else mslBlack
-    val headingColor = if (isDarkTheme) Color.White else mslBlack
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
                 text = "Logout Confirmation",
-                color = headingColor,
+                color = MSLColors.mslGunMetal,
                 fontWeight = FontWeight.Bold,
                 fontSize = MaterialTheme.typography.headlineSmall.fontSize,
-                style = TextStyle(color = headingColor),
+                style = TextStyle(color = MSLColors.mslBlue),
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
@@ -53,7 +50,7 @@ fun LogoutConfirmationDialog(
             ) {
                 Text(
                     text = "Are you sure you want to logout?",
-                    color = textColor,
+                    color = MSLColors.mslGunMetal,
                     style = TextStyle(
                         fontSize = MaterialTheme.typography.bodyLarge.fontSize,
                     ),
@@ -62,17 +59,7 @@ fun LogoutConfirmationDialog(
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "All your local data including rounds, scores, and transaction history will be permanently deleted from this device.",
-                    color = mslRed,
-                    style = TextStyle(
-                        fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
+
             }
         },
         confirmButton = {
@@ -94,7 +81,7 @@ fun LogoutConfirmationDialog(
             TextButton(
                 onClick = onDismiss,
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = textColor
+                    contentColor = MSLColors.mslRed
                 )
             ) {
                 Text(
