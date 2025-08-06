@@ -105,12 +105,14 @@ fun GolferScorecard(
 
     // Get active player's data based on selected tab
     val activeHoleScores = if (selectedTab.value == "golfer") filteredHoleScores else filteredPartnerHoleScores
-    val scorecardData = mutableListOf<ScorecardData>()
+    
+    // Create column data for the grid
+    val columnData = mutableListOf<ScorecardData>()
 
-    for (holeNum in 1..maxHoles) {
+    // Add holes 1-9
+    for (holeNum in 1..9) {
         val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
-
-        scorecardData.add(
+        columnData.add(
             ScorecardData(
                 holeNumber = holeNum.toString(),
                 meters = activeHole?.meters?.toString() ?: "0",
@@ -122,19 +124,9 @@ fun GolferScorecard(
         )
     }
 
-    if (isNineHoles) {
-        scorecardData.add(
-            ScorecardData(
-                holeNumber = "OUT",
-                meters = calculateOutDistance(activeHoleScores).toString(),
-                index = "",
-                par = calculateOutPar(activeHoleScores).toString(),
-                strokes = calculateOutStrokes(activeHoleScores).toString(),
-                score = calculateOutScore(activeHoleScores).toString()
-            )
-        )
-    } else {
-        scorecardData.add(
+    if (!isNineHoles) {
+        // Add OUT column after hole 9
+        columnData.add(
             ScorecardData(
                 holeNumber = "OUT",
                 meters = calculateOutDistance(activeHoleScores).toString(),
@@ -145,10 +137,10 @@ fun GolferScorecard(
             )
         )
 
+        // Add holes 10-18
         for (holeNum in 10..18) {
             val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
-
-            scorecardData.add(
+            columnData.add(
                 ScorecardData(
                     holeNumber = holeNum.toString(),
                     meters = activeHole?.meters?.toString() ?: "0",
@@ -160,7 +152,8 @@ fun GolferScorecard(
             )
         }
 
-        scorecardData.add(
+        // Add IN column after hole 18
+        columnData.add(
             ScorecardData(
                 holeNumber = "IN",
                 meters = calculateInDistance(activeHoleScores).toString(),
@@ -171,7 +164,8 @@ fun GolferScorecard(
             )
         )
 
-        scorecardData.add(
+        // Add TOTAL column at the end
+        columnData.add(
             ScorecardData(
                 holeNumber = "TOTAL",
                 meters = calculateTotalDistance(activeHoleScores).toString(),
@@ -179,6 +173,18 @@ fun GolferScorecard(
                 par = calculateTotalPar(activeHoleScores).toString(),
                 strokes = calculateTotalStrokes(activeHoleScores).toString(),
                 score = calculateTotalScore(activeHoleScores).toString()
+            )
+        )
+    } else {
+        // For 9-hole rounds, add OUT column at the end
+        columnData.add(
+            ScorecardData(
+                holeNumber = "OUT",
+                meters = calculateOutDistance(activeHoleScores).toString(),
+                index = "",
+                par = calculateOutPar(activeHoleScores).toString(),
+                strokes = calculateOutStrokes(activeHoleScores).toString(),
+                score = calculateOutScore(activeHoleScores).toString()
             )
         )
     }
@@ -232,10 +238,10 @@ fun GolferScorecard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val columnCount = scorecardData.size + 1
-            val outColumnIndex = scorecardData.indexOfFirst { it.holeNumber.lowercase() == "out" }
-            val inColumnIndex = scorecardData.indexOfFirst { it.holeNumber.lowercase() == "in" }
-            val totalColumnIndex = scorecardData.indexOfFirst { it.holeNumber.lowercase() == "total" }
+            val columnCount = columnData.size + 1
+            val outColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "out" }
+            val inColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "in" }
+            val totalColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "total" }
 
             TableWithFixedFirstColumnSCORECARD(
                 columnCount = columnCount,
@@ -253,8 +259,8 @@ fun GolferScorecard(
                         )
                     } else {
                         val dataIndex = columnIndex - 1
-                        if (dataIndex < scorecardData.size) {
-                            val data = scorecardData[dataIndex]
+                        if (dataIndex < columnData.size) {
+                            val data = columnData[dataIndex]
                             val backgroundColor = when {
                                 dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> mslBlue
                                 else -> Color.White
@@ -292,8 +298,8 @@ fun GolferScorecard(
                         )
                     } else {
                         val dataIndex = columnIndex - 1
-                        if (dataIndex < scorecardData.size) {
-                            val data = scorecardData[dataIndex]
+                        if (dataIndex < columnData.size) {
+                            val data = columnData[dataIndex]
                             val cellValue = when (rowData) {
                                 "Hole" -> data.holeNumber
                                 "Meters" -> data.meters
