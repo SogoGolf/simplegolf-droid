@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.features.debug.presentation.DebugScreen
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlack
 import kotlinx.coroutines.launch
@@ -87,17 +88,19 @@ fun ScreenWithDrawer(
                     )
                 }
 
-                // Debug icon (always on top right)
-                IconButton(
-                    onClick = { showDebugScreen = true },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(end = 4.dp, top = 4.dp) // Slight padding for visual balance
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Debug Tools"
-                    )
+                // Debug icon (only in debug mode)
+                if (BuildConfig.DEBUG) {
+                    IconButton(
+                        onClick = { showDebugScreen = true },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(end = 4.dp, top = 4.dp) // Slight padding for visual balance
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Debug Tools"
+                        )
+                    }
                 }
             }
         }

@@ -26,10 +26,10 @@ fun <T> TableWithFixedFirstColumnSCORECARD(
     firstColumnWidth: (index: Int) -> Dp,
     data: List<T>,
     modifier: Modifier = Modifier,
+    cellHeight: Dp = 40.dp,
     headerCellContent: @Composable (index: Int) -> Unit,
     cellContent: @Composable (index: Int, item: T) -> Unit,
 ) {
-    val cellHeight = 40.dp
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
         // Fixed First Column
         Column(

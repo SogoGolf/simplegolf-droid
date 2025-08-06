@@ -76,6 +76,14 @@ fun GolferScorecard(
 
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
+    val screenHeight = configuration.screenHeightDp
+    
+    // Calculate responsive cell height based on available screen space
+    // Account for tab headers (~80dp), padding (~32dp), and system UI (~48dp)
+    val reservedHeight = 160.dp // Tab headers + padding + system UI
+    val availableHeight = screenHeight.dp - reservedHeight
+    val totalRows = 6 // 1 header row + 5 data rows
+    val responsiveCellHeight = (availableHeight / totalRows).coerceAtLeast(32.dp)
 
     if (round == null) {
         Box(
@@ -248,6 +256,7 @@ fun GolferScorecard(
                 cellWidth = { (screenWidth * 0.10).dp },
                 firstColumnWidth = { 100.dp },
                 data = listOf("Meters", "Index", "Par", "Strokes", "Score"),
+                cellHeight = responsiveCellHeight,
                 headerCellContent = { columnIndex ->
                     if (columnIndex == 0) {
                         Text(
