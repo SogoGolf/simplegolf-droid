@@ -1,47 +1,47 @@
 package com.sogo.golf.msl.features.play.presentation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.sogo.golf.msl.shared_components.ui.components.GolferScorecard
+import com.sogo.golf.msl.shared_components.ui.components.findPlayerByGolfLinkNumber
+import com.sogo.golf.msl.domain.model.msl.MslCompetition
 
 @Composable
-fun ScorecardScreen() {
+fun ScorecardScreen(
+    competitions: List<MslCompetition> = emptyList(),
+    golferGolfLinkNumber: String? = null,
+    playingPartnerGolfLinkNumber: String? = null
+) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
     if (isLandscape) {
-        // Show scorecard in landscape mode
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Yellow),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+        val golferData = findPlayerByGolfLinkNumber(competitions, golferGolfLinkNumber)
+        val playingPartnerData = findPlayerByGolfLinkNumber(competitions, playingPartnerGolfLinkNumber)
+
+        if (golferData != null || playingPartnerData != null) {
+            GolferScorecard(
+                golferData = golferData,
+                playingPartnerData = playingPartnerData,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Scorecard Screen",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = Color.Black
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Landscape Mode Only",
+                    text = "No scorecard data available",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Black
+                    textAlign = TextAlign.Center
                 )
             }
         }
     }
-    // Don't render anything in portrait mode
 }

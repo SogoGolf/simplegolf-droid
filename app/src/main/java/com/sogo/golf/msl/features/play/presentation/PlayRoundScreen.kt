@@ -52,7 +52,11 @@ fun PlayRoundScreen(
 
     if (isLandscape) {
         // Show scorecard in landscape
-        ScorecardScreen()
+        ScorecardScreen(
+            competitions = emptyList(), // TODO: Pass actual competition data
+            golferGolfLinkNumber = null, // TODO: Pass actual golfer golflink number
+            playingPartnerGolfLinkNumber = null // TODO: Pass actual playing partner golflink number
+        )
     } else {
         // Show normal Screen4 content in portrait
         Screen4Portrait(navController, viewModel, playRoundViewModel)
