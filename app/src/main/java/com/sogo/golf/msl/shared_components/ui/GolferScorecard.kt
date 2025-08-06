@@ -247,13 +247,14 @@ fun GolferScorecard(
                 columnCount = columnCount,
                 cellWidth = { (screenWidth * 0.10).dp },
                 firstColumnWidth = { 100.dp },
-                data = listOf("Hole", "Meters", "Index", "Par", "Strokes", "Score"),
+                data = listOf("Meters", "Index", "Par", "Strokes", "Score"),
                 headerCellContent = { columnIndex ->
                     if (columnIndex == 0) {
                         Text(
-                            text = "",
+                            text = "HOLE",
                             style = MaterialTheme.typography.bodyMedium,
                             fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                            fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(4.dp)
                         )
@@ -301,7 +302,6 @@ fun GolferScorecard(
                         if (dataIndex < columnData.size) {
                             val data = columnData[dataIndex]
                             val cellValue = when (rowData) {
-                                "Hole" -> data.holeNumber
                                 "Meters" -> data.meters
                                 "Index" -> data.index
                                 "Par" -> data.par
