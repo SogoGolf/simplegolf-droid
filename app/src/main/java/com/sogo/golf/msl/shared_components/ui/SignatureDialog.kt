@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.sogo.golf.msl.ui.theme.MSLColors
+import com.sogo.golf.msl.ui.theme.MSLColors.mslWhite
 import com.sogo.golf.msl.ui.theme.MSLGolfTheme
 import se.warting.signaturepad.SignaturePadAdapter
 import se.warting.signaturepad.SignaturePadView
@@ -61,7 +62,7 @@ fun SignatureDialog(
     }
 
     val textColor = if (MaterialTheme.colorScheme.background.luminance() > 0.5) {
-        MaterialTheme.colorScheme.onSurface
+        mslWhite
     } else {
         Color.White
     }

@@ -38,7 +38,23 @@ fun ReviewScoresScreen(
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
     if (isLandscape) {
-        ScorecardScreen()
+        // Create the ViewModel to get the round data for landscape mode
+        val viewModel: ReviewScoresViewModel = hiltViewModel<ReviewScoresViewModel, ReviewScoresViewModel.Factory> { factory ->
+            factory.create(navController)
+        }
+        val uiState by viewModel.uiState.collectAsState()
+        
+        // Load the round data
+        LaunchedEffect(roundId) {
+            if (roundId.isNotEmpty()) {
+                viewModel.loadRound(roundId)
+            }
+        }
+        
+        ScorecardScreen(
+            round = uiState.round,
+            mslCompetition = null
+        )
     } else {
         ReviewScoresPortrait(
             navController = navController,

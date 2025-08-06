@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sogo.golf.msl.shared.utils.DateUtils
 import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
+import com.sogo.golf.msl.ui.theme.MSLColors.mslBlack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,7 +153,7 @@ fun DebugScreen(
                                 text = "Starting Hole: ${game.startingHoleNumber} | ${game.playingPartners.size} playing partners",
                                 style = MaterialTheme.typography.bodySmall,
                                 textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = mslBlack
                             )
 
                             game.teeName?.let { tee ->
@@ -160,7 +161,7 @@ fun DebugScreen(
                                     text = "Tee: $tee",
                                     style = MaterialTheme.typography.bodySmall,
                                     textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = mslBlack
                                 )
                             }
                         } ?: run {
@@ -175,7 +176,7 @@ fun DebugScreen(
                                 text = "Use the buttons below to fetch game data for your club",
                                 style = MaterialTheme.typography.bodySmall,
                                 textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = mslBlack
                             )
                         }
                     }
@@ -214,7 +215,7 @@ fun DebugScreen(
                                         text = name,
                                         style = MaterialTheme.typography.bodySmall,
                                         textAlign = TextAlign.Center,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = mslBlack
                                     )
                                 }
                             }
@@ -230,7 +231,7 @@ fun DebugScreen(
                                 text = "Use the buttons below to fetch competition data for your club",
                                 style = MaterialTheme.typography.bodySmall,
                                 textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = mslBlack
                             )
                         }
                     }

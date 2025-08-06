@@ -61,8 +61,15 @@ fun PlayRoundScreen(
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
     if (isLandscape) {
+        // Collect the state data needed for the scorecard
+        val localCompetition by playRoundViewModel.localCompetition.collectAsState()
+        val currentRound by playRoundViewModel.currentRound.collectAsState()
+        
         // Show scorecard in landscape
-        ScorecardScreen()
+        ScorecardScreen(
+            round = currentRound,
+            mslCompetition = localCompetition
+        )
     } else {
         // Show normal Screen4 content in portrait
         Screen4Portrait(navController, viewModel, playRoundViewModel)

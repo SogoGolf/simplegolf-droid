@@ -15,6 +15,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.sogo.golf.msl.ui.theme.MSLColors.mslBlack
 
 /**
  * A unified header component for screens wrapped with ScreenWithDrawer.
@@ -44,7 +45,7 @@ fun UnifiedScreenHeader(
             style = TextStyle(
                 fontSize = MaterialTheme.typography.headlineMedium.fontSize,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = mslBlack
             ),
             textAlign = TextAlign.Center,
             maxLines = 1
