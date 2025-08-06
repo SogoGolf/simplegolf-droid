@@ -139,7 +139,7 @@ fun PlayingPartnerScreen(
                 if (!isButtonEnabled) {
                     HorizontalDivider(
                         thickness = 0.5.dp,
-                        color = Color.Black.copy(alpha = 0.5f)
+                        color = Color.Gray.copy(alpha = 0.1f)
                     )
                 }
                 
@@ -177,7 +177,7 @@ fun PlayingPartnerScreen(
                     } else {
                         Text(
                             text = "Let's Play",
-                            color = if (isButtonEnabled) Color.White else Color.DarkGray,
+                            color = if (isButtonEnabled) Color.White else Color.DarkGray.copy(alpha = 0.3f),
                             fontWeight = FontWeight.Bold,
                             fontSize = 28.sp
                         )
