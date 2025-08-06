@@ -21,16 +21,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.sogo.golf.msl.features.debug.presentation.DebugScreen
+import com.sogo.golf.msl.ui.theme.MSLColors.mslBlack
 import kotlinx.coroutines.launch
 
 @Composable
 fun ScreenWithDrawer(
     navController: NavController,
+    buttonColor: Color? = mslBlack,
     topBar: @Composable () -> Unit = {}, // Optional custom top bar
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -80,7 +83,7 @@ fun ScreenWithDrawer(
                     Icon(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "Menu",
-                        tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = buttonColor ?: mslBlack
                     )
                 }
 

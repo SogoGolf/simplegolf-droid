@@ -32,6 +32,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.BuildConfig
+import com.sogo.golf.msl.ui.theme.MSLColors.mslBlack
 
 @Composable
 fun WebAuthScreen(
@@ -108,7 +109,7 @@ fun WebAuthScreen(
                     Text(
                         "Debug: Remembered=${selectedClub?.name}, Current=${currentSelectedClub?.name}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        color = mslBlack
                     )
                 }
             }

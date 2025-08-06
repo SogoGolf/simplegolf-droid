@@ -121,7 +121,7 @@ fun HomeScreen(
         windowInsetsController.isAppearanceLightStatusBars = false
     }
 
-    ScreenWithDrawer(navController = navController) {
+    ScreenWithDrawer(navController = navController, buttonColor = Color.White) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

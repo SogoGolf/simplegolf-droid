@@ -95,16 +95,6 @@ fun SubmitRoundSuccessDialog(
     )
 }
 
-
-@Composable
-fun getTextColorForTheme(): Color {
-    return if (MaterialTheme.colorScheme.background.luminance() > 0.5) {
-        mslBlack
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-}
-
 @Composable
 @Preview(showBackground = true)
 fun PreviewSubmitRoundSuccessDialogLight() {
