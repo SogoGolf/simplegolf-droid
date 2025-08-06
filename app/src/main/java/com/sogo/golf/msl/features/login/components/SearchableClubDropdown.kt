@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sogo.golf.msl.domain.model.msl.MslClub
+import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -138,7 +139,7 @@ fun SearchableClubDropdown(
                             Text(
                                 text = "No clubs found",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = mslBlue
                             )
                         },
                         onClick = { expanded = false }
