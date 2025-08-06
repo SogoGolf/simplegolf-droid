@@ -2,6 +2,7 @@
 package com.sogo.golf.msl.features.home.presentation
 
 import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -181,12 +182,25 @@ fun HomeScreen(
                 // Start Competition Round button
                 Button(
                     onClick = {
-                        // ✅ NEW: Check terms acceptance before version update
-                        val termsAccepted = sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions ?: false
-                        if (!termsAccepted) {
-                            showGolferDataConfirmationSheet = true
-                        } else {
-                            shouldStartCompetition = true
+        // ✅ NEW: Check terms acceptance before version update
+        Log.d("HomeScreen", "=== BUTTON CLICK DEBUG ===")
+        Log.d("HomeScreen", "currentGolfer: ${currentGolfer}")
+        Log.d("HomeScreen", "currentGolfer.golfLinkNo: ${currentGolfer?.golfLinkNo}")
+        Log.d("HomeScreen", "localGame: ${localGame}")
+        Log.d("HomeScreen", "localGame.golflinkNumber: ${localGame?.golflinkNumber}")
+        Log.d("HomeScreen", "sogoGolfer: ${sogoGolfer}")
+        Log.d("HomeScreen", "sogoGolfer.appSettings: ${sogoGolfer?.appSettings}")
+        Log.d("HomeScreen", "sogoGolfer.appSettings.isAcceptedSogoTermsAndConditions: ${sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions}")
+        
+        val termsAccepted = sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions ?: false
+        Log.d("HomeScreen", "termsAccepted final value: $termsAccepted")
+        
+        if (!termsAccepted) {
+            Log.d("HomeScreen", "Terms not accepted - showing confirmation sheet")
+            showGolferDataConfirmationSheet = true
+        } else {
+            Log.d("HomeScreen", "Terms accepted - proceeding with competition start")
+            shouldStartCompetition = true
                             // Call the modified method with both callbacks
                             homeViewModel.checkForUpdatesAndStartCompetition(
                                 activity = activity,
