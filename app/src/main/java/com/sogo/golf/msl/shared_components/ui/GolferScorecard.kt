@@ -107,18 +107,17 @@ fun GolferScorecard(
     val holeScores = round.holeScores
     val partnerHoleScores = round.playingPartnerRound?.holeScores ?: emptyList()
 
-    val maxHoles = if (isNineHoles) 9 else 18
-    val filteredHoleScores = holeScores.filter { it.holeNumber <= maxHoles }
-    val filteredPartnerHoleScores = partnerHoleScores.filter { it.holeNumber <= maxHoles }
-
     // Get active player's data based on selected tab
-    val activeHoleScores = if (selectedTab.value == "golfer") filteredHoleScores else filteredPartnerHoleScores
+    val activeHoleScores = if (selectedTab.value == "golfer") holeScores else partnerHoleScores
+    
+    // Detect available hole range from actual data
+    val availableHoles = activeHoleScores.map { it.holeNumber }.sorted()
     
     // Create column data for the grid
     val columnData = mutableListOf<ScorecardData>()
 
-    // Add holes 1-9
-    for (holeNum in 1..9) {
+    // Add holes that actually exist in the data
+    availableHoles.forEach { holeNum ->
         val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
         columnData.add(
             ScorecardData(
@@ -132,8 +131,13 @@ fun GolferScorecard(
         )
     }
 
-    if (!isNineHoles) {
-        // Add OUT column after hole 9
+    // Determine which summary columns to show based on available holes
+    val hasOutHoles = availableHoles.any { it in 1..9 }
+    val hasInHoles = availableHoles.any { it in 10..18 }
+    val isFullRound = hasOutHoles && hasInHoles
+    
+    // Add OUT column if we have holes 1-9 and this is a full round
+    if (hasOutHoles && isFullRound) {
         columnData.add(
             ScorecardData(
                 holeNumber = "OUT",
@@ -144,23 +148,10 @@ fun GolferScorecard(
                 score = calculateOutScore(activeHoleScores).toString()
             )
         )
-
-        // Add holes 10-18
-        for (holeNum in 10..18) {
-            val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
-            columnData.add(
-                ScorecardData(
-                    holeNumber = holeNum.toString(),
-                    meters = activeHole?.meters?.toString() ?: "0",
-                    index = "${activeHole?.index1 ?: 0}/${activeHole?.index2 ?: 0}/${activeHole?.index3 ?: "-"}",
-                    par = activeHole?.par?.toString() ?: "0",
-                    strokes = activeHole?.strokes?.toString() ?: "0",
-                    score = activeHole?.score?.toInt()?.toString() ?: "0"
-                )
-            )
-        }
-
-        // Add IN column after hole 18
+    }
+    
+    // Add IN column if we have holes 10-18 and this is a full round
+    if (hasInHoles && isFullRound) {
         columnData.add(
             ScorecardData(
                 holeNumber = "IN",
@@ -171,8 +162,10 @@ fun GolferScorecard(
                 score = calculateInScore(activeHoleScores).toString()
             )
         )
-
-        // Add TOTAL column at the end
+    }
+    
+    // Add TOTAL column for full rounds, or summary column for partial rounds
+    if (isFullRound) {
         columnData.add(
             ScorecardData(
                 holeNumber = "TOTAL",
@@ -184,15 +177,21 @@ fun GolferScorecard(
             )
         )
     } else {
-        // For 9-hole rounds, add OUT column at the end
+        // For partial rounds (1-9 or 10-18), show a summary column
+        val summaryLabel = if (hasOutHoles) "OUT" else "IN"
+        val summaryDistance = if (hasOutHoles) calculateOutDistance(activeHoleScores) else calculateInDistance(activeHoleScores)
+        val summaryPar = if (hasOutHoles) calculateOutPar(activeHoleScores) else calculateInPar(activeHoleScores)
+        val summaryStrokes = if (hasOutHoles) calculateOutStrokes(activeHoleScores) else calculateInStrokes(activeHoleScores)
+        val summaryScore = if (hasOutHoles) calculateOutScore(activeHoleScores) else calculateInScore(activeHoleScores)
+        
         columnData.add(
             ScorecardData(
-                holeNumber = "OUT",
-                meters = calculateOutDistance(activeHoleScores).toString(),
+                holeNumber = summaryLabel,
+                meters = summaryDistance.toString(),
                 index = "",
-                par = calculateOutPar(activeHoleScores).toString(),
-                strokes = calculateOutStrokes(activeHoleScores).toString(),
-                score = calculateOutScore(activeHoleScores).toString()
+                par = summaryPar.toString(),
+                strokes = summaryStrokes.toString(),
+                score = summaryScore.toString()
             )
         )
     }
