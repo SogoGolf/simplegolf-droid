@@ -78,19 +78,23 @@ class CompetitionViewModel @Inject constructor(
             initialValue = null
         )
 
-    val sogoGolfer = currentGolfer
-        .flatMapLatest { golfer ->
-            if (golfer?.golfLinkNo != null) {
-                getSogoGolferUseCase(golfer.golfLinkNo)
-            } else {
-                flowOf(null)
-            }
+    val sogoGolfer = kotlinx.coroutines.flow.combine(currentGolfer, localGame) { golfer, game ->
+        // Use game data as fallback if golfer's golfLinkNo is empty
+        val golfLinkNo = golfer?.golfLinkNo?.takeIf { it.isNotBlank() }
+            ?: game?.golflinkNumber
+        golfLinkNo
+    }.flatMapLatest { golfLinkNo ->
+        if (!golfLinkNo.isNullOrBlank()) {
+            getSogoGolferUseCase(golfLinkNo)
+        } else {
+            flowOf(null)
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
+    }
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 
     val mslFees = getFeesUseCase.getFeesByEntityName("msl")
         .stateIn(
@@ -247,18 +251,34 @@ class CompetitionViewModel @Inject constructor(
     }
 
     private suspend fun refreshSogoGolferData() {
-        val currentMslGolfer = currentGolfer.value
-        if (currentMslGolfer?.golfLinkNo == null) {
-            android.util.Log.w("CompetitionViewModel", "⚠️ No golf link number available - cannot refresh Sogo Golfer data")
+        // Use same priority logic as HomeViewModel: existing SogoGolfer -> MSL golfer -> game data
+        val golfLinkNo = sogoGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
+            ?: currentGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
+            ?: localGame.value?.golflinkNumber
+        
+        android.util.Log.d("CompetitionViewModel", "=== REFRESH SOGO GOLFER DEBUG ===")
+        android.util.Log.d("CompetitionViewModel", "sogoGolfer.value?.golfLinkNo: ${sogoGolfer.value?.golfLinkNo}")
+        android.util.Log.d("CompetitionViewModel", "currentGolfer.value?.golfLinkNo: ${currentGolfer.value?.golfLinkNo}")
+        android.util.Log.d("CompetitionViewModel", "localGame.value?.golflinkNumber: ${localGame.value?.golflinkNumber}")
+        android.util.Log.d("CompetitionViewModel", "Final golfLinkNo for refresh: $golfLinkNo")
+        
+        // Log current local token balance before refresh
+        android.util.Log.d("CompetitionViewModel", "💰 LOCAL TOKEN BALANCE (before refresh): ${sogoGolfer.value?.tokenBalance}")
+        
+        if (golfLinkNo.isNullOrBlank()) {
+            android.util.Log.w("CompetitionViewModel", "⚠️ No valid golf link number available - cannot refresh Sogo Golfer data")
             // Not a fatal error, just skip
             return
         }
 
-        android.util.Log.d("CompetitionViewModel", "🏌️ Refreshing Sogo Golfer data for: ${currentMslGolfer.golfLinkNo}")
-        when (val result = fetchAndSaveSogoGolferUseCase(currentMslGolfer.golfLinkNo)) {
+        android.util.Log.d("CompetitionViewModel", "🏌️ Refreshing Sogo Golfer data for: $golfLinkNo")
+        when (val result = fetchAndSaveSogoGolferUseCase(golfLinkNo)) {
             is NetworkResult.Success -> {
                 android.util.Log.d("CompetitionViewModel", "✅ Sogo Golfer data refreshed.")
-                // Success, do nothing
+                android.util.Log.d("CompetitionViewModel", "💰 REMOTE TOKEN BALANCE (from API): ${result.data.tokenBalance}")
+                // Give a moment for the local flow to update, then log the updated local balance
+                kotlinx.coroutines.delay(100)
+                android.util.Log.d("CompetitionViewModel", "💰 LOCAL TOKEN BALANCE (after refresh): ${sogoGolfer.value?.tokenBalance}")
             }
             is NetworkResult.Error -> {
                 val error = result.error.toUserMessage()

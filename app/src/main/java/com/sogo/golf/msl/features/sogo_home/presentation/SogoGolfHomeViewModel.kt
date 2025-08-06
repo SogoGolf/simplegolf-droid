@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
-import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
+import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
@@ -25,7 +25,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SogoGolfHomeViewModel @Inject constructor(
-    private val getGameUseCase: GetGameUseCase,
+    private val getLocalGameUseCase: GetLocalGameUseCase,
     private val getSogoGolferUseCase: GetSogoGolferUseCase,
     private val getMslGolferUseCase: GetMslGolferUseCase,
     private val createTransactionUseCase: CreateTransactionUseCase,
@@ -49,19 +49,40 @@ class SogoGolfHomeViewModel @Inject constructor(
             initialValue = null
         )
 
-    val sogoGolfer = currentGolfer
-        .flatMapLatest { golfer ->
-            if (golfer?.golfLinkNo != null) {
-                getSogoGolferUseCase(golfer.golfLinkNo)
-            } else {
-                flowOf(null)
-            }
-        }
+    val localGame = getLocalGameUseCase()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
         )
+
+    val sogoGolfer = kotlinx.coroutines.flow.combine(currentGolfer, localGame) { golfer, game ->
+        Log.d(TAG, "=== SOGO GOLFER FLOW DEBUG ===")
+        Log.d(TAG, "golfer: $golfer")
+        Log.d(TAG, "golfer.golfLinkNo: ${golfer?.golfLinkNo}")
+        Log.d(TAG, "game: $game")
+        Log.d(TAG, "game.golflinkNumber: ${game?.golflinkNumber}")
+        
+        // Use game data as fallback if golfer's golfLinkNo is empty
+        val golfLinkNo = golfer?.golfLinkNo?.takeIf { it.isNotBlank() }
+            ?: game?.golflinkNumber
+        
+        Log.d(TAG, "Final golfLinkNo to use: $golfLinkNo")
+        golfLinkNo
+    }.flatMapLatest { golfLinkNo ->
+        if (!golfLinkNo.isNullOrBlank()) {
+            Log.d(TAG, "Calling getSogoGolferUseCase with golfLinkNo: $golfLinkNo")
+            getSogoGolferUseCase(golfLinkNo)
+        } else {
+            Log.d(TAG, "No valid golfLinkNo available - returning null")
+            flowOf(null)
+        }
+    }
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 
     init {
         initializeGolferData()

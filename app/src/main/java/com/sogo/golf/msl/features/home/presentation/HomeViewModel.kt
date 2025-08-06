@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -94,15 +95,29 @@ class HomeViewModel @Inject constructor(
 
         val updateState = appUpdateManager.updateState
 
-        // ✅ SOGO GOLFER ACCESS - Similar to SogoGolfHomeViewModel pattern
-        val sogoGolfer = currentGolfer
-            .flatMapLatest { golfer ->
-                if (golfer?.golfLinkNo != null) {
-                    getSogoGolferUseCase(golfer.golfLinkNo)
-                } else {
-                    flowOf(null)
-                }
+        // ✅ SOGO GOLFER ACCESS - Combine both currentGolfer and localGame flows
+        val sogoGolfer = kotlinx.coroutines.flow.combine(currentGolfer, localGame) { golfer, game ->
+            Log.d(TAG, "=== SOGO GOLFER FLOW DEBUG ===")
+            Log.d(TAG, "golfer: $golfer")
+            Log.d(TAG, "golfer.golfLinkNo: ${golfer?.golfLinkNo}")
+            Log.d(TAG, "game: $game")
+            Log.d(TAG, "game.golflinkNumber: ${game?.golflinkNumber}")
+            
+            // Use game data as fallback if golfer's golfLinkNo is empty
+            val golfLinkNo = golfer?.golfLinkNo?.takeIf { it.isNotBlank() }
+                ?: game?.golflinkNumber
+            
+            Log.d(TAG, "Final golfLinkNo to use: $golfLinkNo")
+            golfLinkNo
+        }.flatMapLatest { golfLinkNo ->
+            if (!golfLinkNo.isNullOrBlank()) {
+                Log.d(TAG, "Calling getSogoGolferUseCase with golfLinkNo: $golfLinkNo")
+                getSogoGolferUseCase(golfLinkNo)
+            } else {
+                Log.d(TAG, "No valid golfLinkNo available - returning null")
+                flowOf(null)
             }
+        }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
@@ -196,15 +211,31 @@ class HomeViewModel @Inject constructor(
 
                     // ✅Fetch SogoGolfer Data
                     Log.d(TAG, "👤 Fetching sogo golfer data...")
-                    val golfLinkNo = currentGolfer.value?.golfLinkNo
+                    // Priority order: existing SogoGolfer -> MSL golfer -> game data
+                    val golfLinkNo = sogoGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
+                        ?: currentGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
+                        ?: localGame.value?.golflinkNumber
+                    
+                    Log.d(TAG, "sogoGolfer.value?.golfLinkNo: ${sogoGolfer.value?.golfLinkNo}")
+                    Log.d(TAG, "currentGolfer.value?.golfLinkNo: ${currentGolfer.value?.golfLinkNo}")
+                    Log.d(TAG, "localGame.value?.golflinkNumber: ${localGame.value?.golflinkNumber}")
+                    Log.d(TAG, "Final golfLinkNo for fetch: $golfLinkNo")
+                    
+                    // Log current local token balance before refresh
+                    Log.d(TAG, "💰 LOCAL TOKEN BALANCE (before refresh): ${sogoGolfer.value?.tokenBalance}")
+                    
                     if (golfLinkNo.isNullOrBlank()) {
                         Log.w(TAG, "⚠️ No golfLinkNo available - skipping sogo golfer fetch")
-                        sogoGolferError = "No golf link number available for current golfer"
+                        sogoGolferError = "No golf link number available from either golfer or game data"
                     } else {
                         // Fetch the sogo golfer data
                         when (val sogoGolferResult = fetchAndSaveSogoGolferUseCase(golfLinkNo)) {
                             is NetworkResult.Success -> {
                                 Log.d(TAG, "✅ Sogo golfer data fetched successfully: ${sogoGolferResult.data.email}")
+                                Log.d(TAG, "💰 REMOTE TOKEN BALANCE (from API): ${sogoGolferResult.data.tokenBalance}")
+                                // Give a moment for the local flow to update
+                                kotlinx.coroutines.delay(100)
+                                Log.d(TAG, "💰 LOCAL TOKEN BALANCE (after refresh): ${sogoGolfer.value?.tokenBalance}")
                                 sogoGolfSuccess = true
                             }
                             is NetworkResult.Error -> {
@@ -425,8 +456,22 @@ class HomeViewModel @Inject constructor(
         existingSogoGolfer: SogoGolfer? = null
     ): Boolean {
         return try {
+            // DEBUG: Log all available data sources
+            Log.d(TAG, "=== DEBUG: processGolferConfirmationData ===")
+            Log.d(TAG, "currentGolfer.value: ${currentGolfer.value}")
+            Log.d(TAG, "currentGolfer.value?.golfLinkNo: ${currentGolfer.value?.golfLinkNo}")
+            Log.d(TAG, "localGame.value: ${localGame.value}")
+            Log.d(TAG, "localGame.value?.golflinkNumber: ${localGame.value?.golflinkNumber}")
+            Log.d(TAG, "localGame.value?.mainCompetitionId: ${localGame.value?.mainCompetitionId}")
+            
+            // For new golfers, get golflinkNumber from game data since no golfer exists yet
+            val golfLinkNo = currentGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
+                ?: localGame.value?.golflinkNumber 
+                ?: throw Exception("No golf link number available from either golfer or game data")
+            
+            Log.d(TAG, "Final golfLinkNo to use: $golfLinkNo")
+            
             val currentMslGolfer = currentGolfer.value
-                ?: throw Exception("No MSL golfer data available")
             
             if (existingSogoGolfer != null) {
                 Log.d(TAG, "Updating existing golfer: ${existingSogoGolfer.firstName} ${existingSogoGolfer.lastName}")
@@ -459,7 +504,7 @@ class HomeViewModel @Inject constructor(
                 )
 
 
-                when (val result = updateGolferUseCase(currentMslGolfer.golfLinkNo, updateRequest)) {
+                when (val result = updateGolferUseCase(golfLinkNo, updateRequest)) {
                     is NetworkResult.Success -> {
                         Log.d(TAG, "✅ Golfer updated successfully")
                         true
@@ -483,7 +528,7 @@ class HomeViewModel @Inject constructor(
                 val sogoAppVersion = com.sogo.golf.msl.BuildConfig.VERSION_NAME
                 
                 val request = CreateGolferRequestDto(
-                    authSystemUid = currentMslGolfer.golfLinkNo,
+                    authSystemUid = golfLinkNo,
                     country = "australia",
                     dateOfBirth = dateOfBirthString,
                     deviceManufacturer = deviceManufacturer,
@@ -494,7 +539,7 @@ class HomeViewModel @Inject constructor(
                     email = currentEmail,
                     firstName = firstName,
                     gender = sogoGender,
-                    golflinkNo = currentMslGolfer.golfLinkNo,
+                    golflinkNo = golfLinkNo,
                     isAcceptedSogoTermsAndConditions = true,
                     lastName = lastName,
                     mobileNo = currentMobile,
@@ -506,8 +551,22 @@ class HomeViewModel @Inject constructor(
                 when (val result = createGolferUseCase(request)) {
                     is NetworkResult.Success -> {
                         Log.d(TAG, "✅ Golfer created successfully")
-                        fetchAndSaveSogoGolferUseCase(currentMslGolfer.golfLinkNo)
-                        true
+                        
+                        // Now fetch and save the newly created golfer locally
+                        when (val fetchResult = fetchAndSaveSogoGolferUseCase(golfLinkNo)) {
+                            is NetworkResult.Success -> {
+                                Log.d(TAG, "✅ Newly created golfer fetched and saved locally")
+                                true
+                            }
+                            is NetworkResult.Error -> {
+                                Log.e(TAG, "❌ Failed to fetch newly created golfer: ${fetchResult.error}")
+                                // Still return true since the golfer was created remotely
+                                true
+                            }
+                            is NetworkResult.Loading -> {
+                                true
+                            }
+                        }
                     }
                     is NetworkResult.Error -> {
                         Log.e(TAG, "❌ Failed to create golfer: ${result.error}")
