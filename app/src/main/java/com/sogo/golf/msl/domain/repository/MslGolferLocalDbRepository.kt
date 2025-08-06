@@ -9,4 +9,5 @@ interface MslGolferLocalDbRepository {
     suspend fun saveGolfer(golfer: MslGolfer)
     suspend fun clearGolfer()
     suspend fun hasGolfer(): Boolean
+    suspend fun getGolferCount(): Int
 }

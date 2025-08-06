@@ -72,4 +72,11 @@ class MslGolferLocalDbRepositoryImpl @Inject constructor(
         Log.d(TAG, "hasGolfer: $count golfers in database")
         return count > 0
     }
+
+    override suspend fun getGolferCount(): Int {
+        Log.d(TAG, "getGolferCount called")
+        val count = golferDao.getGolferCount()
+        Log.d(TAG, "Found $count golfers")
+        return count
+    }
 }

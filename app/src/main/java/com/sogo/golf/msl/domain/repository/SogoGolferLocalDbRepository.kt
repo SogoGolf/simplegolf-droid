@@ -20,4 +20,5 @@ interface SogoGolferLocalDbRepository {
     suspend fun createAndSaveGolfer(request: CreateGolferRequestDto): NetworkResult<SogoGolfer>
     
     suspend fun updateAndSaveGolfer(golflinkNo: String, request: UpdateGolferRequestDto): NetworkResult<SogoGolfer>
+    suspend fun getSogoGolferCount(): Int
 }

@@ -134,4 +134,11 @@ class FeeLocalDbRepositoryImpl @Inject constructor(
         Log.d(TAG, "hasFees: $count fees in database")
         return count > 0
     }
+
+    override suspend fun getFeeCount(): Int {
+        Log.d(TAG, "getFeeCount called")
+        val count = feeDao.getFeeCount()
+        Log.d(TAG, "Found $count fees")
+        return count
+    }
 }

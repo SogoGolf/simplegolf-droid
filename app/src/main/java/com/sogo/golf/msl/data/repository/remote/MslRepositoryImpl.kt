@@ -44,9 +44,7 @@ class MslRepositoryImpl @Inject constructor(
 
                 val clubs = rawClubs?.toDomainModel() ?: emptyList()
                 Log.d(TAG, "Successfully retrieved ${clubs.size} clubs")
-                clubs.forEach { club ->
-                    Log.d(TAG, "Club: ${club.name} (ID: ${club.clubId})")
-                }
+
                 clubs
             } else {
                 Log.e(TAG, "Failed to get clubs: ${response.code()} - ${response.message()}")

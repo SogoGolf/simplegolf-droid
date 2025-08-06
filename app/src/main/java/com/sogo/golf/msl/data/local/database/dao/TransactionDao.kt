@@ -37,4 +37,10 @@ interface TransactionDao {
         endOfDay: Long,
         mainCompetitionId: Int
     ): Int
+
+    @Query("DELETE FROM transactions")
+    suspend fun clearAllTransactions()
+
+    @Query("SELECT COUNT(*) FROM transactions")
+    suspend fun getTransactionCount(): Int
 }

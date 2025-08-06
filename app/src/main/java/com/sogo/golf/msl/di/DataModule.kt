@@ -17,6 +17,7 @@ import com.sogo.golf.msl.data.repository.local.MslCompetitionLocalDbRepositoryIm
 import com.sogo.golf.msl.data.repository.local.MslGameLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.MslGolferLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.local.SogoGolferLocalDbRepositoryImpl
+import com.sogo.golf.msl.data.repository.local.TransactionLocalDbRepositoryImpl
 import com.sogo.golf.msl.data.repository.remote.MslRepositoryImpl
 import com.sogo.golf.msl.data.repository.remote.SogoMongoRepositoryImpl
 import com.sogo.golf.msl.domain.repository.FeeLocalDbRepository
@@ -26,6 +27,7 @@ import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.SogoGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
 import com.sogo.golf.msl.data.repository.local.RoundLocalDbRepositoryImpl
+import com.sogo.golf.msl.domain.repository.TransactionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
@@ -107,5 +109,10 @@ abstract class DataModule {
     abstract fun bindIncludeRoundPreferences(
         includeRoundPreferencesImpl: IncludeRoundPreferencesImpl
     ): IncludeRoundPreferences
+
+    @Binds
+    abstract fun bindTransactionLocalDbRepository(
+        transactionLocalDbRepositoryImpl: TransactionLocalDbRepositoryImpl
+    ): TransactionLocalDbRepository
 
 }

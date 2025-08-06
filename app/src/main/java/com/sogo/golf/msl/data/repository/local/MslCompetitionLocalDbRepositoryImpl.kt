@@ -129,4 +129,11 @@ class MslCompetitionLocalDbRepositoryImpl @Inject constructor(
         competitionDao.clearAllCompetitions()
         Log.d(TAG, "Single competition cleared from database")
     }
+
+    override suspend fun getCompetitionCount(): Int {
+        Log.d(TAG, "getCompetitionCount called")
+        val count = competitionDao.getCompetitionCount()
+        Log.d(TAG, "Found $count competitions")
+        return count
+    }
 }

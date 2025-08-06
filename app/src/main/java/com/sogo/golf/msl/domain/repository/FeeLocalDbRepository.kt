@@ -14,4 +14,5 @@ interface FeeLocalDbRepository {
     suspend fun fetchAndSaveFees(): NetworkResult<List<Fee>>
     suspend fun clearAllFees()
     suspend fun hasFees(): Boolean
+    suspend fun getFeeCount(): Int
 }

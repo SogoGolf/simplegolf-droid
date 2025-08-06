@@ -11,4 +11,5 @@ interface MslCompetitionLocalDbRepository {
     suspend fun syncCompetitionToServer(competitionId: String): NetworkResult<Unit>
     suspend fun getUnsyncedCompetitions(): List<MslCompetition>
     suspend fun clearAllCompetitions()
+    suspend fun getCompetitionCount(): Int
 }

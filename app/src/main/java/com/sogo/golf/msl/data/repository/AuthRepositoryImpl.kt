@@ -4,9 +4,13 @@ package com.sogo.golf.msl.data.repository
 import com.sogo.golf.msl.data.local.preferences.AuthPreferences
 import com.sogo.golf.msl.data.local.preferences.ClubPreferences
 import com.sogo.golf.msl.domain.model.AuthState
+import com.sogo.golf.msl.domain.repository.FeeLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
+import com.sogo.golf.msl.domain.repository.SogoGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.TransactionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.domain.usecase.round.CheckActiveTodayRoundUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +33,10 @@ class AuthRepositoryImpl @Inject constructor(
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val mslCompetitionLocalDbRepository: MslCompetitionLocalDbRepository,
     private val mslGameLocalDbRepository: MslGameLocalDbRepository,
+    private val roundLocalDbRepository: RoundLocalDbRepository,
+    private val sogoGolferLocalDbRepository: SogoGolferLocalDbRepository,
+    private val feeLocalDbRepository: FeeLocalDbRepository,
+    private val transactionLocalDbRepository: TransactionLocalDbRepository,
     private val checkActiveTodayRoundUseCase: CheckActiveTodayRoundUseCase
 ) : AuthRepository {
 
@@ -86,18 +94,28 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun logout(): Result<Unit> {
         return try {
             authPreferences.setLoggedIn(false)
-            // ✅ CLEAR GOLFER DATA ON LOGOUT
+            
+            // ✅ CLEAR ALL DATABASE DATA ON LOGOUT
+            // Clear MSL data (session-specific)
             mslGolferLocalDbRepository.clearGolfer()
             mslCompetitionLocalDbRepository.clearAllCompetitions()
             mslGameLocalDbRepository.clearAllGames()
+            
+            // ✅ NEW: Clear historical and user data
+            roundLocalDbRepository.clearAllRounds()
+            sogoGolferLocalDbRepository.clearAllSogoGolfers()
+            feeLocalDbRepository.clearAllFees()
+            transactionLocalDbRepository.clearAllTransactions()
 
-            // NEW: ✅ CLEAR CLUB SELECTION ON LOGOUT
+            // ✅ CLEAR PREFERENCES
             clubPreferences.clearSelectedClub()
 
             _authState.value = AuthState(isLoggedIn = false, hasActiveRound = false)
-
+            
+            android.util.Log.d("AuthRepository", "All user data cleared on logout")
             Result.success(Unit)
         } catch (e: Exception) {
+            android.util.Log.e("AuthRepository", "Failed to clear data on logout", e)
             Result.failure(e)
         }
     }

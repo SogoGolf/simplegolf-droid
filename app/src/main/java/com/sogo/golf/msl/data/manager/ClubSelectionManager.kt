@@ -34,17 +34,17 @@ class ClubSelectionManager @Inject constructor() {
     }
 
     fun setAllClubs(clubs: List<MslClub>) {
-        android.util.Log.d(TAG, "=== SETTING ALL CLUBS ===")
+//        android.util.Log.d(TAG, "=== SETTING ALL CLUBS ===")
         android.util.Log.d(TAG, "Clubs count: ${clubs.size}")
 
         _allClubs.value = clubs
 
         // Log all clubs for debugging
-        clubs.forEachIndexed { index, club ->
-            android.util.Log.d(TAG, "Club $index: ${club.name} (ID: ${club.clubId}, TenantID: ${club.tenantId})")
-        }
+//        clubs.forEachIndexed { index, club ->
+//            android.util.Log.d(TAG, "Club $index: ${club.name} (ID: ${club.clubId}, TenantID: ${club.tenantId})")
+//        }
 
-        android.util.Log.d(TAG, "✅ All clubs updated in StateFlow")
+//        android.util.Log.d(TAG, "✅ All clubs updated in StateFlow")
     }
 
     fun clearSelection() {

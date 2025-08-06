@@ -67,6 +67,9 @@ fun AppDrawer(
 
     // Get current golfer from the drawer view model
     val currentGolfer by drawerViewModel.currentGolfer.collectAsState()
+    
+    // Get logout confirmation dialog state
+    val showLogoutConfirmation by navViewModel.showLogoutConfirmation.collectAsState()
 
     Column(
         modifier = Modifier
@@ -147,7 +150,7 @@ fun AppDrawer(
                 modifier = Modifier
                     .padding(top = 8.dp)
                     .clickable {
-                        navViewModel.logout(navController)
+                        navViewModel.requestLogout()
                         onCloseDrawer()
                     }
             )
@@ -218,6 +221,14 @@ fun AppDrawer(
             )
             Spacer(modifier = Modifier.height(60.dp))
         }
+    }
+    
+    // Show logout confirmation dialog
+    if (showLogoutConfirmation) {
+        LogoutConfirmationDialog(
+            onConfirm = { navViewModel.confirmLogout(navController) },
+            onDismiss = { navViewModel.cancelLogout() }
+        )
     }
 }
 

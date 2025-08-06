@@ -7,6 +7,7 @@ import com.sogo.golf.msl.domain.usecase.auth.GetAuthStateUseCase
 import com.sogo.golf.msl.domain.usecase.auth.LoginUseCase
 import com.sogo.golf.msl.domain.usecase.auth.LogoutUseCase
 import com.sogo.golf.msl.domain.usecase.auth.SetFinishedRoundUseCase
+import com.sogo.golf.msl.domain.usecase.database.LogDatabaseCountsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -22,7 +23,8 @@ class NavViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val logoutUseCase: LogoutUseCase,
     private val getAuthStateUseCase: GetAuthStateUseCase,
-    private val setFinishedRoundUseCase: SetFinishedRoundUseCase
+    private val setFinishedRoundUseCase: SetFinishedRoundUseCase,
+    private val logDatabaseCountsUseCase: LogDatabaseCountsUseCase
 ) : ViewModel() {
 
     // Back navigation state
@@ -58,6 +60,10 @@ class NavViewModel @Inject constructor(
             initialValue = false
         )
 
+    // Logout confirmation dialog state
+    private val _showLogoutConfirmation = MutableStateFlow(false)
+    val showLogoutConfirmation: StateFlow<Boolean> = _showLogoutConfirmation.asStateFlow()
+
     fun setBackNavDisabled(disabled: Boolean) {
         _backNavDisabled.value = disabled
     }
@@ -72,15 +78,41 @@ class NavViewModel @Inject constructor(
         }
     }
 
-    fun logout(navController: NavController) {
+    // Show logout confirmation dialog and log database counts
+    fun requestLogout() {
+        viewModelScope.launch {
+            // Log database counts before showing confirmation
+            logDatabaseCountsUseCase("BEFORE LOGOUT")
+            // Show confirmation dialog
+            _showLogoutConfirmation.value = true
+        }
+    }
+
+    // Confirm logout - actually perform the logout
+    fun confirmLogout(navController: NavController) {
         viewModelScope.launch {
             logoutUseCase().onSuccess {
+                // Log database counts after logout
+                logDatabaseCountsUseCase("AFTER LOGOUT")
+                
                 navController.navigate("login") {
                     popUpTo(0) { inclusive = true }
                     launchSingleTop = true
                 }
             }
         }
+        _showLogoutConfirmation.value = false
+    }
+
+    // Cancel logout confirmation
+    fun cancelLogout() {
+        _showLogoutConfirmation.value = false
+    }
+
+    // Legacy logout method for backward compatibility
+    @Deprecated("Use requestLogout() instead")
+    fun logout(navController: NavController) {
+        requestLogout()
     }
 
     fun setFinishedRound(finished: Boolean) {

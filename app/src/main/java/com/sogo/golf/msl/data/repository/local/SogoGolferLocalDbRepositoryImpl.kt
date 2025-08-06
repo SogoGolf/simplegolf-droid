@@ -184,4 +184,11 @@ class SogoGolferLocalDbRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun getSogoGolferCount(): Int {
+        Log.d(TAG, "getSogoGolferCount called")
+        val count = sogoGolferDao.getSogoGolferCount()
+        Log.d(TAG, "Found $count SogoGolfers")
+        return count
+    }
 }

@@ -125,4 +125,11 @@ class MslGameLocalDbRepositoryImpl @Inject constructor(
         gameDao.clearAllGames()
         Log.d(TAG, "Single game cleared from database")
     }
+
+    override suspend fun getGameCount(): Int {
+        Log.d(TAG, "getGameCount called")
+        val count = gameDao.getGameCount()
+        Log.d(TAG, "Found $count games")
+        return count
+    }
 }

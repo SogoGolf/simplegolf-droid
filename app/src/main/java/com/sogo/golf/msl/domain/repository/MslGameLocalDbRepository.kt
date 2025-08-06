@@ -12,4 +12,5 @@ interface MslGameLocalDbRepository {
     suspend fun syncGameToServer(gameId: String): NetworkResult<Unit>
     suspend fun getUnsyncedGames(): List<MslGame>
     suspend fun clearAllGames()
+    suspend fun getGameCount(): Int
 }
