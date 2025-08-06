@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -28,6 +29,7 @@ fun <T> TableWithFixedFirstColumnSCORECARD(
     headerCellContent: @Composable (index: Int) -> Unit,
     cellContent: @Composable (index: Int, item: T) -> Unit,
 ) {
+    val cellHeight = 40.dp
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
         // Fixed First Column
         Column(
@@ -41,7 +43,9 @@ fun <T> TableWithFixedFirstColumnSCORECARD(
                 border = BorderStroke(0.5.dp, Color.LightGray),
                 color = Color.White,
                 contentColor = mslBlack,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(cellHeight)
             ) {
                 headerCellContent(0)
             }
@@ -52,7 +56,9 @@ fun <T> TableWithFixedFirstColumnSCORECARD(
                     border = BorderStroke(0.5.dp, Color.LightGray),
                     color = Color.White,
                     contentColor = mslBlack,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(cellHeight)
                 ) {
                     cellContent(0, item)
                 }
@@ -73,7 +79,9 @@ fun <T> TableWithFixedFirstColumnSCORECARD(
                         border = BorderStroke(0.5.dp, Color.LightGray),
                         color = Color.White,
                         contentColor = mslBlack,
-                        modifier = Modifier.width(cellWidth(columnIndex))
+                        modifier = Modifier
+                            .width(cellWidth(columnIndex))
+                            .height(cellHeight)
                     ) {
                         headerCellContent(columnIndex)
                     }
@@ -84,7 +92,9 @@ fun <T> TableWithFixedFirstColumnSCORECARD(
                             border = BorderStroke(0.5.dp, Color.LightGray),
                             color = Color.White,
                             contentColor = mslBlack,
-                            modifier = Modifier.width(cellWidth(columnIndex))
+                            modifier = Modifier
+                                .width(cellWidth(columnIndex))
+                                .height(cellHeight)
                         ) {
                             cellContent(columnIndex, item)
                         }
