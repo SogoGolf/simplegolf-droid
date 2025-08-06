@@ -13,6 +13,7 @@ interface GameDataTimestampPreferences {
     suspend fun getGameDataDate(): String?
     suspend fun clearGameDataDate()
     suspend fun hasGameDataDate(): Boolean
+    suspend fun clearAllGameData()
 }
 
 @Singleton
@@ -68,5 +69,10 @@ class GameDataTimestampPreferencesImpl @Inject constructor(
 
     override suspend fun hasGameDataDate(): Boolean {
         return prefs.contains(KEY_GAME_DATA_DATE)
+    }
+
+    override suspend fun clearAllGameData() {
+        prefs.edit().clear().apply()
+        android.util.Log.d("GameDataTimestamp", "🗑️ Cleared ALL game data timestamps")
     }
 }
