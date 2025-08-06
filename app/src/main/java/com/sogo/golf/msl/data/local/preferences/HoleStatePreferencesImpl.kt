@@ -56,4 +56,9 @@ class HoleStatePreferencesImpl @Inject constructor(
         
         android.util.Log.d("HoleStatePrefs", "🗑️ Cleared current hole for round: $roundId")
     }
+
+    override suspend fun clearAllHoleStates() {
+        prefs.edit().clear().apply()
+        android.util.Log.d("HoleStatePrefs", "🗑️ Cleared ALL hole states")
+    }
 }

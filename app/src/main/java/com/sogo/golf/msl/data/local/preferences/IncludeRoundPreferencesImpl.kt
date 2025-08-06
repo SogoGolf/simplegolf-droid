@@ -60,4 +60,9 @@ class IncludeRoundPreferencesImpl @Inject constructor(
     override suspend fun clearRoundCost() {
         prefs.edit().remove(KEY_ROUND_COST).apply()
     }
+
+    override suspend fun clearAllPreferences() {
+        prefs.edit().clear().apply()
+        android.util.Log.d("IncludeRoundPrefs", "🗑️ Cleared ALL include round preferences")
+    }
 }

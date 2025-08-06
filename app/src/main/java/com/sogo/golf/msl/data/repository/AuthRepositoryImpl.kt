@@ -3,6 +3,10 @@ package com.sogo.golf.msl.data.repository
 
 import com.sogo.golf.msl.data.local.preferences.AuthPreferences
 import com.sogo.golf.msl.data.local.preferences.ClubPreferences
+import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
+import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
+import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
+import com.sogo.golf.msl.MslTokenManager
 import com.sogo.golf.msl.domain.model.AuthState
 import com.sogo.golf.msl.domain.repository.FeeLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
@@ -30,6 +34,10 @@ import javax.inject.Singleton
 class AuthRepositoryImpl @Inject constructor(
     private val authPreferences: AuthPreferences,
     private val clubPreferences: ClubPreferences,
+    private val holeStatePreferences: HoleStatePreferences,
+    private val includeRoundPreferences: IncludeRoundPreferences,
+    private val gameDataTimestampPreferences: GameDataTimestampPreferences,
+    private val mslTokenManager: MslTokenManager,
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val mslCompetitionLocalDbRepository: MslCompetitionLocalDbRepository,
     private val mslGameLocalDbRepository: MslGameLocalDbRepository,
@@ -93,29 +101,44 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun logout(): Result<Unit> {
         return try {
-            authPreferences.setLoggedIn(false)
-            
             // ✅ CLEAR ALL DATABASE DATA ON LOGOUT
             // Clear MSL data (session-specific)
             mslGolferLocalDbRepository.clearGolfer()
             mslCompetitionLocalDbRepository.clearAllCompetitions()
             mslGameLocalDbRepository.clearAllGames()
             
-            // ✅ NEW: Clear historical and user data
+            // ✅ Clear historical and user data
             roundLocalDbRepository.clearAllRounds()
             sogoGolferLocalDbRepository.clearAllSogoGolfers()
             feeLocalDbRepository.clearAllFees()
             transactionLocalDbRepository.clearAllTransactions()
 
-            // ✅ CLEAR PREFERENCES
+            // ✅ CLEAR ALL PREFERENCES AND TOKENS
+            // Auth preferences (including finished round state)
+            authPreferences.setLoggedIn(false)
+            authPreferences.setFinishedRound(false)
+            
+            // Club preferences
             clubPreferences.clearSelectedClub()
+            
+            // 🔐 Clear authentication tokens
+            mslTokenManager.clearTokens()
+            
+            // 🏌️ Clear hole state data
+            holeStatePreferences.clearAllHoleStates()
+            
+            // 📅 Clear game data timestamps
+            gameDataTimestampPreferences.clearAllGameData()
+            
+            // 🎯 Clear include round preferences
+            includeRoundPreferences.clearAllPreferences()
 
             _authState.value = AuthState(isLoggedIn = false, hasActiveRound = false)
             
-            android.util.Log.d("AuthRepository", "All user data cleared on logout")
+            android.util.Log.d("AuthRepository", "🧹 COMPLETE LOGOUT: All user data and preferences cleared")
             Result.success(Unit)
         } catch (e: Exception) {
-            android.util.Log.e("AuthRepository", "Failed to clear data on logout", e)
+            android.util.Log.e("AuthRepository", "❌ Failed to clear data on logout", e)
             Result.failure(e)
         }
     }
