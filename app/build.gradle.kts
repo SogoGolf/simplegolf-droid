@@ -9,6 +9,13 @@ fun loadProperties(fileName: String): Properties {
     return props
 }
 
+// Load version properties
+val versionProps = loadProperties("version.properties")
+val versionMajor = versionProps["VERSION_MAJOR"]?.toString()?.toIntOrNull() ?: 3
+val versionMinor = versionProps["VERSION_MINOR"]?.toString()?.toIntOrNull() ?: 0
+val versionPatch = versionProps["VERSION_PATCH"]?.toString()?.toIntOrNull() ?: 3
+val versionBuild = versionProps["VERSION_BUILD"]?.toString()?.toIntOrNull() ?: 1
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -26,8 +33,8 @@ android {
         applicationId = "com.sogo.golf.msl"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = versionBuild
+        versionName = "$versionMajor.$versionMinor.$versionPatch"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

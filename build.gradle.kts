@@ -6,3 +6,6 @@ plugins {
     alias(libs.plugins.dagger.hilt) apply false // Add this line
 }
 
+// Apply version management script
+apply(from = "version.gradle.kts")
+
