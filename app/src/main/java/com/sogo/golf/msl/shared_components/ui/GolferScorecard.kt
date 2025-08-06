@@ -20,6 +20,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,10 +48,8 @@ data class ScorecardData(
     val meters: String,
     val index: String,
     val par: String,
-    val golferStrokes: String,
-    val golferScore: String,
-    val partnerStrokes: String,
-    val partnerScore: String
+    val strokes: String,
+    val score: String
 )
 
 @Composable
@@ -93,6 +93,9 @@ fun GolferScorecard(
         return
     }
 
+    // Tab state management
+    val selectedTab = remember { mutableStateOf("golfer") } // "golfer" or "partner"
+    
     val holeScores = round.holeScores
     val partnerHoleScores = round.playingPartnerRound?.holeScores ?: emptyList()
 
@@ -100,22 +103,21 @@ fun GolferScorecard(
     val filteredHoleScores = holeScores.filter { it.holeNumber <= maxHoles }
     val filteredPartnerHoleScores = partnerHoleScores.filter { it.holeNumber <= maxHoles }
 
+    // Get active player's data based on selected tab
+    val activeHoleScores = if (selectedTab.value == "golfer") filteredHoleScores else filteredPartnerHoleScores
     val scorecardData = mutableListOf<ScorecardData>()
 
     for (holeNum in 1..maxHoles) {
-        val golferHole = filteredHoleScores.find { it.holeNumber == holeNum }
-        val partnerHole = filteredPartnerHoleScores.find { it.holeNumber == holeNum }
+        val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
 
         scorecardData.add(
             ScorecardData(
                 holeNumber = holeNum.toString(),
-                meters = golferHole?.meters?.toString() ?: "0",
-                index = "${golferHole?.index1 ?: 0}/${golferHole?.index2 ?: 0}/${golferHole?.index3 ?: "-"}",
-                par = golferHole?.par?.toString() ?: "0",
-                golferStrokes = golferHole?.strokes?.toString() ?: "0",
-                golferScore = golferHole?.score?.toInt()?.toString() ?: "0",
-                partnerStrokes = partnerHole?.strokes?.toString() ?: "0",
-                partnerScore = partnerHole?.score?.toInt()?.toString() ?: "0"
+                meters = activeHole?.meters?.toString() ?: "0",
+                index = "${activeHole?.index1 ?: 0}/${activeHole?.index2 ?: 0}/${activeHole?.index3 ?: "-"}",
+                par = activeHole?.par?.toString() ?: "0",
+                strokes = activeHole?.strokes?.toString() ?: "0",
+                score = activeHole?.score?.toInt()?.toString() ?: "0"
             )
         )
     }
@@ -124,43 +126,36 @@ fun GolferScorecard(
         scorecardData.add(
             ScorecardData(
                 holeNumber = "OUT",
-                meters = calculateOutDistance(filteredHoleScores).toString(),
+                meters = calculateOutDistance(activeHoleScores).toString(),
                 index = "",
-                par = calculateOutPar(filteredHoleScores).toString(),
-                golferStrokes = calculateOutStrokes(filteredHoleScores).toString(),
-                golferScore = calculateOutScore(filteredHoleScores).toString(),
-                partnerStrokes = calculateOutStrokes(filteredPartnerHoleScores).toString(),
-                partnerScore = calculateOutScore(filteredPartnerHoleScores).toString()
+                par = calculateOutPar(activeHoleScores).toString(),
+                strokes = calculateOutStrokes(activeHoleScores).toString(),
+                score = calculateOutScore(activeHoleScores).toString()
             )
         )
     } else {
         scorecardData.add(
             ScorecardData(
                 holeNumber = "OUT",
-                meters = calculateOutDistance(filteredHoleScores).toString(),
+                meters = calculateOutDistance(activeHoleScores).toString(),
                 index = "",
-                par = calculateOutPar(filteredHoleScores).toString(),
-                golferStrokes = calculateOutStrokes(filteredHoleScores).toString(),
-                golferScore = calculateOutScore(filteredHoleScores).toString(),
-                partnerStrokes = calculateOutStrokes(filteredPartnerHoleScores).toString(),
-                partnerScore = calculateOutScore(filteredPartnerHoleScores).toString()
+                par = calculateOutPar(activeHoleScores).toString(),
+                strokes = calculateOutStrokes(activeHoleScores).toString(),
+                score = calculateOutScore(activeHoleScores).toString()
             )
         )
 
         for (holeNum in 10..18) {
-            val golferHole = filteredHoleScores.find { it.holeNumber == holeNum }
-            val partnerHole = filteredPartnerHoleScores.find { it.holeNumber == holeNum }
+            val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
 
             scorecardData.add(
                 ScorecardData(
                     holeNumber = holeNum.toString(),
-                    meters = golferHole?.meters?.toString() ?: "0",
-                    index = "${golferHole?.index1 ?: 0}/${golferHole?.index2 ?: 0}/${golferHole?.index3 ?: "-"}",
-                    par = golferHole?.par?.toString() ?: "0",
-                    golferStrokes = golferHole?.strokes?.toString() ?: "0",
-                    golferScore = golferHole?.score?.toInt()?.toString() ?: "0",
-                    partnerStrokes = partnerHole?.strokes?.toString() ?: "0",
-                    partnerScore = partnerHole?.score?.toInt()?.toString() ?: "0"
+                    meters = activeHole?.meters?.toString() ?: "0",
+                    index = "${activeHole?.index1 ?: 0}/${activeHole?.index2 ?: 0}/${activeHole?.index3 ?: "-"}",
+                    par = activeHole?.par?.toString() ?: "0",
+                    strokes = activeHole?.strokes?.toString() ?: "0",
+                    score = activeHole?.score?.toInt()?.toString() ?: "0"
                 )
             )
         }
@@ -168,26 +163,22 @@ fun GolferScorecard(
         scorecardData.add(
             ScorecardData(
                 holeNumber = "IN",
-                meters = calculateInDistance(filteredHoleScores).toString(),
+                meters = calculateInDistance(activeHoleScores).toString(),
                 index = "",
-                par = calculateInPar(filteredHoleScores).toString(),
-                golferStrokes = calculateInStrokes(filteredHoleScores).toString(),
-                golferScore = calculateInScore(filteredHoleScores).toString(),
-                partnerStrokes = calculateInStrokes(filteredPartnerHoleScores).toString(),
-                partnerScore = calculateInScore(filteredPartnerHoleScores).toString()
+                par = calculateInPar(activeHoleScores).toString(),
+                strokes = calculateInStrokes(activeHoleScores).toString(),
+                score = calculateInScore(activeHoleScores).toString()
             )
         )
 
         scorecardData.add(
             ScorecardData(
                 holeNumber = "TOTAL",
-                meters = calculateTotalDistance(filteredHoleScores).toString(),
+                meters = calculateTotalDistance(activeHoleScores).toString(),
                 index = "",
-                par = calculateTotalPar(filteredHoleScores).toString(),
-                golferStrokes = calculateTotalStrokes(filteredHoleScores).toString(),
-                golferScore = calculateTotalScore(filteredHoleScores).toString(),
-                partnerStrokes = calculateTotalStrokes(filteredPartnerHoleScores).toString(),
-                partnerScore = calculateTotalScore(filteredPartnerHoleScores).toString()
+                par = calculateTotalPar(activeHoleScores).toString(),
+                strokes = calculateTotalStrokes(activeHoleScores).toString(),
+                score = calculateTotalScore(activeHoleScores).toString()
             )
         )
     }
@@ -205,29 +196,41 @@ fun GolferScorecard(
             val golferTeeName = getTeeName(mslCompetition, round.golferGLNumber)
             val partnerTeeName = getTeeName(mslCompetition, round.playingPartnerRound?.golferGLNumber)
 
-            GolferHeader(
-                golferFirstName = round.golferFirstName ?: "",
-                golferLastName = round.golferLastName ?: "",
-                dailyHandicap = round.dailyHandicap?.toString() ?: "0.0",
-                golfLinkHandicap = round.golfLinkHandicap?.toString() ?: "0.0",
-                teeName = golferTeeName,
-                onGolferClicked = onGolferClicked
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            round.playingPartnerRound?.let { partner ->
-                GolferHeader(
-                    golferFirstName = partner.golferFirstName ?: "",
-                    golferLastName = partner.golferLastName ?: "",
-                    dailyHandicap = partner.dailyHandicap?.toString() ?: "0.0",
-                    golfLinkHandicap = partner.golfLinkHandicap?.toString() ?: "0.0",
-                    teeName = partnerTeeName,
-                    onGolferClicked = onPlayingPartnerClicked
+            // Tab Headers
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                // Playing Partner Tab (Left)
+                round.playingPartnerRound?.let { partner ->
+                    TabHeader(
+                        title = "${partner.golferFirstName ?: ""} ${partner.golferLastName ?: ""}",
+                        subtitle = "Daily HC: ${partner.dailyHandicap?.toString() ?: "0.0"} | GL HC: ${partner.golfLinkHandicap?.toString() ?: "0.0"}",
+                        teeName = partnerTeeName,
+                        isActive = selectedTab.value == "partner",
+                        onClick = { 
+                            selectedTab.value = "partner"
+                            onPlayingPartnerClicked()
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                
+                // Golfer Tab (Right)
+                TabHeader(
+                    title = "${round.golferFirstName ?: ""} ${round.golferLastName ?: ""}",
+                    subtitle = "Daily HC: ${round.dailyHandicap?.toString() ?: "0.0"} | GL HC: ${round.golfLinkHandicap?.toString() ?: "0.0"}",
+                    teeName = golferTeeName,
+                    isActive = selectedTab.value == "golfer",
+                    onClick = { 
+                        selectedTab.value = "golfer"
+                        onGolferClicked()
+                    },
+                    modifier = Modifier.weight(1f)
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             val columnCount = scorecardData.size + 1
             val outColumnIndex = scorecardData.indexOfFirst { it.holeNumber.lowercase() == "out" }
@@ -238,7 +241,7 @@ fun GolferScorecard(
                 columnCount = columnCount,
                 cellWidth = { (screenWidth * 0.10).dp },
                 firstColumnWidth = { 100.dp },
-                data = listOf("Hole", "Meters", "Index", "Par", "Golfer", "Score", "Partner", "Score"),
+                data = listOf("Hole", "Meters", "Index", "Par", "Strokes", "Score"),
                 headerCellContent = { columnIndex ->
                     if (columnIndex == 0) {
                         Text(
@@ -296,10 +299,8 @@ fun GolferScorecard(
                                 "Meters" -> data.meters
                                 "Index" -> data.index
                                 "Par" -> data.par
-                                "Golfer" -> data.golferStrokes
-                                "Score" -> data.golferScore
-                                "Partner" -> data.partnerStrokes
-                                else -> data.partnerScore
+                                "Strokes" -> data.strokes
+                                else -> data.score
                             }
 
                             val backgroundColor = when {
@@ -337,6 +338,52 @@ private fun getTeeName(mslCompetition: MslCompetition?, golfLinkNumber: String?)
     return mslCompetition?.players?.find { 
         it.golfLinkNumber == golfLinkNumber 
     }?.teeName ?: "--"
+}
+
+@Composable
+fun TabHeader(
+    title: String,
+    subtitle: String,
+    teeName: String,
+    isActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor = if (isActive) mslBlue else mslGrey.copy(alpha = 0.6f)
+    val textColor = Color.White
+    
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+            .background(backgroundColor)
+            .clickable { onClick() }
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontSize = MaterialTheme.typography.titleMedium.fontSize,
+            fontWeight = FontWeight.Bold,
+            color = textColor,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+            color = textColor.copy(alpha = 0.9f),
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = "$teeName Tee",
+            style = MaterialTheme.typography.bodyMedium,
+            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+            color = textColor,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 @Composable
