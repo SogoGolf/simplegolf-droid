@@ -96,7 +96,7 @@ fun AppDrawer(
                         .memoryCacheKey("simple_golf_logo")
                         .build(),
                     contentDescription = "Logo",
-                    modifier = Modifier.width(imageWidth).padding(top = 25.dp)
+                    modifier = Modifier.width(imageWidth).padding(top = 30.dp)
                 )
 
                 // Close Button

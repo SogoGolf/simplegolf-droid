@@ -8,4 +8,6 @@ interface IncludeRoundPreferences {
     suspend fun setRoundCost(cost: Double)
     suspend fun getRoundCost(): Double
     suspend fun clearRoundCost()
+    
+    suspend fun clearAllPreferences()
 }
