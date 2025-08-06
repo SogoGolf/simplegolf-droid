@@ -69,6 +69,7 @@ import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.TextFieldColors
 
 
 /**
@@ -354,14 +355,14 @@ fun GolferDataConfirmationSheet(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // State Dropdown
+        // State Dropdown - Fixed for Pixel 5 compatibility
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = state ?: "",
+                value = state?.uppercase() ?: "",
                 onValueChange = {},
                 readOnly = true,
                 maxLines = 1,
@@ -369,21 +370,38 @@ fun GolferDataConfirmationSheet(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true)
+                    .menuAnchor(), // Simplified menuAnchor for better compatibility
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = mslBlack,
+                    unfocusedTextColor = mslBlack,
+                    focusedBorderColor = mslBlue,
+                    unfocusedBorderColor = Color.Gray,
+                    focusedLabelColor = mslBlue,
+                    unfocusedLabelColor = Color.Gray
+                )
             )
 
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier.background(Color.White)
+                modifier = Modifier
+                    .background(Color.White)
+                    .fillMaxWidth() // Ensure full width for better visibility
             ) {
                 australianStates.forEach { stateOption ->
                     DropdownMenuItem(
-                        text = { Text(stateOption) },
+                        text = { 
+                            Text(
+                                text = stateOption,
+                                color = mslBlack,
+                                style = MaterialTheme.typography.bodyLarge
+                            ) 
+                        },
                         onClick = {
                             state = stateOption
                             expanded = false
-                        }
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
