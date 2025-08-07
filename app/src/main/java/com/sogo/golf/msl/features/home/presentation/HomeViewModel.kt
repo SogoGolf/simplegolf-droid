@@ -172,6 +172,8 @@ class HomeViewModel @Inject constructor(
                     when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
                         is NetworkResult.Success -> {
                             Log.d(TAG, "✅ MSL Game data fetched successfully: Competition ${gameResult.data.mainCompetitionId}")
+                            Log.d(TAG, "🔍 DEBUG: Game startingHoleNumber: ${gameResult.data.startingHoleNumber}")
+                            Log.d(TAG, "🔍 DEBUG: Game numberOfHoles: ${gameResult.data.numberOfHoles}")
                             gameSuccess = true
                         }
                         is NetworkResult.Error -> {
