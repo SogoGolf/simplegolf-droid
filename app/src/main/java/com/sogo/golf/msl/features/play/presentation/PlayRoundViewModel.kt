@@ -1082,4 +1082,25 @@ class PlayRoundViewModel @Inject constructor(
     fun showGoToHoleDialog() {
         _showGoToHoleDialog.value = true
     }
+    
+    /**
+     * Gets the valid hole range for the current course based on competition data.
+     * This ensures the GoToHole dialog only shows holes that exist on the course.
+     */
+    fun getValidHoleRange(): IntRange? {
+        val game = localGame.value ?: return null
+        val competition = localCompetition.value ?: return null
+        
+        // Get holes from competition data to determine actual available holes
+        val competitionHoles = competition.players.firstOrNull()?.holes ?: return null
+        
+        if (competitionHoles.isEmpty()) return null
+        
+        // Get the actual hole numbers from competition data
+        val holeNumbers = competitionHoles.map { it.holeNumber }.sorted()
+        val minHole = holeNumbers.firstOrNull() ?: game.startingHoleNumber
+        val maxHole = holeNumbers.lastOrNull() ?: getMaxHoleNumber(game)
+        
+        return minHole..maxHole
+    }
 }

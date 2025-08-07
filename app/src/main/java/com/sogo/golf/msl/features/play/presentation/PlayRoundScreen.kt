@@ -657,13 +657,14 @@ private fun Screen4Portrait(
                 GoToHoleAlertDialog(
                     holeScores = round.holeScores,
                     holeScoresPlayingPartner = round.playingPartnerRound.holeScores,
-                showDialog = showDialog,
-                onDismiss = { playRoundViewModel.hideGoToHoleDialog() },
-                onConfirm = { holeNumber ->
-                    playRoundViewModel.hideGoToHoleDialog()
-                    playRoundViewModel.navigateToHole(holeNumber)
-                }
-            )
+                    validHoleRange = playRoundViewModel.getValidHoleRange(),
+                    showDialog = showDialog,
+                    onDismiss = { playRoundViewModel.hideGoToHoleDialog() },
+                    onConfirm = { holeNumber ->
+                        playRoundViewModel.hideGoToHoleDialog()
+                        playRoundViewModel.navigateToHole(holeNumber)
+                    }
+                )
             }
         }
     }

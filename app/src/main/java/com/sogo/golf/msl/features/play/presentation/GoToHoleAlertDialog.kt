@@ -22,6 +22,7 @@ import com.sogo.golf.msl.domain.model.HoleScore
 fun GoToHoleAlertDialog(
     holeScores: List<HoleScore>,
     holeScoresPlayingPartner: List<HoleScore>,
+    validHoleRange: IntRange?,
     showDialog: Boolean,
     onDismiss: () -> Unit,
     onConfirm: (Int) -> Unit
@@ -59,7 +60,14 @@ fun GoToHoleAlertDialog(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.padding(bottom = 16.dp)
                     ) {
-                        items(holeScores) { holeScore ->
+                        // Filter holes to only show ones that exist on the course
+                        val filteredHoleScores = if (validHoleRange != null) {
+                            holeScores.filter { it.holeNumber in validHoleRange }
+                        } else {
+                            holeScores
+                        }
+                        
+                        items(filteredHoleScores) { holeScore ->
                             val holeScorePartner = holeScoresPlayingPartner.find { 
                                 it.holeNumber == holeScore.holeNumber 
                             }
