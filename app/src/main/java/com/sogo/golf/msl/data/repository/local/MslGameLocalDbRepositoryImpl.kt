@@ -56,6 +56,8 @@ class MslGameLocalDbRepositoryImpl @Inject constructor(
                 is NetworkResult.Success -> {
                     val game = result.data
                     Log.d(TAG, "API returned game with competition ID: ${game.mainCompetitionId}")
+                    Log.d(TAG, "🔍 DEBUG: startingHoleNumber from API: ${game.startingHoleNumber}")
+                    Log.d(TAG, "🔍 DEBUG: numberOfHoles from API: ${game.numberOfHoles}")
 
                     // REPLACE the single game in database
                     replaceGameInDatabase(game, gameId)

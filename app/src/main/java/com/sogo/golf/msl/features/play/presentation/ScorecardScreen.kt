@@ -23,12 +23,26 @@ fun ScorecardScreen(
 
     if (isLandscape) {
         if (round != null) {
+            // Determine if this is a 9-hole round by checking the total number of unique holes
+            val allHoles = (round.holeScores.map { it.holeNumber } + 
+                           (round.playingPartnerRound?.holeScores?.map { it.holeNumber } ?: emptyList())).toSet()
+            val isNineHoles = allHoles.size <= 9
+            
+            // DEBUG: Log scorecard detection
+            android.util.Log.d("ScorecardScreen", "=== SCORECARD DETECTION DEBUG ===")
+            android.util.Log.d("ScorecardScreen", "round.holeScores.size: ${round.holeScores.size}")
+            android.util.Log.d("ScorecardScreen", "round.holeScores hole numbers: ${round.holeScores.map { it.holeNumber }}")
+            android.util.Log.d("ScorecardScreen", "partner hole scores: ${round.playingPartnerRound?.holeScores?.map { it.holeNumber } ?: "none"}")
+            android.util.Log.d("ScorecardScreen", "allHoles: $allHoles")
+            android.util.Log.d("ScorecardScreen", "allHoles.size: ${allHoles.size}")
+            android.util.Log.d("ScorecardScreen", "isNineHoles: $isNineHoles")
+            
             GolferScorecard(
                 round = round,
                 mslCompetition = mslCompetition,
                 onPlayingPartnerClicked = {},
                 onGolferClicked = {},
-                isNineHoles = false
+                isNineHoles = isNineHoles
             )
         } else {
             Box(

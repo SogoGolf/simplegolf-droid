@@ -167,11 +167,17 @@ class PlayRoundViewModel @Inject constructor(
         // Initialize hole number based on game data
         viewModelScope.launch {
             localGame.collect { game ->
-                if (game != null && _currentHoleNumber.value == 1) {
-                    // Set starting hole number from game data
+                if (game != null) {
+                    val currentHole = _currentHoleNumber.value
                     val startingHole = game.startingHoleNumber
-                    _currentHoleNumber.value = startingHole
-                    android.util.Log.d("PlayRoundVM", "Set starting hole number to: $startingHole")
+                    
+                    // Update hole number if:
+                    // 1. We're still on the default hole 1 and the game starts on a different hole
+                    // 2. Or we need to ensure consistency with the game's starting hole
+                    if (currentHole == 1 && startingHole != 1) {
+                        _currentHoleNumber.value = startingHole
+                        android.util.Log.d("PlayRoundVM", "Set starting hole number to: $startingHole (was: $currentHole)")
+                    }
                 }
             }
         }
@@ -841,14 +847,15 @@ class PlayRoundViewModel @Inject constructor(
                 
                 if (savedCurrentHole != null) {
                     android.util.Log.d("PlayRoundVM", "🔄 App restart: Found saved current hole $savedCurrentHole")
+                    // Only restore if we have a saved hole state
+                    if (targetHole != _currentHoleNumber.value) {
+                        _currentHoleNumber.value = targetHole
+                        android.util.Log.d("PlayRoundVM", "✅ App restart: Restored to saved hole $targetHole")
+                        updateBackButtonVisibility(round)
+                    }
                 } else {
-                    android.util.Log.d("PlayRoundVM", "🔄 App restart: No saved hole state, using starting hole $targetHole")
-                }
-                
-                if (targetHole != _currentHoleNumber.value) {
-                    _currentHoleNumber.value = targetHole
-                    android.util.Log.d("PlayRoundVM", "✅ App restart: Navigated to hole $targetHole")
-                    updateBackButtonVisibility(round)
+                    android.util.Log.d("PlayRoundVM", "🔄 App restart: No saved hole state, letting game data set starting hole")
+                    // Don't override here - let the game data flow handle initial hole setting
                 }
                 
             } catch (e: Exception) {

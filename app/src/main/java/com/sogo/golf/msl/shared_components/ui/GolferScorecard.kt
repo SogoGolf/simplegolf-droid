@@ -107,9 +107,9 @@ fun GolferScorecard(
     val holeScores = round.holeScores
     val partnerHoleScores = round.playingPartnerRound?.holeScores ?: emptyList()
 
-    val maxHoles = if (isNineHoles) 9 else 18
-    val filteredHoleScores = holeScores.filter { it.holeNumber <= maxHoles }
-    val filteredPartnerHoleScores = partnerHoleScores.filter { it.holeNumber <= maxHoles }
+    // For 18-hole rounds, show all holes. For 9-hole rounds, show all available holes (don't filter)
+    val filteredHoleScores = if (isNineHoles) holeScores else holeScores.filter { it.holeNumber <= 18 }
+    val filteredPartnerHoleScores = if (isNineHoles) partnerHoleScores else partnerHoleScores.filter { it.holeNumber <= 18 }
 
     // Get active player's data based on selected tab
     val activeHoleScores = if (selectedTab.value == "golfer") filteredHoleScores else filteredPartnerHoleScores
@@ -117,22 +117,24 @@ fun GolferScorecard(
     // Create column data for the grid
     val columnData = mutableListOf<ScorecardData>()
 
-    // Add holes 1-9
-    for (holeNum in 1..9) {
-        val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
-        columnData.add(
-            ScorecardData(
-                holeNumber = holeNum.toString(),
-                meters = activeHole?.meters?.toString() ?: "0",
-                index = "${activeHole?.index1 ?: 0}/${activeHole?.index2 ?: 0}/${activeHole?.index3 ?: "-"}",
-                par = activeHole?.par?.toString() ?: "0",
-                strokes = activeHole?.strokes?.toString() ?: "0",
-                score = activeHole?.score?.toInt()?.toString() ?: "0"
-            )
-        )
-    }
-
     if (!isNineHoles) {
+        // 18-hole round: Show holes 1-9, OUT, holes 10-18, IN, TOTAL
+        
+        // Add holes 1-9
+        for (holeNum in 1..9) {
+            val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
+            columnData.add(
+                ScorecardData(
+                    holeNumber = holeNum.toString(),
+                    meters = activeHole?.meters?.toString() ?: "0",
+                    index = "${activeHole?.index1 ?: 0}/${activeHole?.index2 ?: 0}/${activeHole?.index3 ?: "-"}",
+                    par = activeHole?.par?.toString() ?: "0",
+                    strokes = activeHole?.strokes?.toString() ?: "0",
+                    score = activeHole?.score?.toInt()?.toString() ?: "0"
+                )
+            )
+        }
+
         // Add OUT column after hole 9
         columnData.add(
             ScorecardData(
@@ -184,15 +186,61 @@ fun GolferScorecard(
             )
         )
     } else {
-        // For 9-hole rounds, add OUT column at the end
+        // 9-hole round: Show only the holes that were actually played
+        
+        // DEBUG: Log what hole scores are available
+        android.util.Log.d("GolferScorecard", "=== 9-HOLE SCORECARD DEBUG ===")
+        android.util.Log.d("GolferScorecard", "activeHoleScores.size: ${activeHoleScores.size}")
+        android.util.Log.d("GolferScorecard", "activeHoleScores: ${activeHoleScores.map { "Hole ${it.holeNumber}: ${it.strokes} strokes" }}")
+        
+        // Get the actual holes played and sort them
+        val holesPlayed = activeHoleScores.map { it.holeNumber }.sorted()
+        android.util.Log.d("GolferScorecard", "holesPlayed: $holesPlayed")
+        
+        // Add each hole that was played
+        for (holeNum in holesPlayed) {
+            val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
+            if (activeHole != null) {
+                columnData.add(
+                    ScorecardData(
+                        holeNumber = holeNum.toString(),
+                        meters = activeHole.meters.toString(),
+                        index = "${activeHole.index1}/${activeHole.index2}/${activeHole.index3 ?: "-"}",
+                        par = activeHole.par.toString(),
+                        strokes = activeHole.strokes.toString(),
+                        score = activeHole.score.toInt().toString()
+                    )
+                )
+            }
+        }
+        
+        // Add subtotal column - use appropriate name based on holes played
+        val subtotalName = when {
+            holesPlayed.all { it in 1..9 } -> "OUT"
+            holesPlayed.all { it in 10..18 } -> "IN" 
+            else -> "SUBTOTAL"
+        }
+        
         columnData.add(
             ScorecardData(
-                holeNumber = "OUT",
-                meters = calculateOutDistance(activeHoleScores).toString(),
+                holeNumber = subtotalName,
+                meters = activeHoleScores.sumOf { it.meters }.toString(),
                 index = "",
-                par = calculateOutPar(activeHoleScores).toString(),
-                strokes = calculateOutStrokes(activeHoleScores).toString(),
-                score = calculateOutScore(activeHoleScores).toString()
+                par = activeHoleScores.sumOf { it.par }.toString(),
+                strokes = activeHoleScores.sumOf { it.strokes }.toString(),
+                score = activeHoleScores.sumOf { it.score.toInt() }.toString()
+            )
+        )
+        
+        // Add TOTAL column at the end for 9-hole rounds (same as subtotal)
+        columnData.add(
+            ScorecardData(
+                holeNumber = "TOTAL",
+                meters = activeHoleScores.sumOf { it.meters }.toString(),
+                index = "",
+                par = activeHoleScores.sumOf { it.par }.toString(),
+                strokes = activeHoleScores.sumOf { it.strokes }.toString(),
+                score = activeHoleScores.sumOf { it.score.toInt() }.toString()
             )
         )
     }
