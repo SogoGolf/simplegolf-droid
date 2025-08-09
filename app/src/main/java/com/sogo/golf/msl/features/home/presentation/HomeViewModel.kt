@@ -220,7 +220,7 @@ class HomeViewModel @Inject constructor(
 
                     // ✅ NEW: Fetch Fees Data
                     Log.d(TAG, "💰 Fetching SOGO fees data...")
-                    _uiState.value = _uiState.value.copy(progressMessage = "Downloading fees…", progressPercent = 75)
+                    _uiState.value = _uiState.value.copy(progressMessage = "Downloading static…", progressPercent = 75)
                     when (val feesResult = fetchAndSaveFeesUseCase()) {
                         is NetworkResult.Success -> {
                             Log.d(TAG, "✅ SOGO Fees data fetched successfully: ${feesResult.data.size} fees")
