@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.sogo.golf.msl.ui.theme.MSLColors
 import java.util.Locale
 
@@ -56,7 +57,7 @@ fun PostRoundCard(
         ) {
             Text(
                 text = playerName,
-                style = MaterialTheme.typography.headlineMedium,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
@@ -67,7 +68,7 @@ fun PostRoundCard(
             
             Text(
                 text = competitionType.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 18.sp,
                 color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
@@ -77,7 +78,7 @@ fun PostRoundCard(
             
             Text(
                 text = "Daily Handicap: $dailyHandicap",
-                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 18.sp,
                 color = Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
@@ -99,12 +100,12 @@ fun PostRoundCard(
             
             Text(
                 text = "Signature",
-                style = MaterialTheme.typography.titleMedium,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color.White
+                color = Color.White,
+                modifier = Modifier.padding(start = 2.dp)
             )
-            
-//            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             
             SignatureBox(
                 signatureBase64 = signatureBase64,
@@ -128,14 +129,14 @@ private fun ScoreColumn(
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.titleLarge,
+            fontSize = 22.sp,
             color = Color.White,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = score,
-            style = MaterialTheme.typography.titleLarge,
+            fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
             textAlign = TextAlign.Center
@@ -187,13 +188,13 @@ private fun SignaturePlaceholder(signerName: String) {
     ) {
         Text(
             text = "Tap to sign",
-            style = MaterialTheme.typography.bodyMedium,
+            fontSize = 16.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center
         )
         Text(
             text = "($signerName)",
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = 14.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center
         )

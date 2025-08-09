@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.sogo.golf.msl.ui.theme.MSLColors
 import com.sogo.golf.msl.ui.theme.MSLColors.mslWhite
@@ -83,7 +84,7 @@ fun SignatureDialog(
             ) {
                 Text(
                     text = "Please sign below (${firstName} ${lastName}):",
-                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 16.sp,
                     color = textColor,
                     modifier = Modifier.padding(bottom = 16.dp),
                     maxLines = 1,
@@ -117,7 +118,7 @@ fun SignatureDialog(
                             contentColor = Color.White
                         )
                     ) {
-                        Text("Clear")
+                        Text("Clear", fontSize = 16.sp)
                     }
                     Button(
                         onClick = {
@@ -136,7 +137,7 @@ fun SignatureDialog(
                             contentColor = MSLColors.mslWhite
                         )
                     ) {
-                        Text("Save")
+                        Text("Save", fontSize = 16.sp)
                     }
                 }
             }

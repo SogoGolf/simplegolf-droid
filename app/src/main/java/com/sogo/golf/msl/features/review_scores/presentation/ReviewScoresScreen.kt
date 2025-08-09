@@ -142,12 +142,12 @@ private fun ReviewScoresPortrait(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .navigationBarsPadding(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Cards container with weight to fill available space
                         Column(
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(bottom = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // Playing partner card first
@@ -218,7 +218,7 @@ private fun ReviewScoresPortrait(
                             )
                         }
                         
-                        // Submit button at bottom matching other screens
+                        // Submit button pinned to bottom
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
