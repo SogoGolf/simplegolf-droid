@@ -5,6 +5,8 @@ import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.HoleScore
 import com.sogo.golf.msl.domain.model.PlayingPartnerRound
 import com.sogo.golf.msl.domain.model.MslMetaData
+import com.sogo.golf.msl.domain.model.StateInfo
+import org.threeten.bp.LocalDateTime
 import org.threeten.bp.format.DateTimeFormatter
 
 data class RoundDto(

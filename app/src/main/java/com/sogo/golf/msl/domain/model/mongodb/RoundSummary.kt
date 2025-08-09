@@ -4,6 +4,7 @@ import com.sogo.golf.msl.domain.model.StateInfo
 import org.threeten.bp.LocalDateTime
 
 data class RoundSummary(
+    val id: String? = null,
     val roundDate: LocalDateTime? = null,
     val golferEmail: String? = null,
     val golferId: String? = null,

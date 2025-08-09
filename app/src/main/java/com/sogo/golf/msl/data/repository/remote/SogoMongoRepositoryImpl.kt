@@ -381,4 +381,29 @@ class SogoMongoRepositoryImpl @Inject constructor(
             }
         }
     }
+    
+    override suspend fun getRoundDetail(id: String): NetworkResult<com.sogo.golf.msl.domain.model.mongodb.RoundDetail> {
+        return safeNetworkCall {
+            Log.d(TAG, "Getting round detail from SOGO Mongo API for id: $id")
+            
+            val response = sogoMongoApiService.getRoundDetail(id)
+            
+            if (response.isSuccessful) {
+                val roundDetailDto = response.body()
+                if (roundDetailDto != null) {
+                    val roundDetail = roundDetailDto.toDomain()
+                    Log.d(TAG, "Successfully retrieved round detail with ${roundDetail.holeScores.size} hole scores")
+                    roundDetail
+                } else {
+                    Log.e(TAG, "Empty response body for round detail")
+                    throw Exception("Empty response body for round detail")
+                }
+            } else {
+                Log.e(TAG, "Failed to get round detail: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to get round detail: ${response.message()}")
+            }
+        }
+    }
+    
 }

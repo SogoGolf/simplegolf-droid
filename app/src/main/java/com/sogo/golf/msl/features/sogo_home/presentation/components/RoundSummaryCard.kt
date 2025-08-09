@@ -37,6 +37,9 @@ fun RoundSummaryCard(
     playingPartnerLastName: String?,
     compType: String?,
     isSubmitted: Boolean?,
+    scratchRating: Float?,
+    slopeRating: Float?,
+    golfLinkHandicap: Float?,
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -146,6 +149,40 @@ fun RoundSummaryCard(
                 )
             }
             
+            // Course ratings and handicap
+            if (scratchRating != null || slopeRating != null || golfLinkHandicap != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Scratch Rating
+                    if (scratchRating != null) {
+                        RatingInfo(
+                            label = "Scratch Rating",
+                            value = String.format("%.1f", scratchRating)
+                        )
+                    }
+                    
+                    // Slope Rating  
+                    if (slopeRating != null) {
+                        RatingInfo(
+                            label = "Slope Rating",
+                            value = slopeRating.toInt().toString()
+                        )
+                    }
+                    
+                    // Played off (Handicap)
+                    if (golfLinkHandicap != null) {
+                        RatingInfo(
+                            label = "Played off",
+                            value = String.format("%.1f", golfLinkHandicap)
+                        )
+                    }
+                }
+            }
+            
             // Playing partner
             if (!playingPartnerFirstName.isNullOrBlank() || !playingPartnerLastName.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -195,14 +232,13 @@ private fun ScoreInfo(
             color = Color.Gray,
             fontWeight = FontWeight.Normal
         )
-        Spacer(modifier = Modifier.height(4.dp))
         Box(
             modifier = Modifier
                 .background(
                     color = if (highlight) MSLColors.mslYellow else Color.Transparent,
                     shape = RoundedCornerShape(6.dp)
                 )
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .padding(horizontal = 12.dp)
         ) {
             Text(
                 text = value,
@@ -211,5 +247,28 @@ private fun ScoreInfo(
                 color = if (highlight) Color.White else MSLColors.mslBlue
             )
         }
+    }
+}
+
+@Composable
+private fun RatingInfo(
+    label: String,
+    value: String
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = Color.Gray,
+            fontWeight = FontWeight.Normal
+        )
+        Text(
+            text = value,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = MSLColors.mslBlue
+        )
     }
 }

@@ -3,6 +3,7 @@ package com.sogo.golf.msl.data.network.api
 
 import com.sogo.golf.msl.data.network.dto.mongodb.FeeDto
 import com.sogo.golf.msl.data.network.dto.mongodb.RoundDto
+import com.sogo.golf.msl.data.network.dto.mongodb.RoundDetailDto
 import com.sogo.golf.msl.data.network.dto.mongodb.RoundSummaryDto
 import com.sogo.golf.msl.data.network.dto.mongodb.HoleScoreDto
 import com.sogo.golf.msl.data.network.dto.mongodb.PlayingPartnerRoundDto
@@ -82,6 +83,12 @@ interface SogoMongoApiService {
     suspend fun getRoundsSummary(
         @Query("golflinkNo") golfLinkNo: String
     ): Response<List<RoundSummaryDto>>
+
+    @GET("round/detail")
+    suspend fun getRoundDetail(
+        @Query("id") id: String
+    ): Response<RoundDetailDto>
+
 
     @POST("golfers")
     suspend fun createGolfer(

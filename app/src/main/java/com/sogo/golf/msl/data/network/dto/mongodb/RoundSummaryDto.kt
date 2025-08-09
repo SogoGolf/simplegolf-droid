@@ -7,6 +7,9 @@ import org.threeten.bp.LocalDateTime
 import org.threeten.bp.format.DateTimeFormatter
 
 data class RoundSummaryDto(
+    @SerializedName("id")
+    val id: String? = null,
+    
     @SerializedName("roundDate")
     val roundDate: String? = null,
     
@@ -78,6 +81,7 @@ data class ClubStateDto(
 
 fun RoundSummaryDto.toDomain(): RoundSummary {
     return RoundSummary(
+        id = id,
         roundDate = roundDate?.let { dateString ->
             try {
                 // Parse as local date-time since API returns local time for the golfer

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.sogo.golf.msl.domain.model.mongodb.RoundSummary
 import com.sogo.golf.msl.features.sogo_home.presentation.components.RoundSummaryCard
 import com.sogo.golf.msl.ui.theme.MSLColors
 
@@ -29,6 +31,7 @@ fun RoundsSummaryScreen(
     val roundsSummaryState by viewModel.roundsSummaryState.collectAsState()
     val currentGolfer by viewModel.currentGolfer.collectAsState()
     val localGame by viewModel.localGame.collectAsState()
+    
     
     // Fetch rounds when golfer data is available
     LaunchedEffect(currentGolfer, localGame) {
@@ -120,7 +123,7 @@ fun RoundsSummaryScreen(
                     }
                 }
                 
-                roundsSummaryState.rounds.isEmpty() -> {
+                roundsSummaryState.rounds.filter { it.isSubmitted == true }.isEmpty() -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -150,7 +153,7 @@ fun RoundsSummaryScreen(
                         contentPadding = PaddingValues(vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
-                        items(roundsSummaryState.rounds) { round ->
+                        items(roundsSummaryState.rounds.filter { it.isSubmitted == true }) { round ->
                             RoundSummaryCard(
                                 roundDate = round.roundDate,
                                 clubName = round.clubName,
@@ -160,8 +163,14 @@ fun RoundsSummaryScreen(
                                 playingPartnerLastName = round.playingPartnerGolferLastName,
                                 compType = round.compType,
                                 isSubmitted = round.isSubmitted,
-                                onClick = {
-                                    // TODO: Navigate to round details if needed
+                                scratchRating = round.scratchRating,
+                                slopeRating = round.slopeRating,
+                                golfLinkHandicap = round.golfLinkHandicap,
+onClick = {
+                                    // Navigate to round detail screen using the round ID
+                                    round.id?.let { roundId ->
+                                        navController.navigate("rounddetailscreen/$roundId")
+                                    }
                                 }
                             )
                         }

@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -68,6 +69,13 @@ fun SogoGolfHomeScreen(
     var showSogoInfoDialog by remember { mutableStateOf(false) }
     val bottomSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
+    
+    // Handle back navigation with skipDataFetch parameter
+    BackHandler {
+        navController.navigate("homescreen?skipDataFetch=true") {
+            popUpTo("homescreen") { inclusive = true }
+        }
+    }
 
     Box(
         modifier = Modifier
