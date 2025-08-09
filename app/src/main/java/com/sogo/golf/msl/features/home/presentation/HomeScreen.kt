@@ -49,6 +49,7 @@ fun HomeScreen(
     navController: NavController,
     title: String,
     nextRoute: String,
+    skipDataFetch: Boolean = false,
     homeViewModel: HomeViewModel = hiltViewModel(),
     onNavigateToCompetition: () -> Unit
 ) {
@@ -77,6 +78,11 @@ fun HomeScreen(
 
     var shouldStartCompetition by remember { mutableStateOf(false) }
     var showGolferDataConfirmationSheet by remember { mutableStateOf(false) }
+
+    // Initialize the ViewModel with skipDataFetch parameter
+    LaunchedEffect(skipDataFetch) {
+        homeViewModel.setSkipDataFetch(skipDataFetch)
+    }
 
     val updateLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()

@@ -125,9 +125,25 @@ class HomeViewModel @Inject constructor(
             )
 
         init {
-            // ✅ NEW: Automatically fetch data when HomeViewModel is created
-            Log.d(TAG, "=== HOME SCREEN INIT - FETCHING TODAY'S DATA ===")
-            fetchTodaysData()
+            // Note: fetchTodaysData() is now called conditionally via setSkipDataFetch()
+        }
+
+        fun setSkipDataFetch(skipDataFetch: Boolean) {
+            if (!skipDataFetch) {
+                // ✅ NEW: Automatically fetch data when HomeViewModel is created
+                Log.d(TAG, "=== HOME SCREEN INIT - FETCHING TODAY'S DATA ===")
+                fetchTodaysData()
+            } else {
+                Log.d(TAG, "=== HOME SCREEN INIT - SKIPPING DATA FETCH (came from successful round submission) ===")
+                // Set loading to false since we're not fetching
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = null,
+                    successMessage = "Ready to start new round",
+                    progressMessage = null,
+                    progressPercent = null
+                )
+            }
         }
 
 // NEW: Fetch today's game and competition data

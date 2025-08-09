@@ -20,9 +20,11 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.sogo.golf.msl.app.lifecycle.AppLifecycleManager
 import com.sogo.golf.msl.app.lifecycle.AppResumeAction
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
@@ -126,10 +128,33 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("homescreen") {
                             SetPortraitOrientation()
-                            HomeScreen(navController, "Home", "competitionscreen",
+                            HomeScreen(
+                                navController = navController, 
+                                title = "Home", 
+                                nextRoute = "competitionscreen",
+                                skipDataFetch = false,
                                 onNavigateToCompetition = {
-                                    // Navigate to your competition screen
-                                    // For example:
+                                    navController.navigate("competitionscreen")
+                                }
+                            )
+                        }
+                        composable(
+                            route = "homescreen?skipDataFetch={skipDataFetch}",
+                            arguments = listOf(
+                                navArgument("skipDataFetch") {
+                                    type = NavType.BoolType
+                                    defaultValue = false
+                                }
+                            )
+                        ) { backStackEntry ->
+                            val skipDataFetch = backStackEntry.arguments?.getBoolean("skipDataFetch") ?: false
+                            SetPortraitOrientation()
+                            HomeScreen(
+                                navController = navController, 
+                                title = "Home", 
+                                nextRoute = "competitionscreen",
+                                skipDataFetch = skipDataFetch,
+                                onNavigateToCompetition = {
                                     navController.navigate("competitionscreen")
                                 }
                             )

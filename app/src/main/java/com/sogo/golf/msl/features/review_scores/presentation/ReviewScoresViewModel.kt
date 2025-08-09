@@ -332,7 +332,7 @@ class ReviewScoresViewModel @AssistedInject constructor(
     
     fun navigateToHomeAfterSuccess() {
         android.util.Log.d(TAG, "Navigating to home screen after user dismissed success dialog")
-        navController.navigate("homescreen") {
+        navController.navigate("homescreen?skipDataFetch=true") {
             popUpTo(0) { inclusive = true }
             launchSingleTop = true
         }
