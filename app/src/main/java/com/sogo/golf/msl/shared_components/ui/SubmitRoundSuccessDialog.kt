@@ -38,8 +38,8 @@ fun SubmitRoundSuccessDialog(
     val imageSize = screenWidth * 0.5f
 
     val isDarkTheme = isSystemInDarkTheme()
-    val textColor = if (isDarkTheme) Color.White else mslBlack
-    val headingColor = if (isDarkTheme) Color.White else mslBlack
+    val textColor = mslBlack
+    val headingColor = mslBlack
 
     AlertDialog(
         onDismissRequest = { },
