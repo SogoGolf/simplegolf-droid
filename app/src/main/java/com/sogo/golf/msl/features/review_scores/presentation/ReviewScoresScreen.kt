@@ -83,6 +83,7 @@ private fun ReviewScoresPortrait(
     var currentSignaturePlayerLastName by remember { mutableStateOf("") }
     var showSubmitDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+    var hasTriggeredSuccess by remember { mutableStateOf(false) }
     var showSignatureErrorDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(roundId) {
@@ -92,8 +93,10 @@ private fun ReviewScoresPortrait(
     }
 
     LaunchedEffect(uiState.isSubmitted) {
-        if (uiState.isSubmitted) {
+        if (uiState.isSubmitted && !hasTriggeredSuccess) {
+            hasTriggeredSuccess = true
             showSuccessDialog = true
+            android.util.Log.d("ReviewScores", "Success dialog triggered - isSubmitted: ${uiState.isSubmitted}")
         }
     }
 
@@ -376,10 +379,12 @@ private fun ReviewScoresPortrait(
         )
     }
 
-    if (showSuccessDialog && !uiState.isSubmitting) {
+    if (showSuccessDialog) {
+        android.util.Log.d("ReviewScores", "Showing success dialog")
         SubmitRoundSuccessDialog(
             playingPartnerName = uiState.round?.playingPartnerRound?.golferFirstName ?: "",
             onDone = {
+                android.util.Log.d("ReviewScores", "Done button clicked")
                 showSuccessDialog = false
                 viewModel.navigateToHomeAfterSuccess()
             }
