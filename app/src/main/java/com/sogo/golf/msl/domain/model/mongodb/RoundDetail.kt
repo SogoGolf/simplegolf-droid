@@ -16,7 +16,7 @@ data class RoundDetail(
 data class RoundDetailHoleScore(
     val par: Int = 0,
     val playedPar: Int? = null,
-    val parCourse: Int? = null,
+    val parCourse: Boolean? = null,
     val holeNumber: Int = 0,
     val strokes: Int = 0,
     val score: Int = 0,

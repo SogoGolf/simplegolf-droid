@@ -119,7 +119,7 @@ fun SogoGolfHomeScreen(
             LeaderboardsButton(
                 onClick = {
                     viewModel.trackLeaderboardsButtonClicked()
-                    //navController.navigate("leaderboards")
+                    navController.navigate("nationalleaderboardsscreen")
                 },
                 title = "NATIONAL LEADERBOARDS"
             )

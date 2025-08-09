@@ -40,7 +40,7 @@ data class RoundDetailHoleScoreDto(
     val playedPar: Int? = null,
     
     @SerializedName("parCourse")
-    val parCourse: Int? = null,
+    val parCourse: Boolean? = null,
     
     @SerializedName("holeNumber")
     val holeNumber: Int = 0,

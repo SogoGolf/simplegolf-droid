@@ -34,6 +34,7 @@ import com.sogo.golf.msl.features.home.presentation.HomeScreen
 import com.sogo.golf.msl.features.sogo_home.presentation.SogoGolfHomeScreen
 import com.sogo.golf.msl.features.sogo_home.presentation.RoundsSummaryScreen
 import com.sogo.golf.msl.features.sogo_home.presentation.RoundDetailScreen
+import com.sogo.golf.msl.features.sogo_home.presentation.NationalLeaderboardsScreen
 import com.sogo.golf.msl.features.login.presentation.LoginScreen
 import com.sogo.golf.msl.features.login.presentation.WebAuthScreen
 import com.sogo.golf.msl.features.play.presentation.PlayRoundScreen
@@ -198,6 +199,10 @@ class MainActivity : ComponentActivity() {
                             SetPortraitOrientation()
                             val roundId = backStackEntry.arguments?.getString("roundId") ?: ""
                             RoundDetailScreen(navController, roundId)
+                        }
+                        composable("nationalleaderboardsscreen") {
+                            SetPortraitOrientation()
+                            NationalLeaderboardsScreen(navController)
                         }
                     }
                 }

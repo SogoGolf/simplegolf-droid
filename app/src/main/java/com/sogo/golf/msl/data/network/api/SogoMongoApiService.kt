@@ -1,6 +1,7 @@
 // app/src/main/java/com/sogo/golf/msl/data/network/api/SogoMongoApiService.kt
 package com.sogo.golf.msl.data.network.api
 
+import com.sogo.golf.msl.data.network.dto.mongodb.CompetitionDto
 import com.sogo.golf.msl.data.network.dto.mongodb.FeeDto
 import com.sogo.golf.msl.data.network.dto.mongodb.RoundDto
 import com.sogo.golf.msl.data.network.dto.mongodb.RoundDetailDto
@@ -88,6 +89,9 @@ interface SogoMongoApiService {
     suspend fun getRoundDetail(
         @Query("id") id: String
     ): Response<RoundDetailDto>
+    
+    @GET("competitions")
+    suspend fun getCompetitions(): Response<List<CompetitionDto>>
 
 
     @POST("golfers")

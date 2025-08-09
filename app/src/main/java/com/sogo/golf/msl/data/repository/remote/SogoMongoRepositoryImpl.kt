@@ -406,4 +406,22 @@ class SogoMongoRepositoryImpl @Inject constructor(
         }
     }
     
+    override suspend fun getCompetitions(): NetworkResult<List<com.sogo.golf.msl.domain.model.mongodb.Competition>> {
+        return safeNetworkCall {
+            Log.d(TAG, "Getting competitions from SOGO Mongo API")
+            
+            val response = sogoMongoApiService.getCompetitions()
+            
+            if (response.isSuccessful) {
+                val competitions = response.body()?.map { it.toDomain() } ?: emptyList()
+                Log.d(TAG, "Successfully retrieved ${competitions.size} competitions")
+                competitions.sortedBy { it.sortIndex }
+            } else {
+                Log.e(TAG, "Failed to get competitions: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to get competitions: ${response.message()}")
+            }
+        }
+    }
+    
 }
