@@ -4,9 +4,11 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
+import com.sogo.golf.msl.domain.model.mongodb.RoundSummary
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
+import com.sogo.golf.msl.domain.usecase.round.GetRoundsSummaryUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
@@ -30,6 +32,7 @@ class SogoGolfHomeViewModel @Inject constructor(
     private val getMslGolferUseCase: GetMslGolferUseCase,
     private val createTransactionUseCase: CreateTransactionUseCase,
     private val updateTokenBalanceUseCase: UpdateTokenBalanceUseCase,
+    private val getRoundsSummaryUseCase: GetRoundsSummaryUseCase,
 ) : ViewModel() {
 
     companion object {
@@ -41,6 +44,9 @@ class SogoGolfHomeViewModel @Inject constructor(
 
     private val _purchaseTokenState = MutableStateFlow(PurchaseTokenState())
     val purchaseTokenState: StateFlow<PurchaseTokenState> = _purchaseTokenState.asStateFlow()
+    
+    private val _roundsSummaryState = MutableStateFlow(RoundsSummaryState())
+    val roundsSummaryState: StateFlow<RoundsSummaryState> = _roundsSummaryState.asStateFlow()
 
     val currentGolfer = getMslGolferUseCase()
         .stateIn(
@@ -220,6 +226,75 @@ class SogoGolfHomeViewModel @Inject constructor(
     fun setPurchaseTokensState(isInProgress: Boolean) {
         _purchaseTokenState.value = _purchaseTokenState.value.copy(isLoading = isInProgress)
     }
+    
+    fun fetchRoundsSummary() {
+        viewModelScope.launch {
+            Log.d(TAG, "=== FETCHING ROUNDS SUMMARY ===")
+            
+            // Set loading state
+            _roundsSummaryState.value = _roundsSummaryState.value.copy(
+                isLoading = true,
+                error = null
+            )
+            
+            // Get the golf link number from current golfer or game data
+            val golfLinkNo = currentGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
+                ?: localGame.value?.golflinkNumber
+            
+            if (golfLinkNo.isNullOrBlank()) {
+                Log.e(TAG, "❌ Cannot fetch rounds summary: No golf link number available")
+                _roundsSummaryState.value = _roundsSummaryState.value.copy(
+                    isLoading = false,
+                    error = "No golf link number available"
+                )
+                return@launch
+            }
+            
+            Log.d(TAG, "Fetching rounds for golfLinkNo: $golfLinkNo")
+            
+            when (val result = getRoundsSummaryUseCase(golfLinkNo)) {
+                is NetworkResult.Success -> {
+                    val summaries = result.data
+                    Log.d(TAG, "✅ Successfully fetched ${summaries.size} round summaries")
+                    
+                    // Sort rounds by date, most recent first
+                    val sortedSummaries = summaries.sortedByDescending { it.roundDate }
+                    
+                    // Update state with fetched and sorted rounds
+                    _roundsSummaryState.value = _roundsSummaryState.value.copy(
+                        isLoading = false,
+                        rounds = sortedSummaries,
+                        error = null
+                    )
+                    
+                    // Log details for debugging
+                    sortedSummaries.forEachIndexed { index, summary ->
+                        Log.d(TAG, "Round $index:")
+                        Log.d(TAG, "  - Date: ${summary.roundDate}")
+                        Log.d(TAG, "  - Golfer: ${summary.golferFirstName} ${summary.golferLastName}")
+                        Log.d(TAG, "  - Club: ${summary.clubName}")
+                        Log.d(TAG, "  - Score: ${summary.score}")
+                        Log.d(TAG, "  - Holes: ${summary.countOfHoleScores}")
+                        Log.d(TAG, "  - CompType: ${summary.compType}")
+                        Log.d(TAG, "  - Handicap: ${summary.golfLinkHandicap}")
+                        Log.d(TAG, "  - Scratch Rating: ${summary.scratchRating}")
+                        Log.d(TAG, "  - Slope Rating: ${summary.slopeRating}")
+                    }
+                }
+                is NetworkResult.Error -> {
+                    val errorMessage = result.error.toUserMessage()
+                    Log.e(TAG, "❌ Failed to fetch rounds summary: $errorMessage")
+                    _roundsSummaryState.value = _roundsSummaryState.value.copy(
+                        isLoading = false,
+                        error = errorMessage
+                    )
+                }
+                is NetworkResult.Loading -> {
+                    Log.d(TAG, "⏳ Loading rounds summary...")
+                }
+            }
+        }
+    }
 }
 
 data class SogoGolfHomeUiState(
@@ -231,4 +306,10 @@ data class PurchaseTokenState(
     val isLoading: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String? = null
+)
+
+data class RoundsSummaryState(
+    val isLoading: Boolean = false,
+    val rounds: List<RoundSummary> = emptyList(),
+    val error: String? = null
 )

@@ -5,6 +5,7 @@ import com.sogo.golf.msl.data.network.api.UpdateGolferRequestDto
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.mongodb.Fee
+import com.sogo.golf.msl.domain.model.mongodb.RoundSummary
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 
 interface SogoMongoRepository {
@@ -53,4 +54,6 @@ interface SogoMongoRepository {
     suspend fun createGolfer(request: CreateGolferRequestDto): NetworkResult<SogoGolfer>
     
     suspend fun updateGolferData(golflinkNo: String, request: UpdateGolferRequestDto): NetworkResult<SogoGolfer>
+    
+    suspend fun getRoundsSummary(golfLinkNo: String): NetworkResult<List<RoundSummary>>
 }

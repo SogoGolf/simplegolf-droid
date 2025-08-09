@@ -123,6 +123,7 @@ fun SogoGolfHomeScreen(
                 subTitle = "",
                 icon = Icons.Filled.SportsGolf,
                 onClick = {
+                    navController.navigate("roundssummaryscreen")
                 }
             )
 

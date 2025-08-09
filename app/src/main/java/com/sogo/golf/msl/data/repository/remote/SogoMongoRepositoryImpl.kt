@@ -13,12 +13,14 @@ import com.sogo.golf.msl.data.network.api.RoundSubmissionUpdatePayload
 import com.sogo.golf.msl.data.network.api.TokenBalanceUpdatePayload
 import com.sogo.golf.msl.data.network.dto.mongodb.TransactionDto
 import com.sogo.golf.msl.data.network.dto.mongodb.toDomainModel
+import com.sogo.golf.msl.data.network.dto.mongodb.toDomain
 import com.sogo.golf.msl.data.network.dto.mongodb.toDto
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.mongodb.Fee
+import com.sogo.golf.msl.domain.model.mongodb.RoundSummary
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
 import javax.inject.Inject
@@ -358,6 +360,24 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 Log.e(TAG, "Failed to update golfer: ${response.code()} - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
                 throw Exception("Failed to update golfer: ${response.message()}")
+            }
+        }
+    }
+    
+    override suspend fun getRoundsSummary(golfLinkNo: String): NetworkResult<List<RoundSummary>> {
+        return safeNetworkCall {
+            Log.d(TAG, "Getting rounds summary from SOGO Mongo API for golfLinkNo: $golfLinkNo")
+            
+            val response = sogoMongoApiService.getRoundsSummary(golfLinkNo)
+            
+            if (response.isSuccessful) {
+                val summaries = response.body()?.map { it.toDomain() } ?: emptyList()
+                Log.d(TAG, "Successfully retrieved ${summaries.size} round summaries")
+                summaries
+            } else {
+                Log.e(TAG, "Failed to get rounds summary: ${response.code()} - ${response.message()}")
+                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                throw Exception("Failed to get rounds summary: ${response.message()}")
             }
         }
     }

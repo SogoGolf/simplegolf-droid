@@ -32,6 +32,7 @@ import com.sogo.golf.msl.features.playing_partner.presentation.PlayingPartnerScr
 import com.sogo.golf.msl.features.competitions.presentation.CompetitionsScreen
 import com.sogo.golf.msl.features.home.presentation.HomeScreen
 import com.sogo.golf.msl.features.sogo_home.presentation.SogoGolfHomeScreen
+import com.sogo.golf.msl.features.sogo_home.presentation.RoundsSummaryScreen
 import com.sogo.golf.msl.features.login.presentation.LoginScreen
 import com.sogo.golf.msl.features.login.presentation.WebAuthScreen
 import com.sogo.golf.msl.features.play.presentation.PlayRoundScreen
@@ -187,6 +188,10 @@ class MainActivity : ComponentActivity() {
                         composable("sogogolfhomescreen") {
                             SetPortraitOrientation()
                             SogoGolfHomeScreen(navController)
+                        }
+                        composable("roundssummaryscreen") {
+                            SetPortraitOrientation()
+                            RoundsSummaryScreen(navController)
                         }
                     }
                 }
