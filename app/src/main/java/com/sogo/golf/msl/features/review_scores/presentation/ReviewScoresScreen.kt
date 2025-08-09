@@ -355,14 +355,22 @@ private fun ReviewScoresPortrait(
                     onClick = {
                         viewModel.submitRound()
                         showSubmitDialog = false
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MSLColors.mslGreen
+                    )
                 ) {
-                    Text("Submit")
+                    Text("Submit", color = Color.White)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showSubmitDialog = false }) {
-                    Text("Cancel")
+                Button(
+                    onClick = { showSubmitDialog = false },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MSLColors.mslRed
+                    )
+                ) {
+                    Text("Cancel", color = Color.White)
                 }
             }
         )

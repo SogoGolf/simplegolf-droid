@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -539,16 +540,22 @@ private fun Screen4Portrait(
                         onClick = {
                             showBackConfirmDialog = false
                             playRoundViewModel.removeMarkerAndNavigateBack(navController)
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MSLColors.mslGreen
+                        )
                     ) {
-                        Text("Yes")
+                        Text("Yes", color = Color.White)
                     }
                 },
                 dismissButton = {
                     Button(
-                        onClick = { showBackConfirmDialog = false }
+                        onClick = { showBackConfirmDialog = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MSLColors.mslRed
+                        )
                     ) {
-                        Text("No")
+                        Text("No", color = Color.White)
                     }
                 },
                 title = { Text("Remove Marker") },
@@ -581,16 +588,22 @@ private fun Screen4Portrait(
                         onClick = {
                             showAbandonDialog = false
                             playRoundViewModel.abandonRound(navController)
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MSLColors.mslGreen
+                        )
                     ) {
-                        Text("Yes")
+                        Text("Yes", color = Color.White)
                     }
                 },
                 dismissButton = {
                     Button(
-                        onClick = { showAbandonDialog = false }
+                        onClick = { showAbandonDialog = false },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MSLColors.mslRed
+                        )
                     ) {
-                        Text("No")
+                        Text("No", color = Color.White)
                     }
                 },
                 title = { Text("Abandon Round") },
