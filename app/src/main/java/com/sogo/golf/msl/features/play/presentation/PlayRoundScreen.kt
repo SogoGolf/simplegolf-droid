@@ -250,15 +250,13 @@ private fun Screen4Portrait(
 
         Column(
             modifier = Modifier
-//                .fillMaxSize()
-//                .padding(paddingValues)
+                .fillMaxSize()
+                .padding(paddingValues)  // This properly respects the Scaffold's content padding
                 .navigationBarsPadding()
-                .statusBarsPadding()
-//                .padding(vertical = 6.dp)
-                .padding(
-                    top = paddingValues.calculateTopPadding(), // Custom top spacing
-                )
         ) {
+            // Add spacing between nav bar and first card
+            Spacer(modifier = Modifier.height(10.dp))
+            
             // Top card - Main Golfer
 //            Column() {
 //                Text("123", modifier = Modifier.statusBarsPadding())

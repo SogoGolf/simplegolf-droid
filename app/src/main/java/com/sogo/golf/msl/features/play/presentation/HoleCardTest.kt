@@ -26,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.min
+import androidx.compose.ui.unit.em
 import com.sogo.golf.msl.ui.theme.MSLColors
 import kotlin.math.abs
 
@@ -109,24 +110,23 @@ fun HoleCardTest(
         ) {
             BoxWithConstraints {
                 val minDimension = min(maxWidth, maxHeight)
-                // Better scaling that accounts for both size and density
-                // Base scale on dimension, but also consider density for better text scaling
-                val baseScale = minDimension.value / 350f
-                val densityScale = (density.density / 2.75f).coerceIn(0.85f, 1.3f) // 2.75 is typical density
-                val scaleFactor = (baseScale * densityScale).coerceIn(0.75f, 1.4f)
+                // Calculate scale factor based purely on available space, ignoring system font settings
+                // This ensures content always fits regardless of user's font size preferences
+                val baseScale = minDimension.value / 400f  // Adjusted base for better fit
+                // Remove density scaling to ignore system font size settings
+                val scaleFactor = baseScale.coerceIn(0.6f, 1.2f)  // Tighter bounds for consistent sizing
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy((8 * scaleFactor).dp)
+                    verticalArrangement = Arrangement.spacedBy((6 * scaleFactor).dp)
                 ) {
                     // Header with name
                     Text(
                         text = golferName,
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontSize = MaterialTheme.typography.headlineMedium.fontSize * scaleFactor
-                        ),
+                        fontSize = (36 * scaleFactor).sp,
+                        fontWeight = FontWeight.Medium,
                         color = Color.White,
-                        modifier = Modifier.padding(top = (7 * scaleFactor).dp)
+                        modifier = Modifier.padding(top = (4 * scaleFactor).dp)
                     )
 
                 // Tee type and handicap row
@@ -139,29 +139,26 @@ fun HoleCardTest(
                         Text(
                             text = teeColor,
                             color = Color.White,
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontSize = MaterialTheme.typography.headlineSmall.fontSize * scaleFactor
-                            ),
+                            fontSize = (24 * scaleFactor).sp,
+                            fontWeight = FontWeight.Normal
                         )
                         Text(
                             text = "Type: $competitionType",
                             color = Color.White,
-                            fontSize = (14 * scaleFactor).sp
+                            fontSize = (18 * scaleFactor).sp
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = dailyHandicap.toString(),
                             color = Color.White,
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontSize = MaterialTheme.typography.headlineSmall.fontSize * scaleFactor
-                            ),
+                            fontSize = (24 * scaleFactor).sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "Daily Handicap",
                             color = Color.White,
-                            fontSize = (14 * scaleFactor).sp
+                            fontSize = (18 * scaleFactor).sp
                         )
                     }
                 }
@@ -176,23 +173,22 @@ fun HoleCardTest(
                         onClick = if (isBallPickedUp) { {} } else onMinusButtonClick,
                         enabled = !isBallPickedUp,
                         modifier = Modifier
-                            .size(56.dp)
+                            .size(65.dp)
                             .clip(CircleShape)
                             .background(MSLColors.mslYellow.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
                     ) {
                         Text(
                             "-",
                             color = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
-                            style = MaterialTheme.typography.displaySmall.copy(
-                                fontSize = MaterialTheme.typography.displaySmall.fontSize * scaleFactor
-                            ),
+                            fontSize = (38 * scaleFactor).sp,
+                            fontWeight = FontWeight.Normal
                         )
                     }
 
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(88.dp)
                             .clip(CircleShape)
                             .background(Color.White.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
                             .clickable(enabled = !isBallPickedUp) {
@@ -206,14 +202,13 @@ fun HoleCardTest(
                             Text(
                                 text = strokes.toString(),
                                 color = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
-                                style = MaterialTheme.typography.displayMedium.copy(
-                                    fontSize = MaterialTheme.typography.displayMedium.fontSize * scaleFactor
-                                ),
+                                fontSize = (56 * scaleFactor).sp,
+                                fontWeight = FontWeight.Medium
                             )
                             Text(
                                 text = "$currentPoints pts",
                                 color = Color.Gray.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
-                                fontSize = (12 * scaleFactor).sp,
+                                fontSize = (19 * scaleFactor).sp,
                                 modifier = Modifier.offset(y = (-10 * scaleFactor).dp)
                             )
                         }
@@ -223,7 +218,7 @@ fun HoleCardTest(
                         onClick = if (isBallPickedUp) { {} } else onPlusButtonClick,
                         enabled = !isBallPickedUp,
                         modifier = Modifier
-                            .size(56.dp)
+                            .size(65.dp)
                             .clip(CircleShape)
                             .background(MSLColors.mslYellow.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
                     ) {
@@ -234,6 +229,8 @@ fun HoleCardTest(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height((5 * scaleFactor).dp))
 
                 // Pickup button
                 Button(
@@ -246,12 +243,13 @@ fun HoleCardTest(
                     Text(
                         text = "Pickup",
                         color = if (isBallPickedUp) Color.White else Color.Black,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontSize = MaterialTheme.typography.titleMedium.fontSize * scaleFactor
-                        ),
+                        fontSize = (18 * scaleFactor).sp,
+                        fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = (16 * scaleFactor).dp)
                     )
                 }
+
+                    Spacer(modifier = Modifier.height((5 * scaleFactor).dp))
 
                     // Bottom stats row
                     Row(
@@ -262,56 +260,52 @@ fun HoleCardTest(
                             Text(
                                 text = par.toString(),
                                 color = Color.White,
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = MaterialTheme.typography.titleLarge.fontSize * scaleFactor
-                                ),
+                                fontSize = (30 * scaleFactor).sp,
+                                fontWeight = FontWeight.Normal
                             )
                             Text(
                                 text = "Par",
                                 color = Color.White,
-                                fontSize = (14 * scaleFactor).sp
+                                fontSize = (18 * scaleFactor).sp
                             )
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = distance.toString(),
                                 color = Color.White,
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = MaterialTheme.typography.titleLarge.fontSize * scaleFactor
-                                ),
+                                fontSize = (30 * scaleFactor).sp,
+                                fontWeight = FontWeight.Normal
                             )
                             Text(
                                 text = "Meters",
                                 color = Color.White,
-                                fontSize = (14 * scaleFactor).sp
+                                fontSize = (18 * scaleFactor).sp
                             )
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = strokeIndex,
                                 color = Color.White,
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = MaterialTheme.typography.titleLarge.fontSize * scaleFactor
-                                ),
+                                fontSize = (30 * scaleFactor).sp,
+                                fontWeight = FontWeight.Normal
                             )
                             Text(
                                 text = "Index",
                                 color = Color.White,
-                                fontSize = (14 * scaleFactor).sp
+                                fontSize = (18 * scaleFactor).sp
                             )
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = totalScore.toString(),
                                 color = Color.White,
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontSize = MaterialTheme.typography.titleLarge.fontSize * scaleFactor
-                                ),
+                                fontSize = (30 * scaleFactor).sp,
+                                fontWeight = FontWeight.Normal
                             )
                             Text(
                                 text = "Total",
                                 color = Color.White,
-                                fontSize = (14 * scaleFactor).sp
+                                fontSize = (18 * scaleFactor).sp
                             )
                         }
                     }
