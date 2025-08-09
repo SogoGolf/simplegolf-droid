@@ -61,6 +61,7 @@ fun HomeScreen(
     val localGame by homeViewModel.localGame.collectAsState()
     val localCompetition by homeViewModel.localCompetition.collectAsState()
     val sogoGolfer by homeViewModel.sogoGolfer.collectAsState()
+    val homeUiState by homeViewModel.uiState.collectAsState()
 
     // Collect the updateState properly
     val updateState by homeViewModel.updateState.collectAsState()
@@ -215,7 +216,7 @@ fun HomeScreen(
                             )
                         }
                     },
-                    enabled = !updateState.isCheckingForUpdate, // Disable while checking
+                    enabled = !updateState.isCheckingForUpdate && !homeUiState.isLoading && homeViewModel.hasRequiredData(), // Disable while checking or loading initial data
                     modifier = Modifier
                         .padding(horizontal = screenWidth * 0.15f)
                         .height(80.dp)
@@ -324,6 +325,29 @@ fun HomeScreen(
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
+            }
+
+            // Global loading overlay with spinner and progress message
+            if (homeUiState.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.35f))
+                        .zIndex(2f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = Color.White)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        homeUiState.progressMessage?.let { msg ->
+                            Text(text = msg, color = Color.White)
+                        }
+                        homeUiState.progressPercent?.let { pct ->
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = "$pct%", color = Color.White.copy(alpha = 0.85f))
+                        }
+                    }
+                }
             }
 
             // SOGO banner at bottom

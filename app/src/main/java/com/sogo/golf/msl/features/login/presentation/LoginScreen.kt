@@ -1,4 +1,3 @@
-// app/src/main/java/com/sogo/golf/msl/features/login/presentation/LoginScreen.kt
 package com.sogo.golf.msl.features.login.presentation
 
 import androidx.compose.foundation.background
@@ -54,7 +53,7 @@ fun LoginScreen(
     val screenHeightDp = configuration.screenHeightDp.dp
 
     // Calculate responsive image size (15% of screen width, min 80dp, max 200dp)
-    val imageSize = (screenWidthDp * 0.38f).coerceIn(80.dp, 200.dp)
+    val imageSize = (screenWidthDp * 0.45f).coerceIn(80.dp, 200.dp)
 
     // Handle auth success
     LaunchedEffect(Unit) {
@@ -110,169 +109,173 @@ fun LoginScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MSLColors.PrimaryDark)
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                // Dismiss keyboard and clear focus when tapping anywhere
-                focusManager.clearFocus()
-                keyboardController?.hide()
-            }
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ) {
-        // Move image to top with responsive sizing
-        Spacer(modifier = Modifier.height(32.dp))
+    Scaffold(
+        containerColor = MSLColors.PrimaryDark,
+        bottomBar = {
+            if (!uiState.isProcessingAuth) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .imePadding()
+                        .padding(horizontal = 30.dp, vertical = 30.dp)
+                ) {
+                    CenteredYellowButton(
+                        text = "Continue",
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        enabled = uiState.selectedClub != null && !uiState.isLoadingClubs,
+                        onClick = { loginViewModel.startWebAuth() }
 
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(R.drawable.simple_golf_transparent)
-                .memoryCacheKey("top_logo")
-                .build(),
-            contentDescription = "SimpleGolf Logo",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(imageSize) // Responsive size based on screen width
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            "Welcome",
-            fontSize = MaterialTheme.typography.headlineLarge.fontSize,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp)
-                .align(Alignment.Start)
-        )
-        Text(
-            "Get started by finding your home club",
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, top = 5.dp, bottom = 10.dp)
-                .align(Alignment.Start),
-            color = Color.White
-        )
-
-        // Club Selection Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MSLColors.PrimaryDark
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                when {
-                    uiState.isLoadingClubs -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Loading clubs...",
-                                color = Color.White
-                            )
-                        }
-                    }
-
-                    uiState.clubs.isEmpty() -> {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "No clubs available",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Button(
-                                onClick = { loginViewModel.retryLoadClubs() }
-                            ) {
-                                Text("Retry")
-                            }
-                        }
-                    }
-
-                    else -> {
-                        SearchableClubDropdown(
-                            clubs = uiState.clubs,
-                            selectedClub = uiState.selectedClub,
-                            onClubSelected = { club ->
-                                loginViewModel.selectClub(club)
-                            },
-                            isLoading = uiState.isLoadingClubs
-                        )
-                    }
+                    )
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Authentication buttons
-        if (uiState.isProcessingAuth) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CircularProgressIndicator(color = Color.White)
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    "Processing authentication...",
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "Exchanging tokens with MSL API",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f)
-                )
-            }
-        } else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        loginViewModel.startWebAuth()
-                    },
-                    enabled = uiState.selectedClub != null && !uiState.isLoadingClubs,
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFC107), // Yellow button
-                        contentColor = Color.Black
-                    )
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MSLColors.PrimaryDark)
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    Text("Continue")
+                    // Dismiss keyboard and clear focus when tapping anywhere
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
                 }
+                .padding(innerPadding)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            // Move image to top with responsive sizing
+            Spacer(modifier = Modifier.height(32.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(R.drawable.simple_golf_transparent)
+                    .memoryCacheKey("top_logo")
+                    .build(),
+                contentDescription = "SimpleGolf Logo",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(imageSize) // Responsive size based on screen width
+            )
 
-                Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                "Welcome",
+                fontSize = MaterialTheme.typography.displayMedium.fontSize,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp)
+                    .align(Alignment.Start)
+            )
+            Text(
+                "Get started by finding your home club",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Normal,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, top = 5.dp, bottom = 10.dp)
+                    .align(Alignment.Start),
+                color = Color.White
+            )
+
+            // Club Selection Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MSLColors.PrimaryDark
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    when {
+                        uiState.isLoadingClubs -> {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Loading clubs...",
+                                    color = Color.White
+                                )
+                            }
+                        }
+
+                        uiState.clubs.isEmpty() -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "No clubs available",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Button(
+                                    onClick = { loginViewModel.retryLoadClubs() }
+                                ) {
+                                    Text("Retry")
+                                }
+                            }
+                        }
+
+                        else -> {
+                            SearchableClubDropdown(
+                                clubs = uiState.clubs,
+                                selectedClub = uiState.selectedClub,
+                                onClubSelected = { club ->
+                                    loginViewModel.selectClub(club)
+                                },
+                                isLoading = uiState.isLoadingClubs
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Authentication progress content
+            if (uiState.isProcessingAuth) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(color = Color.White)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Processing authentication...",
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Exchanging tokens with MSL API",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun CenteredYellowButton(

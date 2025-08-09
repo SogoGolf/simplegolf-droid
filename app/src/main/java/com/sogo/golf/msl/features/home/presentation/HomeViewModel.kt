@@ -130,7 +130,7 @@ class HomeViewModel @Inject constructor(
             fetchTodaysData()
         }
 
-        // NEW: Fetch today's game and competition data
+// NEW: Fetch today's game and competition data
         private fun fetchTodaysData() {
             viewModelScope.launch {
                 try {
@@ -139,7 +139,10 @@ class HomeViewModel @Inject constructor(
                     // Set loading state
                     _uiState.value = _uiState.value.copy(
                         isLoading = true,
-                        errorMessage = null
+                        errorMessage = null,
+                        successMessage = null,
+                        progressMessage = "Preparing…",
+                        progressPercent = 0
                     )
 
                     // Get the selected club
@@ -169,6 +172,7 @@ class HomeViewModel @Inject constructor(
 
                     // Fetch Game Data
                     Log.d(TAG, "🎮 Fetching game data...")
+                    _uiState.value = _uiState.value.copy(progressMessage = "Downloading game…", progressPercent = 25)
                     when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
                         is NetworkResult.Success -> {
                             Log.d(TAG, "✅ MSL Game data fetched successfully: Competition ${gameResult.data.mainCompetitionId}")
@@ -185,6 +189,7 @@ class HomeViewModel @Inject constructor(
 
                     // Fetch Competition Data
                     Log.d(TAG, "🏆 Fetching competition data...")
+                    _uiState.value = _uiState.value.copy(progressMessage = "Downloading competition…", progressPercent = 55)
                     when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
                         is NetworkResult.Success -> {
                             Log.d(TAG, "✅ MSL Competition data fetched successfully: ${competitionResult.data.players.size} players")
@@ -199,6 +204,7 @@ class HomeViewModel @Inject constructor(
 
                     // ✅ NEW: Fetch Fees Data
                     Log.d(TAG, "💰 Fetching SOGO fees data...")
+                    _uiState.value = _uiState.value.copy(progressMessage = "Downloading fees…", progressPercent = 75)
                     when (val feesResult = fetchAndSaveFeesUseCase()) {
                         is NetworkResult.Success -> {
                             Log.d(TAG, "✅ SOGO Fees data fetched successfully: ${feesResult.data.size} fees")
@@ -213,6 +219,7 @@ class HomeViewModel @Inject constructor(
 
                     // ✅Fetch SogoGolfer Data
                     Log.d(TAG, "👤 Fetching sogo golfer data...")
+                    _uiState.value = _uiState.value.copy(progressMessage = "Downloading golfer…", progressPercent = 90)
                     // Priority order: existing SogoGolfer -> MSL golfer -> game data
                     val golfLinkNo = sogoGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
                         ?: currentGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
@@ -258,7 +265,9 @@ class HomeViewModel @Inject constructor(
                             Log.d(TAG, "✅ All data fetched successfully!")
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
-                                successMessage = "Today's golf data loaded successfully!"
+                                successMessage = "Today's golf data loaded successfully!",
+                                progressMessage = null,
+                                progressPercent = 100
                             )
                         }
                         gameSuccess && !competitionSuccess -> {
@@ -266,7 +275,9 @@ class HomeViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 successMessage = "MSL Game data loaded successfully",
-                                errorMessage = "MSL Competition data failed: $competitionError"
+                                errorMessage = "MSL Competition data failed: $competitionError",
+                                progressMessage = null,
+                                progressPercent = null
                             )
                         }
                         !gameSuccess && competitionSuccess -> {
@@ -274,14 +285,18 @@ class HomeViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 successMessage = "MSL Competition data loaded successfully",
-                                errorMessage = "MSL Game data failed: $gameError"
+                                errorMessage = "MSL Game data failed: $gameError",
+                                progressMessage = null,
+                                progressPercent = null
                             )
                         }
                         else -> {
                             Log.e(TAG, "❌ Both data fetches failed")
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
-                                errorMessage = "Failed to load today's data. Game: $gameError, Competition: $competitionError"
+                                errorMessage = "Failed to load today's data. Game: $gameError, Competition: $competitionError",
+                                progressMessage = null,
+                                progressPercent = null
                             )
                         }
                     }
@@ -290,7 +305,9 @@ class HomeViewModel @Inject constructor(
                     Log.e(TAG, "❌ Exception while fetching today's data", e)
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = "Error loading today's data: ${e.message}"
+                        errorMessage = "Error loading today's data: ${e.message}",
+                        progressMessage = null,
+                        progressPercent = null
                     )
                 }
             }

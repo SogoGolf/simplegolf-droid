@@ -5,5 +5,7 @@ package com.sogo.golf.msl.features.home.presentation
 data class HomeUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val progressMessage: String? = null,
+    val progressPercent: Int? = null
 )

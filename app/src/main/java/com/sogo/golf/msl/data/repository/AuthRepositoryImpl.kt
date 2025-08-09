@@ -45,7 +45,8 @@ class AuthRepositoryImpl @Inject constructor(
     private val sogoGolferLocalDbRepository: SogoGolferLocalDbRepository,
     private val feeLocalDbRepository: FeeLocalDbRepository,
     private val transactionLocalDbRepository: TransactionLocalDbRepository,
-    private val checkActiveTodayRoundUseCase: CheckActiveTodayRoundUseCase
+    private val checkActiveTodayRoundUseCase: CheckActiveTodayRoundUseCase,
+    private val clubSelectionManager: com.sogo.golf.msl.data.manager.ClubSelectionManager
 ) : AuthRepository {
 
     // Repository scope for initialization
@@ -118,8 +119,11 @@ class AuthRepositoryImpl @Inject constructor(
             authPreferences.setLoggedIn(false)
             authPreferences.setFinishedRound(false)
             
-            // Club preferences
+            // Club preferences (persistent storage)
             clubPreferences.clearSelectedClub()
+            
+            // Clear in-memory club selection state
+            clubSelectionManager.clearSelection()
             
             // 🔐 Clear authentication tokens
             mslTokenManager.clearTokens()
