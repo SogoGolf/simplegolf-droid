@@ -182,10 +182,10 @@ class PlayingPartnerViewModel @Inject constructor(
         viewModelScope.launch {
             currentGolfer.collect { golfer ->
                 if (golfer != null) {
-                    android.util.Log.d("PlayingPartnerVM", "=== MSL GOLFER LOADED ===")
-                    android.util.Log.d("PlayingPartnerVM", "Golfer: ${golfer.firstName} ${golfer.surname} (${golfer.golfLinkNo})")
+                    Log.d("PlayingPartnerVM", "=== MSL GOLFER LOADED ===")
+                    Log.d("PlayingPartnerVM", "Golfer: ${golfer.firstName} ${golfer.surname} (${golfer.golfLinkNo})")
                 } else {
-                    android.util.Log.d("PlayingPartnerVM", "⚠️ MSL Golfer is null")
+                    Log.d("PlayingPartnerVM", "⚠️ MSL Golfer is null")
                 }
             }
         }
@@ -193,12 +193,12 @@ class PlayingPartnerViewModel @Inject constructor(
         viewModelScope.launch {
             sogoGolfer.collect { sogo ->
                 if (sogo != null) {
-                    android.util.Log.d("PlayingPartnerVM", "=== SOGO GOLFER LOADED ===")
-                    android.util.Log.d("PlayingPartnerVM", "SogoGolfer: ${sogo.firstName} ${sogo.lastName}")
-                    android.util.Log.d("PlayingPartnerVM", "Token Balance: ${sogo.tokenBalance}")
-                    android.util.Log.d("PlayingPartnerVM", "Entity ID: ${sogo.entityId}")
+                    Log.d("PlayingPartnerVM", "=== SOGO GOLFER LOADED ===")
+                    Log.d("PlayingPartnerVM", "SogoGolfer: ${sogo.firstName} ${sogo.lastName}")
+                    Log.d("PlayingPartnerVM", "Token Balance: ${sogo.tokenBalance}")
+                    Log.d("PlayingPartnerVM", "Entity ID: ${sogo.entityId}")
                 } else {
-                    android.util.Log.d("PlayingPartnerVM", "⚠️ Sogo Golfer is null")
+                    Log.d("PlayingPartnerVM", "⚠️ Sogo Golfer is null")
                 }
             }
         }
@@ -206,10 +206,10 @@ class PlayingPartnerViewModel @Inject constructor(
         viewModelScope.launch {
             localGame.collect { game ->
                 if (game != null) {
-                    android.util.Log.d("PlayingPartnerVM", "=== GAME DATA LOADED ===")
-                    android.util.Log.d("PlayingPartnerVM", "Game: ${game.bookingTime}, Partners: ${game.playingPartners.size}")
+                    Log.d("PlayingPartnerVM", "=== GAME DATA LOADED ===")
+                    Log.d("PlayingPartnerVM", "Game: ${game.bookingTime}, Partners: ${game.playingPartners.size}")
                 } else {
-                    android.util.Log.d("PlayingPartnerVM", "⚠️ Game data is null")
+                    Log.d("PlayingPartnerVM", "⚠️ Game data is null")
                 }
             }
         }
@@ -217,10 +217,10 @@ class PlayingPartnerViewModel @Inject constructor(
         viewModelScope.launch {
             localCompetition.collect { competition ->
                 if (competition != null) {
-                    android.util.Log.d("PlayingPartnerVM", "=== COMPETITION DATA LOADED ===")
-                    android.util.Log.d("PlayingPartnerVM", "Competition: ${competition.players.size} players")
+                    Log.d("PlayingPartnerVM", "=== COMPETITION DATA LOADED ===")
+                    Log.d("PlayingPartnerVM", "Competition: ${competition.players.size} players")
                 } else {
-                    android.util.Log.d("PlayingPartnerVM", "⚠️ Competition data is null")
+                    Log.d("PlayingPartnerVM", "⚠️ Competition data is null")
                 }
             }
         }
@@ -281,17 +281,17 @@ class PlayingPartnerViewModel @Inject constructor(
             if (selectedClub?.clubId != null) {
                 val clubIdStr = selectedClub.clubId.toString()
                 
-                android.util.Log.d("PlayingPartnerVM", "🔄 Starting data refresh...")
+                Log.d("PlayingPartnerVM", "🔄 Starting data refresh...")
                 
                 var allSuccessful = true
                 
                 // Step 1: Refresh golfer data from API and save to local DB
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 1: Refreshing golfer data...")
+                Log.d("PlayingPartnerVM", "🔄 Step 1: Refreshing golfer data...")
                 when (val golferResult = mslRepository.getGolfer(clubIdStr)) {
                     is NetworkResult.Success -> {
-                        android.util.Log.d("PlayingPartnerVM", "✅ Fresh golfer data retrieved, saving to DB...")
+                        Log.d("PlayingPartnerVM", "✅ Fresh golfer data retrieved, saving to DB...")
                         mslGolferLocalDbRepository.saveGolfer(golferResult.data)
-                        android.util.Log.d("PlayingPartnerVM", "✅ Golfer data saved to local DB")
+                        Log.d("PlayingPartnerVM", "✅ Golfer data saved to local DB")
                     }
                     is NetworkResult.Error -> {
                         android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh golfer data: ${golferResult.error}")
@@ -301,11 +301,11 @@ class PlayingPartnerViewModel @Inject constructor(
                 }
                 
                 // Step 2: Refresh game data from API and save to local DB
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 2: Refreshing game data...")
+                Log.d("PlayingPartnerVM", "🔄 Step 2: Refreshing game data...")
                 when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
                     is NetworkResult.Success -> {
-                        android.util.Log.d("PlayingPartnerVM", "✅ Game data refreshed successfully")
-                        android.util.Log.d("PlayingPartnerVM", "Updated playing partners: ${gameResult.data.playingPartners.size}")
+                        Log.d("PlayingPartnerVM", "✅ Game data refreshed successfully")
+                        Log.d("PlayingPartnerVM", "Updated playing partners: ${gameResult.data.playingPartners.size}")
                     }
                     is NetworkResult.Error -> {
                         android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
@@ -318,10 +318,10 @@ class PlayingPartnerViewModel @Inject constructor(
                 }
                 
                 // Step 3: Refresh competition data from API and save to local DB
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 3: Refreshing competition data...")
+                Log.d("PlayingPartnerVM", "🔄 Step 3: Refreshing competition data...")
                 when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
                     is NetworkResult.Success -> {
-                        android.util.Log.d("PlayingPartnerVM", "✅ Competition data refreshed successfully")
+                        Log.d("PlayingPartnerVM", "✅ Competition data refreshed successfully")
                     }
                     is NetworkResult.Error -> {
                         android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
@@ -331,12 +331,12 @@ class PlayingPartnerViewModel @Inject constructor(
                 }
                 
                 // Step 4: Refresh Sogo golfer data (includes token balance)
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 4: Refreshing Sogo golfer data...")
+                Log.d("PlayingPartnerVM", "🔄 Step 4: Refreshing Sogo golfer data...")
                 val currentUser = currentGolfer.value
                 if (currentUser?.golfLinkNo != null) {
                     when (val sogoGolferResult = fetchAndSaveSogoGolferUseCase(currentUser.golfLinkNo)) {
                         is NetworkResult.Success -> {
-                            android.util.Log.d("PlayingPartnerVM", "✅ Sogo golfer data refreshed successfully (Token balance: ${sogoGolferResult.data.tokenBalance})")
+                            Log.d("PlayingPartnerVM", "✅ Sogo golfer data refreshed successfully (Token balance: ${sogoGolferResult.data.tokenBalance})")
                         }
                         is NetworkResult.Error -> {
                             android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh Sogo golfer data: ${sogoGolferResult.error}")
@@ -353,7 +353,7 @@ class PlayingPartnerViewModel @Inject constructor(
                     successMessage = if (allSuccessful) "Data refreshed successfully" else null
                 )
                 
-                android.util.Log.d("PlayingPartnerVM", "✅ All data refresh operations completed")
+                Log.d("PlayingPartnerVM", "✅ All data refresh operations completed")
                 allSuccessful
             } else {
                 android.util.Log.w("PlayingPartnerVM", "⚠️ No club selected, cannot refresh data")
@@ -396,11 +396,11 @@ class PlayingPartnerViewModel @Inject constructor(
                 val sogoGolferData = sogoGolfer.value
                 val competitionData = localCompetition.value
 
-                android.util.Log.d("PlayingPartnerVM", "🔍 Checking Room data availability...")
-                android.util.Log.d("PlayingPartnerVM", "Current golfer: ${currentGolferData?.firstName} ${currentGolferData?.surname}")
-                android.util.Log.d("PlayingPartnerVM", "Game data: ${gameData?.bookingTime}")
-                android.util.Log.d("PlayingPartnerVM", "Sogo golfer: ${sogoGolferData?.firstName} (tokens: ${sogoGolferData?.tokenBalance})")
-                android.util.Log.d("PlayingPartnerVM", "Competition data: ${competitionData?.players?.size ?: 0} players")
+                Log.d("PlayingPartnerVM", "🔍 Checking Room data availability...")
+                Log.d("PlayingPartnerVM", "Current golfer: ${currentGolferData?.firstName} ${currentGolferData?.surname}")
+                Log.d("PlayingPartnerVM", "Game data: ${gameData?.bookingTime}")
+                Log.d("PlayingPartnerVM", "Sogo golfer: ${sogoGolferData?.firstName} (tokens: ${sogoGolferData?.tokenBalance})")
+                Log.d("PlayingPartnerVM", "Competition data: ${competitionData?.players?.size ?: 0} players")
 
                 if (currentGolferData == null) {
                     _uiState.value = _uiState.value.copy(
@@ -427,10 +427,10 @@ class PlayingPartnerViewModel @Inject constructor(
                 }
 
                 // Step 2: Call PUT marker API
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 2: Calling PUT marker API...")
+                Log.d("PlayingPartnerVM", "🔄 Step 2: Calling PUT marker API...")
                 when (val markerResult = selectMarkerUseCase(selectedPartner.golfLinkNumber)) {
                     is NetworkResult.Success -> {
-                        android.util.Log.d("PlayingPartnerVM", "✅ Marker selected successfully")
+                        Log.d("PlayingPartnerVM", "✅ Marker selected successfully")
                     }
                     is NetworkResult.Error -> {
                         android.util.Log.e("PlayingPartnerVM", "❌ Failed to select marker: ${markerResult.error}")
@@ -450,10 +450,10 @@ class PlayingPartnerViewModel @Inject constructor(
                 }
 
                 //now we need to refetch the competition since the selected marker data will be there
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 3: Refreshing competition data...")
+                Log.d("PlayingPartnerVM", "🔄 Step 3: Refreshing competition data...")
                 when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
                     is NetworkResult.Success -> {
-                        android.util.Log.d("PlayingPartnerVM", "✅ Competition data refreshed successfully")
+                        Log.d("PlayingPartnerVM", "✅ Competition data refreshed successfully")
                     }
                     is NetworkResult.Error -> {
                         android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
@@ -467,11 +467,11 @@ class PlayingPartnerViewModel @Inject constructor(
                 }
 
                 //we should also refetch the game since it has who is marking who data which we will need in playroundviewmodel
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 2: Refreshing game data...")
+                Log.d("PlayingPartnerVM", "🔄 Step 2: Refreshing game data...")
                 when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
                     is NetworkResult.Success -> {
-                        android.util.Log.d("PlayingPartnerVM", "✅ Game data refreshed successfully")
-                        android.util.Log.d("PlayingPartnerVM", "Updated playing partners: ${gameResult.data.playingPartners.size}")
+                        Log.d("PlayingPartnerVM", "✅ Game data refreshed successfully")
+                        Log.d("PlayingPartnerVM", "Updated playing partners: ${gameResult.data.playingPartners.size}")
                     }
                     is NetworkResult.Error -> {
                         android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
@@ -485,17 +485,17 @@ class PlayingPartnerViewModel @Inject constructor(
 
 
                 // Step 3: Get fresh competition data from Room after refetch
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 3: Getting fresh competition data from Room...")
+                Log.d("PlayingPartnerVM", "🔄 Step 3: Getting fresh competition data from Room...")
                 val freshCompetitionData = localCompetition.value
-                android.util.Log.d("PlayingPartnerVM", "Fresh competition data: ${freshCompetitionData?.players?.size ?: 0} players")
+                Log.d("PlayingPartnerVM", "Fresh competition data: ${freshCompetitionData?.players?.size ?: 0} players")
 
                 // Step 4: Handle fee charging with duplicate prevention
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 4: Checking for duplicate transactions and handling fees...")
+                Log.d("PlayingPartnerVM", "🔄 Step 4: Checking for duplicate transactions and handling fees...")
                 val includeRoundValue = _includeRound.value
                 val currentTokenCost = tokenCost.value
                 
                 if (includeRoundValue && currentTokenCost > 0) {
-                    android.util.Log.d("PlayingPartnerVM", "💰 Fee required: $currentTokenCost tokens")
+                    Log.d("PlayingPartnerVM", "💰 Fee required: $currentTokenCost tokens")
                     
                     // Get mainCompetitionId from game data
                     val mainCompetitionId = gameData.mainCompetitionId
@@ -509,13 +509,13 @@ class PlayingPartnerViewModel @Inject constructor(
                     }
                     
                     // Check for existing transactions
-                    android.util.Log.d("PlayingPartnerVM", "🔍 Checking for existing transactions for golfer ${sogoGolferData.id}, competition $mainCompetitionId")
+                    Log.d("PlayingPartnerVM", "🔍 Checking for existing transactions for golfer ${sogoGolferData.id}, competition $mainCompetitionId")
                     checkExistingTransactionUseCase(sogoGolferData.id, mainCompetitionId).fold(
                         onSuccess = { hasExistingTransaction ->
                             if (hasExistingTransaction) {
-                                android.util.Log.d("PlayingPartnerVM", "✅ Existing transaction found - skipping fee charge")
+                                Log.d("PlayingPartnerVM", "✅ Existing transaction found - skipping fee charge")
                             } else {
-                                android.util.Log.d("PlayingPartnerVM", "💳 No existing transaction - charging fee")
+                                Log.d("PlayingPartnerVM", "💳 No existing transaction - charging fee")
                                 
                                 // Check sufficient balance
                                 if (sogoGolferData.tokenBalance < currentTokenCost) {
@@ -541,16 +541,16 @@ class PlayingPartnerViewModel @Inject constructor(
                                     mainCompetitionId = mainCompetitionId
                                 ).fold(
                                     onSuccess = {
-                                        android.util.Log.d("PlayingPartnerVM", "✅ Transaction created successfully")
+                                        Log.d("PlayingPartnerVM", "✅ Transaction created successfully")
                                         
                                         // Update token balance locally and on server
                                         val newBalance = sogoGolferData.tokenBalance - currentTokenCost.toInt()
-                                        android.util.Log.d("PlayingPartnerVM", "💰 Updating token balance: ${sogoGolferData.tokenBalance} -> $newBalance")
+                                        Log.d("PlayingPartnerVM", "💰 Updating token balance: ${sogoGolferData.tokenBalance} -> $newBalance")
                                         
                                         viewModelScope.launch {
                                             updateTokenBalanceUseCase(newBalance, sogoGolferData).fold(
                                                 onSuccess = { updatedGolfer ->
-                                                    android.util.Log.d("PlayingPartnerVM", "✅ Token balance updated successfully to ${updatedGolfer.tokenBalance}")
+                                                    Log.d("PlayingPartnerVM", "✅ Token balance updated successfully to ${updatedGolfer.tokenBalance}")
                                                 },
                                                 onFailure = { balanceError ->
                                                     android.util.Log.e("PlayingPartnerVM", "❌ Failed to update token balance: ${balanceError.message}")
@@ -581,23 +581,23 @@ class PlayingPartnerViewModel @Inject constructor(
                         }
                     )
                 } else {
-                    android.util.Log.d("PlayingPartnerVM", "ℹ️ No fee required (include round: $includeRoundValue, cost: $currentTokenCost)")
+                    Log.d("PlayingPartnerVM", "ℹ️ No fee required (include round: $includeRoundValue, cost: $currentTokenCost)")
                 }
 
                 // Step 5: Create Round object using fresh Room data
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 5: Creating Round object from fresh Room data...")
+                Log.d("PlayingPartnerVM", "🔄 Step 5: Creating Round object from fresh Room data...")
                 val round = createRoundFromRoomData(selectedPartner, currentGolferData, gameData, sogoGolferData, freshCompetitionData, selectedClub)
 
                 // Step 6: Save Round to Room
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 6: Saving Round to database...")
+                Log.d("PlayingPartnerVM", "🔄 Step 6: Saving Round to database...")
                 roundRepository.saveRound(round)
-                android.util.Log.d("PlayingPartnerVM", "✅ Round saved to database")
+                Log.d("PlayingPartnerVM", "✅ Round saved to database")
 
                 // Step 7: Save Round to MongoDB API
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 7: Syncing Round to MongoDB...")
+                Log.d("PlayingPartnerVM", "🔄 Step 7: Syncing Round to MongoDB...")
                 when (val createRoundResult = createRoundUseCase(round)) {
                     is NetworkResult.Success -> {
-                        android.util.Log.d("PlayingPartnerVM", "✅ Round synced to MongoDB successfully")
+                        Log.d("PlayingPartnerVM", "✅ Round synced to MongoDB successfully")
                         val syncedRound = round.copy(isSynced = true)
                         roundRepository.saveRound(syncedRound)
                     }
@@ -613,7 +613,7 @@ class PlayingPartnerViewModel @Inject constructor(
                 )
 
                 // Step 8: Navigate to PlayRound screen
-                android.util.Log.d("PlayingPartnerVM", "🔄 Step 8: Navigating to PlayRound screen...")
+                Log.d("PlayingPartnerVM", "🔄 Step 8: Navigating to PlayRound screen...")
                 onNavigateToPlayRound()
 
             } catch (e: Exception) {
@@ -636,12 +636,15 @@ class PlayingPartnerViewModel @Inject constructor(
     ): Round {
         val includeRoundValue = _includeRound.value
 
-        android.util.Log.d("PlayingPartnerVM", "📝 Creating Round with data:")
-        android.util.Log.d("PlayingPartnerVM", "  - Golfer: ${currentGolferData.firstName} ${currentGolferData.surname}")
-        android.util.Log.d("PlayingPartnerVM", "  - Game: ${gameData.bookingTime}")
-        android.util.Log.d("PlayingPartnerVM", "  - Sogo tokens: ${sogoGolferData.tokenBalance}")
-        android.util.Log.d("PlayingPartnerVM", "  - Competition: ${competitionData?.players?.size ?: 0} players")
-        android.util.Log.d("PlayingPartnerVM", "  - Include round: $includeRoundValue")
+        // Use current local time (will be converted to UTC when sending to MongoDB)
+        val nowUtc = LocalDateTime.now()
+
+        Log.d("PlayingPartnerVM", "📝 Creating Round with data:")
+        Log.d("PlayingPartnerVM", "  - Golfer: ${currentGolferData.firstName} ${currentGolferData.surname}")
+        Log.d("PlayingPartnerVM", "  - Game: ${gameData.bookingTime}")
+        Log.d("PlayingPartnerVM", "  - Sogo tokens: ${sogoGolferData.tokenBalance}")
+        Log.d("PlayingPartnerVM", "  - Competition: ${competitionData?.players?.size ?: 0} players")
+        Log.d("PlayingPartnerVM", "  - Include round: $includeRoundValue")
 
         val golfer = competitionData?.players?.find { it.golfLinkNumber == currentGolferData.golfLinkNo }
 
@@ -662,8 +665,8 @@ class PlayingPartnerViewModel @Inject constructor(
             dailyHandicap = gameData.dailyHandicap?.toDouble(),
             golfLinkHandicap = gameData.gaHandicap,
             golflinkNo = currentGolferData.golfLinkNo,
-            roundDate = gameData.bookingTime?.toLocalDate()?.atStartOfDay(),
-            startTime = gameData.bookingTime,
+            roundDate = nowUtc,
+            startTime = nowUtc,
             finishTime = null,
             scratchRating = golfer?.scratchRating?.toFloat(),
             slopeRating = golfer?.slopeRating?.toFloat(),
@@ -687,7 +690,7 @@ class PlayingPartnerViewModel @Inject constructor(
             holeScores = holeScores,
             playingPartnerRound = playingPartnerRound,
             mslMetaData = MslMetaData(isIncludeRoundOnSogo = includeRoundValue),
-            createdDate = LocalDateTime.now()
+            createdDate = nowUtc
         )
     }
 
@@ -695,9 +698,9 @@ class PlayingPartnerViewModel @Inject constructor(
         val playerToUse = specificPlayer ?: competitionData?.players?.firstOrNull()
         val holes = playerToUse?.holes ?: emptyList()
 
-        android.util.Log.d("PlayingPartnerVM", "🏌️ Creating hole scores for ${holes.size} holes")
+        Log.d("PlayingPartnerVM", "🏌️ Creating hole scores for ${holes.size} holes")
         holes.forEach { hole ->
-            android.util.Log.d("PlayingPartnerVM", "  - Hole ${hole.holeNumber}: par=${hole.par}, distance=${hole.distance}")
+            Log.d("PlayingPartnerVM", "  - Hole ${hole.holeNumber}: par=${hole.par}, distance=${hole.distance}")
         }
         
         return holes.map { holeData ->
@@ -720,9 +723,10 @@ class PlayingPartnerViewModel @Inject constructor(
         competitionData: MslCompetition?,
         sogoGolferData: SogoGolfer
     ): PlayingPartnerRound {
-        android.util.Log.d("PlayingPartnerVM", "📝 Creating PlayingPartnerRound for: ${selectedPartner.firstName} ${selectedPartner.lastName}")
+        Log.d("PlayingPartnerVM", "📝 Creating PlayingPartnerRound for: ${selectedPartner.firstName} ${selectedPartner.lastName}")
 
-        //val golferGender = competitionData?.players?.find { it.golfLinkNumber == selectedPartner.golfLinkNumber }
+        // Use current local time (will be converted to UTC when sending to MongoDB)
+        val nowUtc = LocalDateTime.now()
 
         val partnerGolfer = competitionData?.players?.find { it.golfLinkNumber == selectedPartner.golfLinkNumber }
         val holeScores = createHoleScores(competitionData, partnerGolfer)
@@ -732,9 +736,9 @@ class PlayingPartnerViewModel @Inject constructor(
             entityId = sogoGolferData.entityId,
             dailyHandicap = selectedPartner.dailyHandicap.toFloat(),
             golfLinkHandicap = selectedPartner.dailyHandicap.toFloat(),
-            roundDate = gameData.bookingTime?.toLocalDate()?.atStartOfDay(),
+            roundDate = nowUtc,
             roundType = "competition",
-            startTime = gameData.bookingTime,
+            startTime = nowUtc,
             finishTime = null,
             submittedTime = null,
             scratchRating = partnerGolfer?.scratchRating?.toFloat(),
@@ -753,7 +757,7 @@ class PlayingPartnerViewModel @Inject constructor(
             golferGender = partnerGolfer?.gender?.lowercase(),
             holeScores = holeScores,
             roundApprovalSignatureUrl = null,
-            createdDate = LocalDateTime.now(),
+            createdDate = nowUtc,
             updateDate = null,
             deleteDate = null
         )

@@ -139,14 +139,21 @@ fun RoundSummaryCard(
                 )
                 
                 // Score
-                ScoreInfo(
-                    label = compType?.replaceFirstChar { 
-                        if (it.isLowerCase()) it.titlecase(Locale.getDefault()) 
-                        else it.toString() 
-                    } ?: "Score",
-                    value = score?.toString() ?: "-",
-                    highlight = true
-                )
+                run {
+                    val compLabel = compType?.replaceFirstChar {
+                        if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+                    } ?: "Score"
+                    val compTypeLower = compType?.lowercase(Locale.getDefault())
+                    val displayScore = when (compTypeLower) {
+                        "par", "stroke" -> score?.let { if (it > 0) "+$it" else it.toString() } ?: "-"
+                        else -> score?.toString() ?: "-"
+                    }
+                    ScoreInfo(
+                        label = compLabel,
+                        value = displayScore,
+                        highlight = true
+                    )
+                }
             }
             
             // Course ratings and handicap

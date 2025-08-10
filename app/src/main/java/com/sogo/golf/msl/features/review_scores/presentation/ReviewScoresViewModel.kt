@@ -332,9 +332,19 @@ class ReviewScoresViewModel @AssistedInject constructor(
     
     fun navigateToHomeAfterSuccess() {
         android.util.Log.d(TAG, "Navigating to home screen after user dismissed success dialog")
-        navController.navigate("homescreen?skipDataFetch=true") {
-            popUpTo(0) { inclusive = true }
-            launchSingleTop = true
+        try {
+            navController.navigate("homescreen?skipDataFetch=true") {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Navigation failed: ${e.message}", e)
+            // Try alternative navigation approach
+            try {
+                navController.popBackStack("homescreen", inclusive = false)
+            } catch (fallbackError: Exception) {
+                android.util.Log.e(TAG, "Fallback navigation also failed: ${fallbackError.message}", fallbackError)
+            }
         }
     }
 

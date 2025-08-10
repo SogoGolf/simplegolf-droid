@@ -30,8 +30,6 @@ fun PostRoundHeader(
                 text = title,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
                 color = Color.White
             )
         },

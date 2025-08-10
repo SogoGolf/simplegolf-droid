@@ -90,22 +90,28 @@ fun PostRoundCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
+                // Determine label and formatted competition score based on competition type
+                val compTypeLower = competitionType.lowercase(Locale.getDefault())
+                val compLabel = when {
+                    compTypeLower == "par" -> "Score"
+                    compTypeLower == "stroke" -> "To Par"
+                    else -> "Pts"
+                }
+                val formattedCompScore = when {
+                    compTypeLower == "par" || compTypeLower == "stroke" -> {
+                        val n = compScoreTotal.toIntOrNull()
+                        if (n == null) compScoreTotal else if (n > 0) "+$n" else n.toString()
+                    }
+                    else -> compScoreTotal
+                }
+
                 ScoreColumn("Front 9", frontNineScore)
                 ScoreColumn("Back 9", backNineScore)
                 ScoreColumn("Total", grandTotalStrokes)
-                ScoreColumn("Pts", compScoreTotal)
+                ScoreColumn(compLabel, formattedCompScore)
             }
             
             Spacer(modifier = Modifier.height(12.dp))
-            
-            Text(
-                text = "Signature",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White,
-                modifier = Modifier.padding(start = 2.dp)
-            )
-            Spacer(modifier = Modifier.height(2.dp))
             
             SignatureBox(
                 signatureBase64 = signatureBase64,
@@ -115,6 +121,7 @@ fun PostRoundCard(
                     .fillMaxWidth()
                     .height(80.dp)
             )
+            Spacer(modifier = Modifier.height(4.dp))
         }
     }
 }
@@ -129,14 +136,14 @@ private fun ScoreColumn(
     ) {
         Text(
             text = label,
-            fontSize = 22.sp,
+            fontSize = 16.sp,
             color = Color.White,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = score,
-            fontSize = 22.sp,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
             textAlign = TextAlign.Center

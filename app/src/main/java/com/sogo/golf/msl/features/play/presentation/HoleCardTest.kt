@@ -116,6 +116,24 @@ fun HoleCardTest(
                 // Remove density scaling to ignore system font size settings
                 val scaleFactor = baseScale.coerceIn(0.6f, 1.2f)  // Tighter bounds for consistent sizing
 
+                // Build points label based on competition type
+                val pointsText = when {
+                    competitionType.equals("par", ignoreCase = true) ||
+                            competitionType.equals("stroke", ignoreCase = true) -> {
+                        if (currentPoints > 0) "+$currentPoints" else "$currentPoints"
+                    }
+                    currentPoints == 1 -> "1 pt"
+                    else -> "$currentPoints pts"
+                }
+                // Build total score label based on competition type
+                val totalScoreText = when {
+                    competitionType.equals("par", ignoreCase = true) ||
+                            competitionType.equals("stroke", ignoreCase = true) -> {
+                        if (totalScore > 0) "+$totalScore" else "$totalScore"
+                    }
+                    else -> "$totalScore"
+                }
+
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy((6 * scaleFactor).dp)
@@ -206,7 +224,7 @@ fun HoleCardTest(
                                 fontWeight = FontWeight.Medium
                             )
                             Text(
-                                text = "$currentPoints pts",
+                                text = pointsText,
                                 color = Color.Gray.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
                                 fontSize = (19 * scaleFactor).sp,
                                 modifier = Modifier.offset(y = (-10 * scaleFactor).dp)
@@ -233,16 +251,28 @@ fun HoleCardTest(
                 Spacer(modifier = Modifier.height((5 * scaleFactor).dp))
 
                 // Pickup button
+                val isStrokeRound = competitionType.equals("stroke", ignoreCase = true)
                 Button(
                     onClick = onPickupButtonClick,
+                    enabled = !isStrokeRound,
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isBallPickedUp) Color.Red else MSLColors.mslYellow
+                        containerColor = when {
+                            isBallPickedUp -> Color.Red
+                            else -> MSLColors.mslYellow
+                        },
+                        contentColor = Color.Black,
+                        disabledContainerColor = MSLColors.mslYellow.copy(alpha = 0.55f),
+                        disabledContentColor = Color.Gray
                     )
                 ) {
                     Text(
                         text = "Pickup",
-                        color = if (isBallPickedUp) Color.White else Color.Black,
+                        color = when {
+                            isStrokeRound -> Color.Black.copy(alpha = 0.3f)
+                            isBallPickedUp -> Color.White
+                            else -> Color.Black
+                        },
                         fontSize = (18 * scaleFactor).sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = (16 * scaleFactor).dp)
@@ -297,7 +327,7 @@ fun HoleCardTest(
                         }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = totalScore.toString(),
+                                text = totalScoreText,
                                 color = Color.White,
                                 fontSize = (30 * scaleFactor).sp,
                                 fontWeight = FontWeight.Normal

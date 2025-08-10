@@ -9,6 +9,22 @@ import com.sogo.golf.msl.domain.model.StateInfo
 import org.threeten.bp.LocalDateTime
 import org.threeten.bp.format.DateTimeFormatter
 
+// Helper to convert LocalDateTime (in system's default timezone) to UTC ISO-8601 strings
+// IMPORTANT: LocalDateTime is treated as being in the system's default timezone,
+// then converted to UTC for storage in MongoDB
+private fun formatUtc(dateTime: LocalDateTime?): String? = dateTime
+    ?.atZone(org.threeten.bp.ZoneId.systemDefault())  // Treat as local time
+    ?.withZoneSameInstant(org.threeten.bp.ZoneOffset.UTC)  // Convert to UTC
+    ?.toInstant()
+    ?.toString()
+
+// For date-only semantics: always emit midnight at UTC (UTC-0) for the given date
+private fun formatDateOnlyUtc(dateTime: LocalDateTime?): String? = dateTime
+    ?.toLocalDate()
+    ?.atStartOfDay(org.threeten.bp.ZoneOffset.UTC)
+    ?.toInstant()
+    ?.toString()
+
 data class RoundDto(
     @SerializedName("id")
     val id: String,
@@ -212,13 +228,13 @@ fun Round.toDto(): RoundDto {
         dailyHandicap = dailyHandicap,
         golfLinkHandicap = golfLinkHandicap,
         golflinkNo = golflinkNo,
-        roundDate = roundDate?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+roundDate = formatUtc(roundDate),
         roundType = roundType,
-        startTime = startTime?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-        finishTime = finishTime?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+        startTime = formatUtc(startTime),
+        finishTime = formatUtc(finishTime),
         scratchRating = scratchRating,
         slopeRating = slopeRating,
-        submittedTime = submittedTime?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+        submittedTime = formatUtc(submittedTime),
         compScoreTotal = compScoreTotal,
         clubName = clubName,
         golferFirstName = golferFirstName,
@@ -235,7 +251,7 @@ fun Round.toDto(): RoundDto {
         holeScores = holeScores.map { it.toDto() },
         playingPartnerRound = playingPartnerRound?.toDto(),
         mslMetaData = mslMetaData?.toDto(),
-        createdDate = createdDate?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        createdDate = formatUtc(createdDate)
     )
 }
 
@@ -263,10 +279,10 @@ fun PlayingPartnerRound.toDto(): PlayingPartnerRoundDto {
         golferLastName = golferLastName,
         golferGLNumber = golferGLNumber,
         golflinkNo = golflinkNo,
-        roundDate = roundDate?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+roundDate = formatUtc(roundDate),
         roundType = roundType,
-        startTime = startTime?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-        finishTime = finishTime?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+        startTime = formatUtc(startTime),
+        finishTime = formatUtc(finishTime),
         scratchRating = scratchRating,
         slopeRating = slopeRating,
         compScoreTotal = compScoreTotal,
@@ -275,7 +291,7 @@ fun PlayingPartnerRound.toDto(): PlayingPartnerRoundDto {
         isSubmitted = isSubmitted,
         golferGender = golferGender,
         holeScores = holeScores.map { it.toDto() },
-        createdDate = createdDate?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        createdDate = formatUtc(createdDate)
     )
 }
 

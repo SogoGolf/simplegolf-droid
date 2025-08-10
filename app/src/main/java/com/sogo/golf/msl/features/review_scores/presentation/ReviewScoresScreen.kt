@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -100,6 +101,19 @@ private fun ReviewScoresPortrait(
         }
     }
 
+    // Match status bar background with header color and left-align title
+    val view = androidx.compose.ui.platform.LocalView.current
+    val statusBarColor = MaterialTheme.colorScheme.primary
+    val statusBarArgb = statusBarColor.toArgb()
+    SideEffect {
+        val window = (view.context as? androidx.activity.ComponentActivity)?.window
+        if (window != null) {
+            androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                .isAppearanceLightStatusBars = false
+            window.statusBarColor = statusBarArgb
+        }
+    }
+
     Scaffold(
         topBar = {
             PostRoundHeader(
@@ -167,7 +181,9 @@ private fun ReviewScoresPortrait(
                                         .sumOf { it.strokes }.toString(),
                                     grandTotalStrokes = uiState.round!!.playingPartnerRound!!.holeScores
                                         .sumOf { it.strokes }.toString(),
-                                    compScoreTotal = 99.toString(),
+                                    compScoreTotal = uiState.round!!.playingPartnerRound!!.holeScores
+                                        .sumOf { it.score.toInt() }
+                                        .toString(),
 
                                     signatureBase64 = playerSignatures[uiState.round!!.playingPartnerRound!!.golferId ?: ""],
                                     onSignatureClick = {
@@ -192,7 +208,9 @@ private fun ReviewScoresPortrait(
                                 frontNineScore = viewModel.calculateFrontNineScore(uiState.round!!).toString(),
                                 backNineScore = viewModel.calculateBackNineScore(uiState.round!!).toString(),
                                 grandTotalStrokes = viewModel.calculateGrandTotal(uiState.round!!).toString(),
-                                compScoreTotal = 99.toString(),
+                                compScoreTotal = uiState.round!!.holeScores
+                                    .sumOf { it.score.toInt() }
+                                    .toString(),
 
                                 signatureBase64 = playerSignatures[uiState.round!!.golferId ?: ""],
                                 onSignatureClick = {

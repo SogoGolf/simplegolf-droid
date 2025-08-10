@@ -87,10 +87,9 @@ fun RoundSummaryDto.toDomain(): RoundSummary {
                 // Parse as local date-time since API returns local time for the golfer
                 when {
                     dateString.contains("Z") -> {
-                        // If it has Z, it's UTC - convert to local by removing Z
-                        // Note: This treats it as local time, not converting from UTC
-                        val localString = dateString.substring(0, dateString.indexOf('Z'))
-                        LocalDateTime.parse(localString, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                        // UTC time - convert to LocalDateTime in system's default timezone
+                        val instant = org.threeten.bp.Instant.parse(dateString)
+                        LocalDateTime.ofInstant(instant, org.threeten.bp.ZoneId.systemDefault())
                     }
                     dateString.contains("T") -> {
                         // Standard ISO local date-time format

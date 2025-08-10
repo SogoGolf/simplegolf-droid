@@ -6,7 +6,7 @@ data class MslGameCompetitionDto(
     val id: Int,
     val name: String,
     val scoreType: String,
-    val type: String
+    val type: String?
 )
 
 fun MslGameCompetitionDto.toDomainModel(): MslGameCompetition {
@@ -14,6 +14,6 @@ fun MslGameCompetitionDto.toDomainModel(): MslGameCompetition {
         id = id,
         name = name,
         scoreType = scoreType,
-        type = type
+        type = type ?: ""
     )
 }
