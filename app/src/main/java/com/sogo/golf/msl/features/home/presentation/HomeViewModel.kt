@@ -128,6 +128,8 @@ class HomeViewModel @Inject constructor(
             // Note: fetchTodaysData() is now called conditionally via setSkipDataFetch()
         }
 
+        private var cameFromRoundSubmission = false
+        
         fun setSkipDataFetch(skipDataFetch: Boolean) {
             if (!skipDataFetch) {
                 // ✅ NEW: Automatically fetch data when HomeViewModel is created
@@ -135,6 +137,8 @@ class HomeViewModel @Inject constructor(
                 fetchTodaysData()
             } else {
                 Log.d(TAG, "=== HOME SCREEN INIT - SKIPPING DATA FETCH (came from successful round submission) ===")
+                // Set flag to indicate we came from round submission
+                cameFromRoundSubmission = true
                 // Set loading to false since we're not fetching
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -412,6 +416,12 @@ class HomeViewModel @Inject constructor(
 
         // NEW: Method to check if we have all required data
         fun hasRequiredData(): Boolean {
+            // If we came from round submission, assume we have the data
+            if (cameFromRoundSubmission) {
+                Log.d(TAG, "Came from round submission - assuming data is available")
+                return true
+            }
+            
             val hasGolfer = currentGolfer.value != null
             val hasGame = localGame.value != null
             val hasCompetition = localCompetition.value != null

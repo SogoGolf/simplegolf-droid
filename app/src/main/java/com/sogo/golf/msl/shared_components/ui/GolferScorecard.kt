@@ -307,14 +307,20 @@ fun GolferScorecard(
                 cellHeight = responsiveCellHeight,
                 headerCellContent = { columnIndex ->
                     if (columnIndex == 0) {
-                        Text(
-                            text = "HOLE",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(4.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "HOLE",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     } else {
                         val dataIndex = columnIndex - 1
                         if (dataIndex < columnData.size) {
@@ -347,13 +353,19 @@ fun GolferScorecard(
                 },
                 cellContent = { columnIndex, rowData ->
                     if (columnIndex == 0) {
-                        Text(
-                            text = rowData,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(4.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = rowData,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     } else {
                         val dataIndex = columnIndex - 1
                         if (dataIndex < columnData.size) {
