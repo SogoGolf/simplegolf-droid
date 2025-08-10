@@ -8,6 +8,7 @@ import com.sogo.golf.msl.data.network.api.GolfApiService
 import com.sogo.golf.msl.data.network.api.SogoApiService
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.api.SogoMongoApiService
+import com.sogo.golf.msl.data.network.api.SogoGeneralApi
 import com.sogo.golf.msl.data.network.interceptors.GolfApiAuthInterceptor
 import com.sogo.golf.msl.data.network.interceptors.SogoApiAuthInterceptor
 import com.sogo.golf.msl.data.network.interceptors.MpsAuthInterceptor
@@ -178,5 +179,16 @@ object NetworkModule {
     @Singleton
     fun provideSogoMongoApiService(@SogoMongoApi retrofit: Retrofit): SogoMongoApiService {
         return retrofit.create(SogoMongoApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSogoGeneralApi(baseOkHttpClient: OkHttpClient): SogoGeneralApi {
+        return Retrofit.Builder()
+            .baseUrl("https://sogo-api.azure-api.net/sogo-general/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(baseOkHttpClient)
+            .build()
+            .create(SogoGeneralApi::class.java)
     }
 }

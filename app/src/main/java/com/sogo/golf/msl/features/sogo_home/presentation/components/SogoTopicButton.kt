@@ -35,7 +35,7 @@ fun SogoTopicButton(
     Surface(
         modifier = Modifier
             .width(180.dp)
-            .height(80.dp),
+            .height(90.dp),
         shape = RoundedCornerShape(16.dp),
         color = Color.White.copy(alpha = 0.65f),
         onClick = onClick,
@@ -50,7 +50,7 @@ fun SogoTopicButton(
                     painter = painterResource(id = imageResId),
                     contentDescription = null,
                     tint = Color.DarkGray,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             } else if (icon != null) {
                 Icon(
@@ -76,8 +76,7 @@ fun SogoTopicButton(
                     text = subTitle,
                     color = Color.DarkGray,
                     fontWeight = FontWeight.Medium,
-                    fontSize = MaterialTheme.typography.bodyMedium.fontSize,
-                    textAlign = TextAlign.Center
+                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
                 )
             }
         }

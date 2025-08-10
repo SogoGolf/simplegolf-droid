@@ -27,7 +27,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -70,6 +77,17 @@ fun SogoGolfHomeScreen(
     val bottomSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     
+    // Set status bar to have dark icons (for light background) and make it transparent
+    val view = LocalView.current
+    SideEffect {
+        val window = (view.context as? androidx.activity.ComponentActivity)?.window
+        window?.let {
+            WindowCompat.setDecorFitsSystemWindows(it, false)
+            WindowCompat.getInsetsController(it, view).isAppearanceLightStatusBars = true
+            it.statusBarColor = android.graphics.Color.TRANSPARENT
+        }
+    }
+    
     // Handle back navigation with skipDataFetch parameter
     BackHandler {
         navController.navigate("homescreen?skipDataFetch=true") {
@@ -80,7 +98,6 @@ fun SogoGolfHomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(mslBlue)
     ) {
 
         AsyncImage(
@@ -97,6 +114,7 @@ fun SogoGolfHomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally

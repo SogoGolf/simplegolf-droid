@@ -10,6 +10,8 @@ import com.sogo.golf.msl.data.network.dto.mongodb.HoleScoreDto
 import com.sogo.golf.msl.data.network.dto.mongodb.PlayingPartnerRoundDto
 import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
 import com.sogo.golf.msl.data.network.dto.mongodb.TransactionDto
+import com.sogo.golf.msl.data.network.dto.mongodb.LeaderboardRequestDto
+import com.sogo.golf.msl.data.network.dto.mongodb.LeaderboardResponseDto
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -92,6 +94,11 @@ interface SogoMongoApiService {
     
     @GET("competitions")
     suspend fun getCompetitions(): Response<List<CompetitionDto>>
+
+    @POST("leaderboard")
+    suspend fun getLeaderboard(
+        @Body request: LeaderboardRequestDto
+    ): Response<List<LeaderboardResponseDto>>
 
 
     @POST("golfers")

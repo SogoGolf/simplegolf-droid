@@ -9,8 +9,11 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,6 +35,14 @@ fun RoundsSummaryScreen(
     val currentGolfer by viewModel.currentGolfer.collectAsState()
     val localGame by viewModel.localGame.collectAsState()
     
+    // Set status bar to have light icons (white) for dark background
+    val view = LocalView.current
+    SideEffect {
+        val window = (view.context as? androidx.activity.ComponentActivity)?.window
+        window?.let {
+            WindowCompat.getInsetsController(it, view).isAppearanceLightStatusBars = false
+        }
+    }
     
     // Fetch rounds when golfer data is available
     LaunchedEffect(currentGolfer, localGame) {
