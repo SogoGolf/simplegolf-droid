@@ -125,15 +125,6 @@ class UpdatePickupUseCase @Inject constructor(
         isBallPickedUp: Boolean
     ): Float {
         return try {
-            if (isBallPickedUp) {
-                Log.d("UpdatePickup", "Ball picked up - setting score to 0")
-                return 0f
-            }
-            
-            if (strokes == 0) {
-                return 0f
-            }
-            
             val competition = getLocalCompetitionUseCase().first()
             val game = getLocalGameUseCase().first()
             
@@ -143,6 +134,19 @@ class UpdatePickupUseCase @Inject constructor(
             }
 
             val scoreType = competition.players.firstOrNull()?.scoreType ?: "Stableford"
+            
+            if (isBallPickedUp) {
+                // For Par rounds, pickup results in -1 point
+                // For other rounds (Stableford, Stroke), pickup results in 0 points
+                val pickupScore = if (scoreType == "Par") -1f else 0f
+                Log.d("UpdatePickup", "Ball picked up - scoreType: $scoreType, setting score to $pickupScore")
+                return pickupScore
+            }
+            
+            if (strokes == 0) {
+                return 0f
+            }
+            
             val dailyHandicap = if (isMainGolfer) {
                 game.dailyHandicap?.toDouble() ?: 0.0
             } else {

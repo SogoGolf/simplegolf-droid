@@ -77,6 +77,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = System.getenv("SIMPLEGOLF_ANDROID_KEY_ALIAS") ?: "upload"
+            keyPassword = System.getenv("SIMPLEGOLF_ANDROID_KEY_PASSWORD") ?: "simplegolf"
+            storeFile = file("${System.getenv("SIMPLEGOLF_ANDROID_KEYSTORE_PATH") ?: "msl_keystore.jks"}")
+            storePassword = System.getenv("SIMPLEGOLF_ANDROID_KEYSTORE_PASSWORD") ?: "simplegolf"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -84,6 +93,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
