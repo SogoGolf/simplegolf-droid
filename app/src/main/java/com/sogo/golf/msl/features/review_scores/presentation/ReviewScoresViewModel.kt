@@ -331,21 +331,19 @@ class ReviewScoresViewModel @AssistedInject constructor(
     }
     
     fun navigateToHomeAfterSuccess() {
-        android.util.Log.d(TAG, "Navigating to home screen after user dismissed success dialog")
-        try {
-            navController.navigate("homescreen?skipDataFetch=true") {
-                popUpTo(0) { inclusive = true }
-                launchSingleTop = true
-            }
-        } catch (e: Exception) {
-            android.util.Log.e(TAG, "Navigation failed: ${e.message}", e)
-            // Try alternative navigation approach
-            try {
-                navController.popBackStack("homescreen", inclusive = false)
-            } catch (fallbackError: Exception) {
-                android.util.Log.e(TAG, "Fallback navigation also failed: ${fallbackError.message}", fallbackError)
-            }
-        }
+        // Deprecated - navigation now handled directly in the UI layer for better reliability
+        android.util.Log.d(TAG, "navigateToHomeAfterSuccess called - navigation should be handled in UI")
+    }
+    
+    fun clearNavigationState() {
+        // Clear any navigation-related state to prevent memory leaks
+        android.util.Log.d(TAG, "Clearing navigation state")
+        _uiState.value = _uiState.value.copy(
+            isSubmitted = false,
+            isSubmitting = false
+        )
+        _playerSignatures.value = emptyMap()
+        _roundSubmitState.value = RoundSubmitState()
     }
 
     @AssistedFactory

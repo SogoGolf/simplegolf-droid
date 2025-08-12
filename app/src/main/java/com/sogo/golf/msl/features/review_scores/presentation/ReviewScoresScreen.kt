@@ -402,9 +402,34 @@ private fun ReviewScoresPortrait(
         SubmitRoundSuccessDialog(
             playingPartnerName = uiState.round?.playingPartnerRound?.golferFirstName ?: "",
             onDone = {
-                android.util.Log.d("ReviewScores", "Done button clicked")
+                android.util.Log.d("ReviewScores", "Done button clicked - navigating to home")
                 showSuccessDialog = false
-                viewModel.navigateToHomeAfterSuccess()
+                
+                // Bulletproof navigation with multiple fallback strategies
+                try {
+                    // Strategy 1: Try normal navigation first
+                    navController.navigate("homescreen?skipDataFetch=true") {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("ReviewScores", "Primary navigation failed: ${e.message}")
+                    try {
+                        // Strategy 2: Try popping to home screen
+                        navController.popBackStack("homescreen", inclusive = false)
+                    } catch (e2: Exception) {
+                        android.util.Log.e("ReviewScores", "Secondary navigation failed: ${e2.message}")
+                        try {
+                            // Strategy 3: Clear entire backstack and navigate
+                            navController.popBackStack(navController.graph.startDestinationId, inclusive = false)
+                        } catch (e3: Exception) {
+                            android.util.Log.e("ReviewScores", "All navigation attempts failed", e3)
+                        }
+                    }
+                }
+                
+                // Clean up ViewModel state
+                viewModel.clearNavigationState()
             }
         )
     }
