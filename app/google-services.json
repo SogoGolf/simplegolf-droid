@@ -1,0 +1,171 @@
+{
+  "project_info": {
+    "project_number": "719518718236",
+    "firebase_url": "https://sogo-golf.firebaseio.com",
+    "project_id": "sogo-golf",
+    "storage_bucket": "sogo-golf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719518718236:android:ff5527584c28c84a1602d9",
+        "android_client_info": {
+          "package_name": "com.sogo.golf"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "719518718236-f9f2e1grcb8j602q5eeivkgn51eatn3q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRK0WDc5abQmgd14yjgVm2xvE5r_Jg8Dc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "719518718236-f9f2e1grcb8j602q5eeivkgn51eatn3q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "719518718236-4jbs2gc1fbv9pkolpaj2l4kc6apckpm1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sogo.sogoGolf"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719518718236:android:8905b70bc77ccc8b1602d9",
+        "android_client_info": {
+          "package_name": "com.sogo.golf.msl"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "719518718236-f9f2e1grcb8j602q5eeivkgn51eatn3q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRK0WDc5abQmgd14yjgVm2xvE5r_Jg8Dc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "719518718236-f9f2e1grcb8j602q5eeivkgn51eatn3q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "719518718236-4jbs2gc1fbv9pkolpaj2l4kc6apckpm1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sogo.sogoGolf"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719518718236:android:04ce00bd7b4b480d",
+        "android_client_info": {
+          "package_name": "com.sogo.sogogolf"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "719518718236-f9f2e1grcb8j602q5eeivkgn51eatn3q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRK0WDc5abQmgd14yjgVm2xvE5r_Jg8Dc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "719518718236-f9f2e1grcb8j602q5eeivkgn51eatn3q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "719518718236-4jbs2gc1fbv9pkolpaj2l4kc6apckpm1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sogo.sogoGolf"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:719518718236:android:bfbd3e617ab499c3",
+        "android_client_info": {
+          "package_name": "sogo.android.sogogolf"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "719518718236-es10qr4p3r5uf9m9tbt6v5qdcqs290lo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sogo.android.sogogolf",
+            "certificate_hash": "497870d55dfa74e65d55765bd12f14aa1b2513fa"
+          }
+        },
+        {
+          "client_id": "719518718236-vkf8g3pjnd7nbbrn3cs77n7gmo12m709.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "sogo.android.sogogolf",
+            "certificate_hash": "f02e8601c6f57df10444f2ac7c6230273ae887c6"
+          }
+        },
+        {
+          "client_id": "719518718236-f9f2e1grcb8j602q5eeivkgn51eatn3q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRK0WDc5abQmgd14yjgVm2xvE5r_Jg8Dc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "719518718236-f9f2e1grcb8j602q5eeivkgn51eatn3q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "719518718236-4jbs2gc1fbv9pkolpaj2l4kc6apckpm1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sogo.sogoGolf"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

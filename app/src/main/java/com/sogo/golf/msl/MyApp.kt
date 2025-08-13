@@ -3,15 +3,30 @@ package com.sogo.golf.msl
 import android.app.Application
 import android.util.Log
 import com.jakewharton.threetenabp.AndroidThreeTen
+import com.google.firebase.FirebaseApp
 import com.revenuecat.purchases.LogLevel
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @HiltAndroidApp
 class MyApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        
+        // Initialize Firebase first
+        try {
+            FirebaseApp.initializeApp(this)
+            Log.d("MyApp", "Firebase initialized successfully")
+        } catch (e: Exception) {
+            Log.e("MyApp", "Firebase initialization failed", e)
+        }
+        
         AndroidThreeTen.init(this)
 
         // ✅ FORCE FONT SCALE TO 1.0 across the entire app
@@ -67,6 +82,46 @@ class MyApp : Application() {
         Purchases.logLevel = LogLevel.DEBUG
         Purchases.configure(PurchasesConfiguration.Builder(this, BuildConfig.REVENUECAT).build())
         Log.d("MyApp", "Revenuecat initialised...")
+
+        // Initialize FCM token after a delay to ensure Firebase is ready
+        CoroutineScope(Dispatchers.Main).launch {
+            kotlinx.coroutines.delay(1000) // Wait 1 second for Firebase to initialize
+            initializeFcmToken()
+        }
+    }
+
+    private suspend fun initializeFcmToken() {
+        try {
+            Log.d("MyApp", "Starting FCM initialization...")
+            
+            // Check if Firebase app is initialized
+            val firebaseApps = FirebaseApp.getApps(this)
+            Log.d("MyApp", "Firebase apps count: ${firebaseApps.size}")
+            firebaseApps.forEach { app ->
+                Log.d("MyApp", "Firebase app: ${app.name}, options: ${app.options.applicationId}")
+            }
+            
+            // Get FCM token directly from FirebaseMessaging
+            val token = FirebaseMessaging.getInstance().token.await()
+            Log.d("MyApp", "FCM Token: $token")
+            
+            // Subscribe to MSL notifications topic
+            FirebaseMessaging.getInstance().subscribeToTopic("msl_notification")
+                .addOnCompleteListener { task ->
+                    val msg = if (task.isSuccessful) {
+                        "Subscribed to msl_notification"
+                    } else {
+                        "Failed to subscribe to msl_notification"
+                    }
+                    Log.d("MyApp", msg)
+                }
+            
+            // TODO: Send token to your backend server for user-specific notifications
+            // This would typically involve making an API call to register the token
+            // with the user's account
+        } catch (e: Exception) {
+            Log.e("MyApp", "Failed to initialize FCM token", e)
+        }
     }
 
     private fun enforceNormalFontScale() {

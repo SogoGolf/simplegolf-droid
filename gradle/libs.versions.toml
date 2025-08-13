@@ -7,6 +7,7 @@ converterGson = "2.11.0"
 coreSplashscreenVersion = "1.0.1"
 firebaseBom = "34.0.0"
 firebaseMessagingKtx = "24.1.2"
+googleServices = "4.4.2"
 gson = "2.10.1"
 iconsLucide = "1.0.0"
 jwtdecode = "2.0.0"
@@ -97,3 +98,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 dagger-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
