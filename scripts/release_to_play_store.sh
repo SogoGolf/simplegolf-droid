@@ -51,14 +51,51 @@ case $VERSION_CHOICE in
         MINOR="${VERSION_PARTS[1]}"
         PATCH="${VERSION_PARTS[2]:-0}"  # Default to 0 if not provided
         
+        # Get current version
+        CURRENT_MAJOR=$(grep VERSION_MAJOR version.properties | cut -d'=' -f2)
+        CURRENT_MINOR=$(grep VERSION_MINOR version.properties | cut -d'=' -f2)
+        CURRENT_PATCH=$(grep VERSION_PATCH version.properties | cut -d'=' -f2)
+        
         echo -e "\n${YELLOW}Setting version to $MAJOR.$MINOR.$PATCH...${NC}"
         
-        # Update version using gradle properties
-        ./gradlew \
-            -PversionMajor="$MAJOR" \
-            -PversionMinor="$MINOR" \
-            -PversionPatch="$PATCH" \
-            setTimestampBuild
+        # Determine which version component changed and use appropriate gradle task
+        if [ "$MAJOR" != "$CURRENT_MAJOR" ]; then
+            # Major version changed - need to increment multiple times if needed
+            DIFF=$((MAJOR - CURRENT_MAJOR))
+            if [ $DIFF -gt 0 ]; then
+                for ((i=1; i<=DIFF; i++)); do
+                    ./gradlew incrementVersionMajor
+                done
+            else
+                echo -e "${RED}❌ Cannot decrease major version. Current: $CURRENT_MAJOR, Requested: $MAJOR${NC}"
+                exit 1
+            fi
+        elif [ "$MINOR" != "$CURRENT_MINOR" ]; then
+            # Minor version changed
+            DIFF=$((MINOR - CURRENT_MINOR))
+            if [ $DIFF -gt 0 ]; then
+                for ((i=1; i<=DIFF; i++)); do
+                    ./gradlew incrementVersionMinor
+                done
+            else
+                echo -e "${RED}❌ Cannot decrease minor version. Current: $CURRENT_MINOR, Requested: $MINOR${NC}"
+                exit 1
+            fi
+        elif [ "$PATCH" != "$CURRENT_PATCH" ]; then
+            # Patch version changed
+            DIFF=$((PATCH - CURRENT_PATCH))
+            if [ $DIFF -gt 0 ]; then
+                for ((i=1; i<=DIFF; i++)); do
+                    ./gradlew incrementVersionPatch
+                done
+            else
+                echo -e "${RED}❌ Cannot decrease patch version. Current: $CURRENT_PATCH, Requested: $PATCH${NC}"
+                exit 1
+            fi
+        else
+            # Same version, just update build number
+            ./gradlew setTimestampBuild
+        fi
         
         echo -e "${GREEN}✓ Version set to $MAJOR.$MINOR.$PATCH with new build number${NC}"
         ;;

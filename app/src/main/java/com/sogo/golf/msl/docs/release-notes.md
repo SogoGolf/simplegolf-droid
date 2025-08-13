@@ -9,20 +9,62 @@
 - 
 
 ### Known Issues
-- None
+-
 
 ---
 
 ## Previous Releases
 
-### Version 3.0.3
+### Version 3.0.4
 ### What's New
-- bump version to 3.0.4
+- update to 3.0.4
 ### Bug Fixes
 -
 ### Known Issues
+- None
+
+
+### Version 3.0.3
+
+### What's New
+
+- set version to 3.0.4
+
+### Bug Fixes
+
 -
 
+### Known Issues
+
+- None
+
+### Version 3.0.3
+
+### What's New
+
+-
+
+### Bug Fixes
+
+-
+
+### Known Issues
+
+- None
+
+### Version 3.0.3
+
+### What's New
+
+- bump version to 3.0.4
+
+### Bug Fixes
+
+-
+
+### Known Issues
+
+-
 
 ### Version 3.0.3
 
