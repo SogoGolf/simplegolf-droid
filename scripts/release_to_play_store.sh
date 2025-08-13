@@ -142,6 +142,7 @@ RELEASE_NOTES_TEXT=$(awk '/^## Latest Release/,/^---/' "$RELEASE_NOTES_FILE" | \
     grep -v '^---' | \
     sed '/^$/d' | \
     sed 's/^### //' | \
+    grep -v '^- *$' | \
     sed 's/^- /• /')
 
 if [ -z "$RELEASE_NOTES_TEXT" ]; then
