@@ -132,9 +132,13 @@ class HomeViewModel @Inject constructor(
         
         fun setSkipDataFetch(skipDataFetch: Boolean) {
             if (!skipDataFetch) {
-                // ✅ NEW: Automatically fetch data when HomeViewModel is created
-                Log.d(TAG, "=== HOME SCREEN INIT - FETCHING TODAY'S DATA ===")
-                fetchTodaysData()
+                // NEW: Only fetch lightweight SOGO data needed for home screen
+                Log.d(TAG, "=== HOME SCREEN INIT - FETCHING SOGO DATA ONLY ===")
+                // Wait a bit for currentGolfer to be available, then fetch
+                viewModelScope.launch {
+                    kotlinx.coroutines.delay(100) // Small delay to ensure currentGolfer is set
+                    fetchSogoDataOnly()
+                }
             } else {
                 Log.d(TAG, "=== HOME SCREEN INIT - SKIPPING DATA FETCH (came from successful round submission) ===")
                 // Set flag to indicate we came from round submission
@@ -150,8 +154,177 @@ class HomeViewModel @Inject constructor(
             }
         }
 
-// NEW: Fetch today's game and competition data
-        private fun fetchTodaysData() {
+        // NEW: Lightweight fetch for home screen - only SOGO golfer data needed for terms check
+        private fun fetchSogoDataOnly() {
+            viewModelScope.launch {
+                try {
+                    Log.d(TAG, "Starting to fetch SOGO golfer data only...")
+
+                    // Set loading state
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = true,
+                        errorMessage = null,
+                        successMessage = null,
+                        progressMessage = "Loading golfer data…",
+                        progressPercent = 50
+                    )
+
+                    // Fetch SogoGolfer Data only
+                    Log.d(TAG, "👤 Fetching sogo golfer data...")
+                    val golfLinkNo = currentGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
+                    
+                    if (golfLinkNo.isNullOrBlank()) {
+                        Log.w(TAG, "⚠️ No golfLinkNo available - cannot fetch SOGO golfer data")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = "No golf link number available"
+                        )
+                        return@launch
+                    }
+
+                    when (val sogoGolferResult = fetchAndSaveSogoGolferUseCase(golfLinkNo)) {
+                        is NetworkResult.Success -> {
+                            Log.d(TAG, "✅ SOGO API call succeeded: ${sogoGolferResult.data?.email ?: "No golfer found (new user)"}")
+                            sogoFetchCompleted = true
+                            sogoFetchError = null
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                successMessage = "Ready to start round",
+                                progressMessage = null,
+                                progressPercent = 100
+                            )
+                        }
+                        is NetworkResult.Error -> {
+                            val error = sogoGolferResult.error.toUserMessage()
+                            Log.e(TAG, "❌ SOGO API call failed: $error")
+                            sogoFetchCompleted = false
+                            sogoFetchError = error
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = "Cannot connect to SOGO services: $error",
+                                progressMessage = null,
+                                progressPercent = null
+                            )
+                        }
+                        is NetworkResult.Loading -> {
+                            Log.d(TAG, "⏳ SOGO golfer data is loading...")
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Exception while fetching SOGO data", e)
+                    sogoFetchCompleted = false
+                    sogoFetchError = e.message
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Cannot connect to SOGO services: ${e.message}",
+                        progressMessage = null,
+                        progressPercent = null
+                    )
+                }
+            }
+        }
+
+        // NEW: Fetch MSL game and competition data (for competition screen)
+        fun fetchMslData() {
+            viewModelScope.launch {
+                try {
+                    Log.d(TAG, "Starting to fetch MSL game and competition data...")
+
+                    // Set loading state
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = true,
+                        errorMessage = null,
+                        successMessage = null,
+                        progressMessage = "Loading competition data…",
+                        progressPercent = 0
+                    )
+
+                    // Get the selected club
+                    val selectedClub = getMslClubAndTenantIdsUseCase()
+                    if (selectedClub?.clubId == null) {
+                        Log.w(TAG, "⚠️ No club selected - cannot fetch MSL data")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = "No club selected. Please login again."
+                        )
+                        return@launch
+                    }
+
+                    val clubIdStr = selectedClub.clubId.toString()
+                    Log.d(TAG, "Fetching MSL data for club: $clubIdStr")
+
+                    var gameSuccess = false
+                    var competitionSuccess = false
+                    var gameError: String? = null
+                    var competitionError: String? = null
+
+                    // Fetch Game Data
+                    Log.d(TAG, "🎮 Fetching game data...")
+                    _uiState.value = _uiState.value.copy(progressMessage = "Loading game data…", progressPercent = 50)
+                    when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
+                        is NetworkResult.Success -> {
+                            Log.d(TAG, "✅ MSL Game data fetched successfully: Competition ${gameResult.data.mainCompetitionId}")
+                            gameSuccess = true
+                        }
+                        is NetworkResult.Error -> {
+                            gameError = gameResult.error.toUserMessage()
+                            Log.e(TAG, "❌ Failed to fetch MSL game data: $gameError")
+                        }
+                        is NetworkResult.Loading -> { /* Already handled */ }
+                    }
+
+                    // Fetch Competition Data
+                    Log.d(TAG, "🏆 Fetching competition data...")
+                    _uiState.value = _uiState.value.copy(progressMessage = "Loading competition…", progressPercent = 80)
+                    when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
+                        is NetworkResult.Success -> {
+                            Log.d(TAG, "✅ MSL Competition data fetched successfully: ${competitionResult.data.players.size} players")
+                            competitionSuccess = true
+                        }
+                        is NetworkResult.Error -> {
+                            competitionError = competitionResult.error.toUserMessage()
+                            Log.e(TAG, "❌ Failed to fetch MSL competition data: $competitionError")
+                        }
+                        is NetworkResult.Loading -> { /* Already handled */ }
+                    }
+
+                    // Update UI based on results
+                    when {
+                        gameSuccess && competitionSuccess -> {
+                            Log.d(TAG, "✅ MSL data fetched successfully!")
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                successMessage = "Competition data loaded successfully!",
+                                progressMessage = null,
+                                progressPercent = 100
+                            )
+                        }
+                        else -> {
+                            Log.e(TAG, "❌ MSL data fetch failed")
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = "Failed to load competition data. Game: $gameError, Competition: $competitionError",
+                                progressMessage = null,
+                                progressPercent = null
+                            )
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Exception while fetching MSL data", e)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Error loading competition data: ${e.message}",
+                        progressMessage = null,
+                        progressPercent = null
+                    )
+                }
+            }
+        }
+
+// NEW: Fetch today's game and competition data (can be called from competition screen)
+        fun fetchTodaysData() {
             viewModelScope.launch {
                 try {
                     Log.d(TAG, "Starting to fetch today's data...")
@@ -414,7 +587,11 @@ class HomeViewModel @Inject constructor(
             appUpdateManager.cleanup()
         }
 
-        // NEW: Method to check if we have all required data
+        // Track if SOGO fetch has completed successfully (even if no golfer found)
+        private var sogoFetchCompleted = false
+        private var sogoFetchError: String? = null
+
+        // NEW: Method to check if we have all required data for home screen
         fun hasRequiredData(): Boolean {
             // If we came from round submission, assume we have the data
             if (cameFromRoundSubmission) {
@@ -423,11 +600,15 @@ class HomeViewModel @Inject constructor(
             }
             
             val hasGolfer = currentGolfer.value != null
-            val hasGame = localGame.value != null
-            val hasCompetition = localCompetition.value != null
+            val isLoading = _uiState.value.isLoading
 
-            Log.d(TAG, "Data status - Golfer: $hasGolfer, Game: $hasGame, Competition: $hasCompetition")
-            return hasGolfer && hasGame && hasCompetition
+            Log.d(TAG, "Data status - Golfer: $hasGolfer, SogoFetchCompleted: $sogoFetchCompleted, SogoFetchError: $sogoFetchError, isLoading: $isLoading")
+            
+            // Enable button only if:
+            // 1. We have currentGolfer AND
+            // 2. SOGO fetch has completed successfully (regardless of whether golfer exists) AND  
+            // 3. We're not currently loading
+            return hasGolfer && sogoFetchCompleted && !isLoading
         }
 
         // NEW: Method to get data status summary
