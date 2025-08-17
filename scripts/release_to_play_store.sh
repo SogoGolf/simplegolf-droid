@@ -11,9 +11,6 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Release notes file path
-RELEASE_NOTES_FILE="app/src/main/java/com/sogo/golf/msl/docs/release-notes.md"
-
 echo -e "${GREEN}🚀 Android Release Process${NC}"
 echo "======================================="
 
@@ -114,77 +111,55 @@ echo ""
 echo -e "\n${CYAN}📝 Release Notes${NC}"
 echo "======================================="
 
-# Check if release notes file exists
-if [ ! -f "$RELEASE_NOTES_FILE" ]; then
-    echo -e "${YELLOW}Creating release notes file...${NC}"
-    mkdir -p release-notes
-    cat > "$RELEASE_NOTES_FILE" << 'EOF'
-# Release Notes
+# Create a temporary file for release notes
+TEMP_RELEASE_NOTES=$(mktemp /tmp/release_notes_XXXXXX.txt)
 
-## Latest Release
+# Create simple template in temp file
+cat > "$TEMP_RELEASE_NOTES" << 'EOF'
+Enter your release notes here (plain text, one item per line):
 
-### What's New
-- 
+What's New:
 
-### Bug Fixes
-- 
 
-### Known Issues
-- None
+Bug Fixes:
 
----
 
-## Previous Releases
+Known Issues:
+
+
+(Delete these instructions and just type your release notes)
 EOF
-    echo -e "${GREEN}✓ Created release notes template at $RELEASE_NOTES_FILE${NC}"
+
+# Open in VS Code for editing
+echo -e "${YELLOW}Opening VS Code for you to enter release notes...${NC}"
+echo -e "${BLUE}Just type your release notes directly in the editor and save when done.${NC}"
+
+if command -v code &> /dev/null; then
+    code --wait "$TEMP_RELEASE_NOTES"
+else
+    echo -e "${RED}VS Code not found. Using default editor...${NC}"
+    ${EDITOR:-nano} "$TEMP_RELEASE_NOTES"
 fi
 
-# Show current release notes
-echo -e "\n${YELLOW}Current release notes (Latest Release section):${NC}"
-echo "---"
-# Extract just the Latest Release section
-awk '/^## Latest Release/,/^---/' "$RELEASE_NOTES_FILE" | sed '$d'
-echo "---"
-
-# Ask if user wants to edit release notes
-echo -n -e "\n${YELLOW}Do you want to edit the release notes now? [y/N]: ${NC}"
-read -r EDIT_NOTES
-
-if [[ "$EDIT_NOTES" =~ ^[Yy]$ ]]; then
-    # Check for available editors
-    if command -v code &> /dev/null; then
-        echo -e "${BLUE}Opening release notes in VS Code...${NC}"
-        code "$RELEASE_NOTES_FILE"
-    elif command -v nano &> /dev/null; then
-        nano "$RELEASE_NOTES_FILE"
-    elif command -v vim &> /dev/null; then
-        vim "$RELEASE_NOTES_FILE"
-    else
-        echo -e "${YELLOW}Please edit $RELEASE_NOTES_FILE manually and press Enter when done${NC}"
-    fi
-    
-    echo -n -e "\n${YELLOW}Press Enter when you've finished editing the release notes...${NC}"
-    read -r
-    
-    # Show updated release notes
-    echo -e "\n${GREEN}Updated release notes:${NC}"
-    echo "---"
-    awk '/^## Latest Release/,/^---/' "$RELEASE_NOTES_FILE" | sed '$d'
-    echo "---"
-fi
-
-# Extract release notes for upload (removing markdown headers and empty lines)
-RELEASE_NOTES_TEXT=$(awk '/^## Latest Release/,/^---/' "$RELEASE_NOTES_FILE" | \
-    grep -v '^##' | \
-    grep -v '^---' | \
+# Read the release notes from the temp file
+RELEASE_NOTES_TEXT=$(cat "$TEMP_RELEASE_NOTES" | \
+    grep -v "^Enter your release notes" | \
+    grep -v "^(Delete these instructions" | \
     sed '/^$/d' | \
-    sed 's/^### //' | \
-    grep -v '^- *$' | \
-    sed 's/^- /• /')
+    sed 's/^/• /')
+
+# Clean up temp file
+rm -f "$TEMP_RELEASE_NOTES"
 
 if [ -z "$RELEASE_NOTES_TEXT" ]; then
     RELEASE_NOTES_TEXT="Bug fixes and performance improvements"
 fi
+
+# Display the release notes for confirmation
+echo -e "\n${GREEN}Release Notes Preview:${NC}"
+echo "======================================="
+echo "$RELEASE_NOTES_TEXT"
+echo "======================================="
 
 # Step 3: Confirmation
 echo -n -e "\n${YELLOW}Do you want to continue with the release? [y/N]: ${NC}"
@@ -347,63 +322,13 @@ EOF
 if [ $? -eq 0 ]; then
     echo -e "\n${GREEN}✅ Successfully uploaded to Google Play Store Open Testing!${NC}"
     
-    # Archive current release notes
+    # Show final version info
     VERSION=$(grep VERSION_MAJOR version.properties | cut -d'=' -f2).$(grep VERSION_MINOR version.properties | cut -d'=' -f2).$(grep VERSION_PATCH version.properties | cut -d'=' -f2)
     
-    # Ask if user wants to archive the release notes
-    echo -n -e "\n${YELLOW}Archive current release notes for version $VERSION? [Y/n]: ${NC}"
-    read -r ARCHIVE_NOTES
-    
-    if [[ ! "$ARCHIVE_NOTES" =~ ^[Nn]$ ]]; then
-        # Move current release notes to previous releases section
-        echo -e "${YELLOW}Archiving release notes...${NC}"
-        
-        # Create a temporary file with the new structure
-        TEMP_FILE=$(mktemp)
-        
-        # Write the header and empty latest release section
-        cat > "$TEMP_FILE" << 'EOF'
-# Release Notes
-
-## Latest Release
-
-### What's New
-- 
-
-### Bug Fixes
-- 
-
-### Known Issues
-- None
-
----
-
-## Previous Releases
-
-EOF
-        
-        # Add current release to previous releases
-        echo "### Version $VERSION" >> "$TEMP_FILE"
-        awk '/^## Latest Release/,/^---/' "$RELEASE_NOTES_FILE" | \
-            grep -v '^## Latest Release' | \
-            grep -v '^---' | \
-            sed '/^$/d' >> "$TEMP_FILE"
-        echo "" >> "$TEMP_FILE"
-        
-        # Append existing previous releases
-        awk '/^## Previous Releases/,EOF' "$RELEASE_NOTES_FILE" | \
-            grep -v '^## Previous Releases' >> "$TEMP_FILE"
-        
-        # Replace the original file
-        mv "$TEMP_FILE" "$RELEASE_NOTES_FILE"
-        
-        echo -e "${GREEN}✓ Release notes archived${NC}"
-    fi
-    
-    # Show final version info
     echo -e "\n${BLUE}Release Summary:${NC}"
     echo "======================================="
-    grep -E "VERSION_MAJOR|VERSION_MINOR|VERSION_PATCH|VERSION_BUILD" version.properties
+    echo "Version: $VERSION"
+    grep -E "VERSION_BUILD" version.properties
     echo "--------------------------------------"
     echo "Release Notes:"
     echo "$RELEASE_NOTES_TEXT"
