@@ -32,6 +32,7 @@ import com.sogo.golf.msl.data.network.NetworkStateMonitor
 import android.util.Log
 import com.sogo.golf.msl.data.network.NetworkState
 import com.sogo.golf.msl.shared.utils.DateUtils
+import com.sogo.golf.msl.analytics.AnalyticsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -65,6 +66,7 @@ class PlayRoundViewModel @Inject constructor(
     private val gameDataTimestampPreferences: GameDataTimestampPreferences,
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
     private val updatePickupUseCase: UpdatePickupUseCase,
+    private val analyticsManager: AnalyticsManager
 ) : ViewModel() {
 
     private val _deleteMarkerEnabled = MutableStateFlow(false)
@@ -81,6 +83,9 @@ class PlayRoundViewModel @Inject constructor(
 
     private val _abandonError = MutableStateFlow<String?>(null)
     val abandonError: StateFlow<String?> = _abandonError.asStateFlow()
+
+    // Store partner golflink number for analytics tracking
+    private var removedPartnerGolfLinkNumber: String? = null
 
     // 🔧 NEW: Debug message state
     private val _debugMessage = MutableStateFlow("")
@@ -320,6 +325,9 @@ class PlayRoundViewModel @Inject constructor(
             _isRemovingMarker.value = true
             _markerError.value = null
 
+            // Store the partner golflink number for tracking after successful removal
+            removedPartnerGolfLinkNumber = partnerGolfLinkNumber
+
             android.util.Log.d("PlayRoundVM", "Step 1: Removing marker...")
             when (val markerResult = removeMarkerUseCase(partnerGolfLinkNumber)) {
                 is NetworkResult.Success -> {
@@ -340,6 +348,9 @@ class PlayRoundViewModel @Inject constructor(
                                 
                                 _isRemovingMarker.value = false
                                 android.util.Log.d("PlayRoundVM", "✅ Complete flow successful - navigating back")
+                                
+                                // Track the round reset marker event after successful removal
+                                trackRoundResetMarker()
 
                                 navController.popBackStack()
                             }
@@ -1055,6 +1066,22 @@ class PlayRoundViewModel @Inject constructor(
                 
                 android.util.Log.d("PlayRoundVM", "Pickup button clicked - updating local state immediately")
                 
+                // Check current pickup state before updating to track the new state
+                val holeIndex = currentHole - (localGame.value?.startingHoleNumber ?: 1)
+                val currentPickupState = if (isMainGolfer) {
+                    if (holeIndex >= 0 && holeIndex < round.holeScores.size) {
+                        round.holeScores[holeIndex].isBallPickedUp ?: false
+                    } else false
+                } else {
+                    if (round.playingPartnerRound != null && holeIndex >= 0 && holeIndex < round.playingPartnerRound.holeScores.size) {
+                        round.playingPartnerRound.holeScores[holeIndex].isBallPickedUp ?: false
+                    } else false
+                }
+                val newPickupState = !currentPickupState
+                
+                // Track the pickup tap event with the new state
+                trackPickupTapped(isMainGolfer, newPickupState)
+                
                 // Update pickup state locally first (local-first approach)
                 updatePickupUseCase(
                     round = round,
@@ -1109,5 +1136,70 @@ class PlayRoundViewModel @Inject constructor(
         val maxHole = holeNumbers.lastOrNull() ?: getMaxHoleNumber(game)
         
         return minHole..maxHole
+    }
+
+    fun trackRoundResetMarker() {
+        val eventProperties = mutableMapOf<String, Any>()
+        
+        // Add the golfer whose marker was removed (stored before removal)
+        removedPartnerGolfLinkNumber?.let { partnerNo ->
+            eventProperties["removed_marker"] = partnerNo
+        }
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_ROUND_RESET_MARKER, eventProperties)
+    }
+
+    fun trackScorecardViewed() {
+        val eventProperties = mutableMapOf<String, Any>()
+        
+        // Add main golfer details
+        currentGolfer.value?.let { golfer ->
+            eventProperties["golferGLNumber"] = golfer.golfLinkNo ?: ""
+            eventProperties["golfer_name"] = "${golfer.firstName ?: ""} ${golfer.surname ?: ""}".trim()
+        }
+        
+        // Add playing partner details
+        val partnerGolfLinkNumber = getPartnerMarkedByMe()
+        partnerGolfLinkNumber?.let { partnerNo ->
+            localGame.value?.playingPartners?.find { 
+                it.golfLinkNumber == partnerNo 
+            }?.let { partner ->
+                eventProperties["playing_partner_GLNumber"] = partnerNo
+                eventProperties["playing_partner_name"] = "${partner.firstName ?: ""} ${partner.lastName ?: ""}".trim()
+            }
+        }
+        
+        // Add current hole number
+        eventProperties["holeNumber"] = _currentHoleNumber.value
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_SCORECARD_VIEWED, eventProperties)
+    }
+
+    fun trackPickupTapped(isMainGolfer: Boolean, pickupState: Boolean) {
+        val eventProperties = mutableMapOf<String, Any>()
+        
+        if (isMainGolfer) {
+            // Main golfer details
+            currentGolfer.value?.let { golfer ->
+                eventProperties["golfer_name"] = "${golfer.firstName ?: ""} ${golfer.surname ?: ""}".trim()
+                eventProperties["golflinkNo"] = golfer.golfLinkNo ?: ""
+            }
+        } else {
+            // Playing partner details
+            val partnerGolfLinkNumber = getPartnerMarkedByMe()
+            partnerGolfLinkNumber?.let { partnerNo ->
+                localGame.value?.playingPartners?.find { 
+                    it.golfLinkNumber == partnerNo 
+                }?.let { partner ->
+                    eventProperties["golfer_name"] = "${partner.firstName ?: ""} ${partner.lastName ?: ""}".trim()
+                    eventProperties["golflinkNo"] = partnerNo
+                }
+            }
+        }
+        
+        eventProperties["pickup"] = pickupState
+        eventProperties["holeNumber"] = _currentHoleNumber.value
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_PICKUP_TAPPED, eventProperties)
     }
 }

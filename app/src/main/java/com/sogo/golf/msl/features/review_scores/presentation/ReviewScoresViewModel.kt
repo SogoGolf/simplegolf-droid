@@ -15,6 +15,7 @@ import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
+import com.sogo.golf.msl.analytics.AnalyticsManager
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -37,6 +38,7 @@ class ReviewScoresViewModel @AssistedInject constructor(
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
     private val holeStatePreferences: HoleStatePreferences,
     private val sogoMongoRepository: SogoMongoRepository,
+    private val analyticsManager: AnalyticsManager,
     @Assisted private val navController: NavController
 ) : ViewModel() {
 
@@ -114,6 +116,9 @@ class ReviewScoresViewModel @AssistedInject constructor(
         val currentSignatures = _playerSignatures.value.toMutableMap()
         currentSignatures[playerId] = signatureBase64
         _playerSignatures.value = currentSignatures
+        
+        // Track signature captured event
+        trackSignatureCaptured(playerId)
     }
 
     fun clearPlayerSignature(playerId: String) {
@@ -178,34 +183,8 @@ class ReviewScoresViewModel @AssistedInject constructor(
                             
                             android.util.Log.d(TAG, "Round submitted successfully: ${currentRound.id}")
                             
-                            // Perform immediate cleanup operations (but not navigation)
-                            viewModelScope.launch {
-                                try {
-                                    android.util.Log.d(TAG, "Starting post-submission cleanup")
-                                    
-                                    // Update MongoDB round with isSubmitted = true using minimal payload
-                                    android.util.Log.d(TAG, "Updating MongoDB round submission status to true")
-                                    when (val mongoResult = sogoMongoRepository.updateRoundSubmissionStatus(currentRound.id, true)) {
-                                        is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
-                                            android.util.Log.d(TAG, "✅ Successfully updated MongoDB round submission status")
-                                        }
-                                        is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
-                                            android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round submission status: ${mongoResult.error.toUserMessage()}")
-                                        }
-                                        is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
-                                            android.util.Log.d(TAG, "MongoDB round submission status update in progress...")
-                                        }
-                                    }
-                                    
-                                    holeStatePreferences.clearCurrentHole(currentRound.id)
-                                    
-                                    resetStaleDataUseCase()
-                                    
-                                    android.util.Log.d(TAG, "Post-submission cleanup completed - waiting for user to dismiss dialog")
-                                } catch (e: Exception) {
-                                    android.util.Log.e(TAG, "Error during post-submission cleanup", e)
-                                }
-                            }
+                            // Track round submission
+                            trackRoundSubmitted(currentRound)
                         }
                         is Resource.Error -> {
                             _roundSubmitState.value = _roundSubmitState.value.copy(
@@ -344,6 +323,95 @@ class ReviewScoresViewModel @AssistedInject constructor(
         )
         _playerSignatures.value = emptyMap()
         _roundSubmitState.value = RoundSubmitState()
+    }
+
+    private fun trackSignatureCaptured(playerId: String) {
+        val currentRound = _uiState.value.round ?: return
+        val eventProperties = mutableMapOf<String, Any>()
+        
+        // Determine if this is main golfer or playing partner based on playerId
+        val isMainGolfer = playerId == currentRound.golferId
+        val isPlayingPartner = playerId == currentRound.playingPartnerRound?.golferId
+        
+        when {
+            isMainGolfer -> {
+                // Main golfer signature
+                currentRound.golferFirstName?.let { firstName ->
+                    currentRound.golferLastName?.let { lastName ->
+                        eventProperties["golfer_name"] = "$firstName $lastName".trim()
+                    }
+                }
+                currentRound.golferGLNumber?.let { glNumber ->
+                    eventProperties["golfer_gl_number"] = glNumber
+                }
+                eventProperties["golfer_type"] = "user"
+            }
+            isPlayingPartner -> {
+                // Playing partner signature
+                currentRound.playingPartnerRound?.golferFirstName?.let { firstName ->
+                    currentRound.playingPartnerRound?.golferLastName?.let { lastName ->
+                        eventProperties["golfer_name"] = "$firstName $lastName".trim()
+                    }
+                }
+                currentRound.playingPartnerRound?.golferGLNumber?.let { glNumber ->
+                    eventProperties["golfer_gl_number"] = glNumber
+                }
+                eventProperties["golfer_type"] = "partner"
+            }
+        }
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_SIGNATURE_CAPTURED, eventProperties)
+    }
+
+    private fun trackRoundSubmitted(round: Round) {
+        val eventProperties = mutableMapOf<String, Any>()
+        
+        // Add playing partner information if available
+        round.playingPartnerRound?.let { partnerRound ->
+            partnerRound.golferFirstName?.let { firstName ->
+                partnerRound.golferLastName?.let { lastName ->
+                    eventProperties["playing_partner_name"] = "$firstName $lastName".trim()
+                }
+            }
+        }
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_ROUND_SUBMITTED, eventProperties)
+    }
+
+    fun performPostSubmissionCleanup() {
+        viewModelScope.launch {
+            try {
+                val currentRound = _uiState.value.round
+                if (currentRound == null) {
+                    android.util.Log.w(TAG, "No round available for cleanup")
+                    return@launch
+                }
+                
+                android.util.Log.d(TAG, "Starting post-submission cleanup after user dismissed dialog")
+                
+                // Update MongoDB round with isSubmitted = true using minimal payload
+                android.util.Log.d(TAG, "Updating MongoDB round submission status to true")
+                when (val mongoResult = sogoMongoRepository.updateRoundSubmissionStatus(currentRound.id, true)) {
+                    is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
+                        android.util.Log.d(TAG, "✅ Successfully updated MongoDB round submission status")
+                    }
+                    is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
+                        android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round submission status: ${mongoResult.error.toUserMessage()}")
+                    }
+                    is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
+                        android.util.Log.d(TAG, "MongoDB round submission status update in progress...")
+                    }
+                }
+                
+                holeStatePreferences.clearCurrentHole(currentRound.id)
+                
+                resetStaleDataUseCase()
+                
+                android.util.Log.d(TAG, "Post-submission cleanup completed")
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "Error during post-submission cleanup", e)
+            }
+        }
     }
 
     @AssistedFactory

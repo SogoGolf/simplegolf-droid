@@ -2,6 +2,7 @@ package com.sogo.golf.msl.shared_components.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sogo.golf.msl.analytics.AnalyticsManager
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -12,7 +13,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DrawerViewModel @Inject constructor(
-    private val getMslGolferUseCase: GetMslGolferUseCase
+    private val getMslGolferUseCase: GetMslGolferUseCase,
+    private val analyticsManager: AnalyticsManager
 ) : ViewModel() {
 
     val currentGolfer = getMslGolferUseCase()
@@ -29,6 +31,13 @@ class DrawerViewModel @Inject constructor(
                 android.util.Log.d("DrawerViewModel", "Golfer updated: ${golfer?.firstName} ${golfer?.surname}")
             }
         }
+    }
+
+    fun trackSideMenuOpened() {
+        val eventProperties = mapOf(
+            "timestamp" to System.currentTimeMillis()
+        )
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_OPEN_SIDE_MENU, eventProperties)
     }
 }
 

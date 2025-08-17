@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -65,6 +66,11 @@ fun PlayRoundScreen(
         // Collect the state data needed for the scorecard
         val localCompetition by playRoundViewModel.localCompetition.collectAsState()
         val currentRound by playRoundViewModel.currentRound.collectAsState()
+        
+        // Track scorecard viewed event when switching to landscape
+        LaunchedEffect(isLandscape) {
+            playRoundViewModel.trackScorecardViewed()
+        }
         
         // Show scorecard in landscape
         ScorecardScreen(

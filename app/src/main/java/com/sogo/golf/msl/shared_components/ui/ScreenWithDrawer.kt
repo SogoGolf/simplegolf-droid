@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.features.debug.presentation.DebugScreen
@@ -34,7 +35,8 @@ fun ScreenWithDrawer(
     navController: NavController,
     buttonColor: Color? = mslBlack,
     topBar: @Composable () -> Unit = {}, // Optional custom top bar
-    content: @Composable () -> Unit,
+    drawerViewModel: DrawerViewModel = hiltViewModel(),
+    content: @Composable () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -71,6 +73,7 @@ fun ScreenWithDrawer(
                     onClick = {
                         scope.launch {
                             if (drawerState.isClosed) {
+                                drawerViewModel.trackSideMenuOpened()
                                 drawerState.open()
                             } else {
                                 drawerState.close()

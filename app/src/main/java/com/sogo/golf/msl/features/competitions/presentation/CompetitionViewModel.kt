@@ -15,6 +15,7 @@ import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.revenuecat.purchases.models.StoreTransaction
 import android.util.Log
+import com.sogo.golf.msl.analytics.AnalyticsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -42,7 +43,8 @@ class CompetitionViewModel @Inject constructor(
     private val getMslClubAndTenantIdsUseCase: com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase,
     private val updateTokenBalanceUseCase: UpdateTokenBalanceUseCase,
     private val createTransactionUseCase: CreateTransactionUseCase,
-    private val includeRoundPreferences: IncludeRoundPreferences
+    private val includeRoundPreferences: IncludeRoundPreferences,
+    private val analyticsManager: AnalyticsManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompetitionUiState())
@@ -368,6 +370,10 @@ class CompetitionViewModel @Inject constructor(
     // ✅ NEW: Update include round state
     fun setIncludeRound(include: Boolean) {
         _includeRound.value = include
+        
+        // Track the toggle event
+        trackIncludeRoundToggled(include)
+        
         viewModelScope.launch {
             includeRoundPreferences.setIncludeRound(include)
             // Update token cost using calculated fee instead of stored preference
@@ -509,5 +515,29 @@ class CompetitionViewModel @Inject constructor(
         )
 
         setPurchaseTokensState(isInProgress = false)
+    }
+
+    fun trackCompetitionsViewed() {
+        val eventProperties = mutableMapOf<String, Any>()
+        
+        // Get competition names from game data (cleaner than competition.players)
+        localGame.value?.competitions?.let { competitions ->
+            if (competitions.isNotEmpty()) {
+                eventProperties["competition_names"] = competitions.map { it.name }
+                // Also include the main competition name separately for easier filtering
+                competitions.firstOrNull()?.let { mainComp ->
+                    eventProperties["main_competition_name"] = mainComp.name
+                }
+            }
+        }
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_COMPETITIONS_VIEWED, eventProperties)
+    }
+
+    fun trackIncludeRoundToggled(includeRound: Boolean) {
+        val eventProperties = mutableMapOf<String, Any>()
+        eventProperties["include_round"] = includeRound
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_INCLUDE_ROUND_TOGGLED, eventProperties)
     }
 }

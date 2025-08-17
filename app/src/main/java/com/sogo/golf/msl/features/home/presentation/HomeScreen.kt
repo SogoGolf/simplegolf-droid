@@ -392,6 +392,11 @@ fun HomeScreen(
             @OptIn(ExperimentalMaterial3Api::class)
             currentGolfer?.let { golfer ->
                 if (showGolferDataConfirmationSheet) {
+                    // Track when the confirmation sheet is displayed
+                    LaunchedEffect(showGolferDataConfirmationSheet) {
+                        homeViewModel.trackConfirmGolferDataDisplayed(golfer, sogoGolfer)
+                    }
+                    
                     val bottomSheetState = rememberModalBottomSheetState(
                         skipPartiallyExpanded = true
                     )

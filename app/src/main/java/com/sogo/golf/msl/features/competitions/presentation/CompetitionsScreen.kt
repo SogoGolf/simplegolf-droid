@@ -105,6 +105,13 @@ fun CompetitionsScreen(
     LaunchedEffect(Unit) {
         competitionViewModel.triggerRefresh()
     }
+    
+    // Track competitions viewed only when game data is loaded
+    LaunchedEffect(localGame) {
+        localGame?.let {
+            competitionViewModel.trackCompetitionsViewed()
+        }
+    }
 
     ScreenWithDrawer(
         navController = navController,
@@ -156,27 +163,47 @@ fun CompetitionsScreen(
                             )
                         }
                     }
-                        game.competitions.isEmpty() -> {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxSize()
-//                                    .background(Color.Red)
-                            ) {
-                                item {
-                                    Box(
-                                        modifier = Modifier.fillParentMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = "No Competitions Registrations or Entries found, try registering in a competition or printing a scorecard\n\n(Pull down to refresh)",
-                                            fontSize = MaterialTheme.typography.bodyLarge.fontSize,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.padding(horizontal = 40.dp)
-                                        )
-                                    }
+                    !game.errorMessage.isNullOrBlank() -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            item {
+                                Box(
+                                    modifier = Modifier.fillParentMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = game.errorMessage,
+                                        fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 40.dp),
+                                        color = Color.Red
+                                    )
                                 }
                             }
                         }
+                    }
+                    game.competitions.isEmpty() -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+//                                    .background(Color.Red)
+                        ) {
+                            item {
+                                Box(
+                                    modifier = Modifier.fillParentMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "No Competitions Registrations or Entries found, try registering in a competition or printing a scorecard\n\n(Pull down to refresh)",
+                                        fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 40.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                     else -> {
                         CompetitionsListSection(
                             game = game
@@ -191,6 +218,7 @@ fun CompetitionsScreen(
                 golfer = currentGolfer,
                 sogoGolfer = sogoGolfer,
                 tokenCost = tokenCost,
+                game = localGame,
                 onIncludeRoundChanged = { newValue ->
                     competitionViewModel.setIncludeRound(newValue)
                 },
@@ -323,6 +351,7 @@ fun FooterContent(
     golfer: com.sogo.golf.msl.domain.model.msl.MslGolfer?,
     sogoGolfer: SogoGolfer?,
     tokenCost: Double,
+    game: com.sogo.golf.msl.domain.model.msl.MslGame?,
     onIncludeRoundChanged: (Boolean) -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -370,15 +399,18 @@ fun FooterContent(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Next button - enable only if competitions are available
-        val hasCompetitions = true //localGame?.competitions?.isNotEmpty() == true
+        // Next button - disable if there's an error message or no competitions
+        val hasError = !game?.errorMessage.isNullOrBlank()
+        val hasCompetitions = game?.competitions?.isNotEmpty() == true
+        val canProceed = !hasError && hasCompetitions
+        
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(60.dp)
-                .background(if (hasCompetitions) mslYellow else Color.LightGray)
-                .clickable(enabled = hasCompetitions) {
-                    if (hasCompetitions) {
+                .background(if (canProceed) mslYellow else Color.LightGray)
+                .clickable(enabled = canProceed) {
+                    if (canProceed) {
                         onNextClick()
                     }
                 },
@@ -386,7 +418,7 @@ fun FooterContent(
         ) {
             Text(
                 text = "Next",
-                color = Color.White,
+                color = if (canProceed) Color.White else Color.DarkGray,
                 fontWeight = FontWeight.Bold,
                 fontSize = 28.sp
             )

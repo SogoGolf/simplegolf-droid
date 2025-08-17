@@ -47,6 +47,7 @@ import com.sogo.golf.msl.domain.usecase.transaction.CheckExistingTransactionUseC
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
+import com.sogo.golf.msl.analytics.AnalyticsManager
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -69,7 +70,8 @@ class PlayingPartnerViewModel @Inject constructor(
     private val checkExistingTransactionUseCase: CheckExistingTransactionUseCase,
     private val createTransactionUseCase: CreateTransactionUseCase,
     private val includeRoundPreferences: IncludeRoundPreferences,
-    private val updateTokenBalanceUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
+    private val updateTokenBalanceUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase,
+    private val analyticsManager: AnalyticsManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -241,10 +243,16 @@ class PlayingPartnerViewModel @Inject constructor(
 
     // Method to select a playing partner
     fun selectPartner(partner: MslPlayingPartner) {
-        _selectedPartner.value = if (_selectedPartner.value == partner) {
-            null // Deselect if same partner is tapped again
+        val currentSelection = _selectedPartner.value
+        
+        _selectedPartner.value = if (currentSelection == partner) {
+            // Deselect if same partner is tapped again
+            trackPlayingPartnerDeselected(partner)
+            null
         } else {
-            partner // Select the new partner
+            // Select the new partner
+            trackPlayingPartnerSelected(partner)
+            partner
         }
     }
 
@@ -382,6 +390,9 @@ class PlayingPartnerViewModel @Inject constructor(
             )
             return
         }
+        
+        // Track round started event
+        trackRoundStarted(selectedPartner)
 
         viewModelScope.launch {
             try {
@@ -761,6 +772,58 @@ class PlayingPartnerViewModel @Inject constructor(
             updateDate = null,
             deleteDate = null
         )
+    }
+
+    fun trackPlayingPartnerScreenViewed() {
+        val eventProperties = mutableMapOf<String, Any>()
+        
+        // Get playing partners data from local game
+        localGame.value?.playingPartners?.let { partners ->
+            if (partners.isNotEmpty()) {
+                val partnersData = partners.map { partner ->
+                    mapOf(
+                        "firstName" to (partner.firstName ?: ""),
+                        "lastName" to (partner.lastName ?: ""),
+                        "golfLinkNumber" to (partner.golfLinkNumber ?: ""),
+                        "markedByGolfLinkNumber" to (partner.markedByGolfLinkNumber ?: "")
+                    )
+                }
+                eventProperties["playing_partners"] = partnersData
+                eventProperties["partner_count"] = partners.size
+            } else {
+                eventProperties["partner_count"] = 0
+            }
+        } ?: run {
+            eventProperties["partner_count"] = 0
+        }
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_PLAYING_PARTNER_SCREEN_VIEWED, eventProperties)
+    }
+
+    private fun trackPlayingPartnerSelected(partner: MslPlayingPartner) {
+        val eventProperties = mutableMapOf<String, Any>()
+        eventProperties["partner_name"] = "${partner.firstName ?: ""} ${partner.lastName ?: ""}".trim()
+        partner.golfLinkNumber?.let { eventProperties["golf_link_number"] = it }
+        partner.markedByGolfLinkNumber?.let { eventProperties["marked_by_golf_link_number"] = it }
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_PLAYING_PARTNER_SELECTED, eventProperties)
+    }
+
+    private fun trackPlayingPartnerDeselected(partner: MslPlayingPartner) {
+        val eventProperties = mutableMapOf<String, Any>()
+        eventProperties["partner_name"] = "${partner.firstName ?: ""} ${partner.lastName ?: ""}".trim()
+        partner.golfLinkNumber?.let { eventProperties["golf_link_number"] = it }
+        partner.markedByGolfLinkNumber?.let { eventProperties["marked_by_golf_link_number"] = it }
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_PLAYING_PARTNER_DESELECTED, eventProperties)
+    }
+
+    private fun trackRoundStarted(selectedPartner: MslPlayingPartner) {
+        val eventProperties = mutableMapOf<String, Any>()
+        eventProperties["selected_partner_name"] = "${selectedPartner.firstName ?: ""} ${selectedPartner.lastName ?: ""}".trim()
+        selectedPartner.golfLinkNumber?.let { eventProperties["selected_partner_golf_link_number"] = it }
+        
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_ROUND_STARTED, eventProperties)
     }
 
     fun clearMessages() {

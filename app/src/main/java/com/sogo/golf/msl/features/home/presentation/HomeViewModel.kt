@@ -25,6 +25,7 @@ import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateGolferUseCase
 import com.sogo.golf.msl.features.sogo_home.presentation.state.CountryDataState
 import com.sogo.golf.msl.features.sogo_home.presentation.state.SogoGolferDataState
+import com.sogo.golf.msl.analytics.AnalyticsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -52,6 +53,7 @@ class HomeViewModel @Inject constructor(
         private val getSogoGolferUseCase: GetSogoGolferUseCase,
         private val createGolferUseCase: CreateGolferUseCase,
         private val updateGolferUseCase: UpdateGolferUseCase,
+        private val analyticsManager: AnalyticsManager,
     ) : ViewModel() {
 
         companion object {
@@ -545,6 +547,51 @@ class HomeViewModel @Inject constructor(
             }
         }
 
+        fun trackConfirmGolferDataDisplayed(
+            mslGolfer: com.sogo.golf.msl.domain.model.msl.MslGolfer,
+            sogoGolfer: SogoGolfer?
+        ) {
+            val eventProperties = mutableMapOf<String, Any>()
+            
+            // MSL golfer data (from MSL API)
+            mslGolfer.golfLinkNo.let { eventProperties["msl_golflink_number"] = it }
+            mslGolfer.firstName.let { eventProperties["msl_first_name"] = it }
+            mslGolfer.surname.let { eventProperties["msl_surname"] = it }
+            mslGolfer.email?.let { eventProperties["msl_email"] = it }
+            mslGolfer.state?.let { eventProperties["msl_state"] = it }
+            mslGolfer.postCode?.let { eventProperties["msl_postcode"] = it }
+            mslGolfer.mobileNo?.let { eventProperties["msl_mobile"] = it }
+            mslGolfer.gender?.let { eventProperties["msl_gender"] = it }
+            mslGolfer.dateOfBirth.let { eventProperties["msl_date_of_birth"] = it }
+            
+            // SOGO golfer data (existing data if any)
+            sogoGolfer?.let { sogo ->
+                sogo.firstName.let { eventProperties["sogo_first_name"] = it }
+                sogo.lastName.let { eventProperties["sogo_last_name"] = it }
+                sogo.email?.let { eventProperties["sogo_email"] = it }
+                sogo.state?.shortName?.let { eventProperties["sogo_state"] = it }
+                sogo.postCode?.let { eventProperties["sogo_postcode"] = it }
+                sogo.mobileNo?.let { eventProperties["sogo_mobile"] = it }
+                sogo.gender?.let { eventProperties["sogo_gender"] = it }
+                sogo.dateOfBirth?.let { eventProperties["sogo_date_of_birth"] = it }
+                eventProperties["has_existing_sogo_data"] = true
+            } ?: run {
+                eventProperties["has_existing_sogo_data"] = false
+            }
+            
+            
+            analyticsManager.trackEvent(AnalyticsManager.EVENT_CONFIRM_GOLFER_DATA_DISPLAYED, eventProperties)
+            Log.d(TAG, "Tracked confirm_golfer_data_displayed event")
+        }
+
+        fun trackConfirmGolferDataSuccess(golferData: Map<String, Any>) {
+            val eventProperties = mutableMapOf<String, Any>()
+            eventProperties.putAll(golferData)
+            
+            analyticsManager.trackEvent(AnalyticsManager.EVENT_CONFIRM_GOLFER_DATA_SUCCESS, eventProperties)
+            Log.d(TAG, "Tracked confirm_golfer_data_success event")
+        }
+
         // Example method showing how to use game data
         fun getGameSummary(): String {
             val game = localGame.value
@@ -733,6 +780,20 @@ class HomeViewModel @Inject constructor(
                 when (val result = updateGolferUseCase(golfLinkNo, updateRequest)) {
                     is NetworkResult.Success -> {
                         Log.d(TAG, "✅ Golfer updated successfully")
+                        
+                        // Track success event
+                        trackConfirmGolferDataSuccess(mapOf(
+                            "action" to "update",
+                            "golflink_number" to golfLinkNo,
+                            "first_name" to firstName,
+                            "last_name" to lastName,
+                            "email" to currentEmail,
+                            "state" to state,
+                            "postcode" to currentPostcode,
+                            "mobile" to currentMobile,
+                            "gender" to sogoGender
+                        ))
+                        
                         true
                     }
                     is NetworkResult.Error -> {
@@ -782,6 +843,20 @@ class HomeViewModel @Inject constructor(
                         when (val fetchResult = fetchAndSaveSogoGolferUseCase(golfLinkNo)) {
                             is NetworkResult.Success -> {
                                 Log.d(TAG, "✅ Newly created golfer fetched and saved locally")
+                                
+                                // Track success event
+                                trackConfirmGolferDataSuccess(mapOf(
+                                    "action" to "create",
+                                    "golflink_number" to golfLinkNo,
+                                    "first_name" to firstName,
+                                    "last_name" to lastName,
+                                    "email" to currentEmail,
+                                    "state" to state,
+                                    "postcode" to currentPostcode,
+                                    "mobile" to currentMobile,
+                                    "gender" to sogoGender
+                                ))
+                                
                                 true
                             }
                             is NetworkResult.Error -> {

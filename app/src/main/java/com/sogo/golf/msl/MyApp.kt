@@ -16,6 +16,7 @@ import kotlinx.coroutines.tasks.await
 
 @HiltAndroidApp
 class MyApp : Application() {
+    
     override fun onCreate() {
         super.onCreate()
         

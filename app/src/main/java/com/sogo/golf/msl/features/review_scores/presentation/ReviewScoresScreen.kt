@@ -402,8 +402,11 @@ private fun ReviewScoresPortrait(
         SubmitRoundSuccessDialog(
             playingPartnerName = uiState.round?.playingPartnerRound?.golferFirstName ?: "",
             onDone = {
-                android.util.Log.d("ReviewScores", "Done button clicked - navigating to home")
+                android.util.Log.d("ReviewScores", "Done button clicked - performing cleanup and navigating to home")
                 showSuccessDialog = false
+                
+                // Perform post-submission cleanup operations
+                viewModel.performPostSubmissionCleanup()
                 
                 // Bulletproof navigation with multiple fallback strategies
                 try {

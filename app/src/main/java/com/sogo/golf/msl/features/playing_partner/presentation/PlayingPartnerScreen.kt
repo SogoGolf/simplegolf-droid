@@ -71,6 +71,13 @@ fun PlayingPartnerScreen(
         window.statusBarColor = Color.White.toArgb()
         windowInsetsController.isAppearanceLightStatusBars = true
     }
+    
+    // Track playing partner screen viewed only when game data is loaded
+    LaunchedEffect(localGame) {
+        localGame?.let {
+            playingPartnerViewModel.trackPlayingPartnerScreenViewed()
+        }
+    }
 
     ScreenWithDrawer(
         navController = navController,
