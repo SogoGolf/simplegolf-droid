@@ -186,6 +186,9 @@ dependencies {
     //Amplitude analytics
     implementation(libs.analytics.android)
 
+    //Sentry error logs
+    implementation(libs.sentry.android.v8180)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
