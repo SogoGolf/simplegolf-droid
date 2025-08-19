@@ -30,14 +30,15 @@ fun SogoTopicButton(
     imageResId: Int? = null,
     icon: ImageVector? = null,
     title: String = "ABOUT SOGO GOLF & PRIZES",
-    subTitle: String? = null
+    subTitle: String? = null,
+    enabled: Boolean = true
 ) {
     Surface(
         modifier = Modifier
             .width(180.dp)
             .height(90.dp),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.65f),
+        color = if (enabled) Color.White.copy(alpha = 0.65f) else Color.Gray.copy(alpha = 0.4f),
         onClick = onClick,
     ) {
         Column(
@@ -45,18 +46,20 @@ fun SogoTopicButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxSize()
         ) {
+            val contentColor = if (enabled) Color.DarkGray else Color.Gray.copy(alpha = 1f)
+            
             if (imageResId != null) {
                 Icon(
                     painter = painterResource(id = imageResId),
                     contentDescription = null,
-                    tint = Color.DarkGray,
+                    tint = contentColor,
                     modifier = Modifier.size(24.dp)
                 )
             } else if (icon != null) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = Color.DarkGray,
+                    tint = contentColor,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -65,7 +68,7 @@ fun SogoTopicButton(
 
             Text(
                 text = title,
-                color = Color.DarkGray,
+                color = contentColor,
                 fontWeight = FontWeight.Bold,
                 fontSize = MaterialTheme.typography.bodyMedium.fontSize,
                 textAlign = TextAlign.Center
@@ -74,7 +77,7 @@ fun SogoTopicButton(
             if (!subTitle.isNullOrEmpty()) {
                 Text(
                     text = subTitle,
-                    color = Color.DarkGray,
+                    color = contentColor,
                     fontWeight = FontWeight.Medium,
                     fontSize = MaterialTheme.typography.bodySmall.fontSize,
                 )

@@ -222,7 +222,9 @@ fun HomeScreen(
                             )
                         }
                     },
-                    enabled = !updateState.isCheckingForUpdate && !homeUiState.isLoading && homeViewModel.hasRequiredData(), // Disable while checking or loading initial data
+                    enabled = (!updateState.isCheckingForUpdate && !homeUiState.isLoading && homeViewModel.hasRequiredData()).also { enabled ->
+                        Log.d("HomeScreen", "🔴 BUTTON STATE: enabled=$enabled, currentGolfer.golfLinkNo='${currentGolfer?.golfLinkNo}', localGame.golflinkNumber='${localGame?.golflinkNumber}'")
+                    }, // Disable while checking or loading initial data
                     modifier = Modifier
                         .padding(horizontal = screenWidth * 0.15f)
                         .height(80.dp)
@@ -271,6 +273,20 @@ fun HomeScreen(
                             fontSize = MaterialTheme.typography.bodyLarge.fontSize
                         )
                     }
+                }
+
+                // Show message when button is disabled due to missing golflink number  
+                if (!homeUiState.isLoading && !updateState.isCheckingForUpdate && 
+                    currentGolfer?.golfLinkNo.isNullOrBlank() == true) {
+                    Text(
+                        text = "Your GolfLink number was not provided to the app. Please contact your club to ensure this is set up on your profile.",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp, vertical = 18.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

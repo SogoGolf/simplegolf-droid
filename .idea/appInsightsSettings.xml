@@ -22,10 +22,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.sogo.golf.msl" />
+                  <option name="mobileSdkAppId" value="1:719518718236:android:8905b70bc77ccc8b1602d9" />
+                  <option name="projectId" value="sogo-golf" />
+                  <option name="projectNumber" value="719518718236" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

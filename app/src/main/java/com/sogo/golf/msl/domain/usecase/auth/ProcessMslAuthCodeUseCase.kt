@@ -92,6 +92,19 @@ class ProcessMslAuthCodeUseCase @Inject constructor(
                             is NetworkResult.Success -> {
                                 val golfer = golferResult.data
                                 Log.d(TAG, "Successfully retrieved golfer: ${golfer.firstName} ${golfer.surname}")
+                                
+                                // 🔍 COMPREHENSIVE RAW GOLFER DATA LOGGING
+                                Log.d(TAG, "=== RAW MSL GOLFER DATA ===")
+                                Log.d(TAG, "firstName: '${golfer.firstName}'")
+                                Log.d(TAG, "surname: '${golfer.surname}'") 
+                                Log.d(TAG, "golfLinkNo: '${golfer.golfLinkNo}'")
+                                Log.d(TAG, "email: '${golfer.email}'")
+                                Log.d(TAG, "mobileNo: '${golfer.mobileNo}'")
+                                Log.d(TAG, "dateOfBirth: '${golfer.dateOfBirth}'")
+                                Log.d(TAG, "gender: '${golfer.gender}'")
+                                Log.d(TAG, "state: '${golfer.state}'")
+                                Log.d(TAG, "postCode: '${golfer.postCode}'")
+                                Log.d(TAG, "=== END RAW MSL GOLFER DATA ===")
 
                                 // ✅ SAVE GOLFER TO DATABASE FOR GLOBAL ACCESS
                                 Log.d(TAG, "Saving golfer to database...")

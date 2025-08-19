@@ -159,18 +159,17 @@ fun SogoGolfHomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                currentGolfer?.let { golfer ->
-                    sogoGolfer?.let { sogo ->
-                        SogoTopicButton(
-                            title = "PURCHASE TOKENS",
-                            subTitle = "Balance: ${sogo.tokenBalance} Tokens",
-                            imageResId = R.drawable.token_icon,
-                            onClick = {
-                                viewModel.setPurchaseTokensState(isInProgress = true)
-                            }
-                        )
+                SogoTopicButton(
+                    title = "PURCHASE TOKENS",
+                    subTitle = sogoGolfer?.let { "Balance: ${it.tokenBalance} Tokens" } ?: "--",
+                    imageResId = R.drawable.token_icon,
+                    enabled = currentGolfer != null && sogoGolfer != null,
+                    onClick = {
+                        if (currentGolfer != null && sogoGolfer != null) {
+                            viewModel.setPurchaseTokensState(isInProgress = true)
+                        }
                     }
-                }
+                )
                 Spacer(modifier = Modifier.width(16.dp))
                 SogoTopicButton(
                     title = "SOGO T&C",

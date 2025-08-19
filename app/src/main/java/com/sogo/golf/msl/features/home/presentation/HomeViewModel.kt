@@ -156,11 +156,11 @@ class HomeViewModel @Inject constructor(
             }
         }
 
-        // NEW: Lightweight fetch for home screen - only SOGO golfer data needed for terms check
+        // NEW: Lightweight fetch for home screen - SOGO golfer data + fees needed for competitions
         private fun fetchSogoDataOnly() {
             viewModelScope.launch {
                 try {
-                    Log.d(TAG, "Starting to fetch SOGO golfer data only...")
+                    Log.d(TAG, "Starting to fetch SOGO golfer data and fees...")
 
                     // Set loading state
                     _uiState.value = _uiState.value.copy(
@@ -168,11 +168,26 @@ class HomeViewModel @Inject constructor(
                         errorMessage = null,
                         successMessage = null,
                         progressMessage = "Loading golfer data…",
-                        progressPercent = 50
+                        progressPercent = 25
                     )
 
-                    // Fetch SogoGolfer Data only
+                    // ✅ Fetch Fees Data first (needed for competitions)
+                    Log.d(TAG, "💰 Fetching SOGO fees data...")
+                    _uiState.value = _uiState.value.copy(progressMessage = "Downloading fees…", progressPercent = 50)
+                    when (val feesResult = fetchAndSaveFeesUseCase()) {
+                        is NetworkResult.Success -> {
+                            Log.d(TAG, "✅ SOGO Fees data fetched successfully: ${feesResult.data.size} fees")
+                        }
+                        is NetworkResult.Error -> {
+                            Log.e(TAG, "❌ Failed to fetch SOGO fees data: ${feesResult.error.toUserMessage()}")
+                            // Don't fail the whole process for fees
+                        }
+                        is NetworkResult.Loading -> { /* Already handled */ }
+                    }
+
+                    // Fetch SogoGolfer Data
                     Log.d(TAG, "👤 Fetching sogo golfer data...")
+                    _uiState.value = _uiState.value.copy(progressMessage = "Loading golfer data…", progressPercent = 75)
                     val golfLinkNo = currentGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
                     
                     if (golfLinkNo.isNullOrBlank()) {
@@ -640,22 +655,41 @@ class HomeViewModel @Inject constructor(
 
         // NEW: Method to check if we have all required data for home screen
         fun hasRequiredData(): Boolean {
-            // If we came from round submission, assume we have the data
-            if (cameFromRoundSubmission) {
-                Log.d(TAG, "Came from round submission - assuming data is available")
-                return true
-            }
-            
-            val hasGolfer = currentGolfer.value != null
+            val golfer = currentGolfer.value
+            val hasGolfer = golfer != null
+            val hasValidGolfLink = golfer?.golfLinkNo?.isNotBlank() == true  // Only check golfer's own golflink, not localGame
             val isLoading = _uiState.value.isLoading
 
-            Log.d(TAG, "Data status - Golfer: $hasGolfer, SogoFetchCompleted: $sogoFetchCompleted, SogoFetchError: $sogoFetchError, isLoading: $isLoading")
+            // 🔧 ALWAYS validate golflink number first - even if came from round submission
+            if (!hasValidGolfLink) {
+                Log.d(TAG, "🔧 No valid golflink number - button disabled regardless of other conditions")
+                Log.d(TAG, "GolfLink values - golfer.golfLinkNo: '${golfer?.golfLinkNo}', localGame.golflinkNumber: '${localGame.value?.golflinkNumber}' (localGame ignored for button enablement)")
+                return false
+            }
+
+            // If we came from round submission AND have valid golflink, assume data is available
+            if (cameFromRoundSubmission) {
+                Log.d(TAG, "Came from round submission with valid golflink - assuming data is available")
+                return true
+            }
+
+            // 🔧 RESET sogoFetchCompleted if we don't have a valid golflink number
+            // This prevents stale state from previous navigation where SOGO fetch succeeded
+            // but the golfer still doesn't have a valid golflink number
+            if (!hasValidGolfLink && sogoFetchCompleted) {
+                Log.d(TAG, "🔧 Resetting sogoFetchCompleted because golflink is invalid")
+                sogoFetchCompleted = false
+            }
+
+            Log.d(TAG, "Data status - Golfer: $hasGolfer, HasValidGolfLink: $hasValidGolfLink, SogoFetchCompleted: $sogoFetchCompleted, SogoFetchError: $sogoFetchError, isLoading: $isLoading")
+            Log.d(TAG, "GolfLink values - golfer.golfLinkNo: '${golfer?.golfLinkNo}', localGame.golflinkNumber: '${localGame.value?.golflinkNumber}' (localGame ignored for button enablement)")
             
             // Enable button only if:
             // 1. We have currentGolfer AND
-            // 2. SOGO fetch has completed successfully (regardless of whether golfer exists) AND  
-            // 3. We're not currently loading
-            return hasGolfer && sogoFetchCompleted && !isLoading
+            // 2. We have a valid golflink number in the golfer profile (NOT from localGame) AND
+            // 3. SOGO fetch has completed successfully (regardless of whether golfer exists) AND  
+            // 4. We're not currently loading
+            return hasGolfer && hasValidGolfLink && sogoFetchCompleted && !isLoading
         }
 
         // NEW: Method to get data status summary
