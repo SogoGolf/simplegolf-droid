@@ -141,18 +141,22 @@ else
     ${EDITOR:-nano} "$TEMP_RELEASE_NOTES"
 fi
 
-# Read the release notes from the temp file
+# Read the release notes from the temp file (keep raw content)
 RELEASE_NOTES_TEXT=$(cat "$TEMP_RELEASE_NOTES" | \
     grep -v "^Enter your release notes" | \
     grep -v "^(Delete these instructions" | \
-    sed '/^$/d' | \
-    sed 's/^/• /')
+    sed '/^$/d')
 
-# Clean up temp file
+# Save processed release notes to a file for Python to read
+RELEASE_NOTES_FILE=$(mktemp /tmp/release_notes_final_XXXXXX.txt)
+echo "$RELEASE_NOTES_TEXT" > "$RELEASE_NOTES_FILE"
+
+# Clean up original temp file
 rm -f "$TEMP_RELEASE_NOTES"
 
 if [ -z "$RELEASE_NOTES_TEXT" ]; then
     RELEASE_NOTES_TEXT="Bug fixes and performance improvements"
+    echo "$RELEASE_NOTES_TEXT" > "$RELEASE_NOTES_FILE"
 fi
 
 # Display the release notes for confirmation
@@ -223,8 +227,8 @@ echo "$RELEASE_NOTES_TEXT"
 echo ""
 
 # Upload to Google Play with release notes
-# Export release notes as environment variable to avoid shell escaping issues
-export RELEASE_NOTES_ENV="$RELEASE_NOTES_TEXT"
+# Export paths as environment variables
+export RELEASE_NOTES_FILE_PATH="$RELEASE_NOTES_FILE"
 export AAB_PATH_ENV="$AAB_PATH"
 
 python3 - <<'PYTHON_EOF'
@@ -239,7 +243,17 @@ SCOPES = ['https://www.googleapis.com/auth/androidpublisher']
 PACKAGE_NAME = 'com.sogo.golf.msl'
 AAB_FILE = os.environ['AAB_PATH_ENV']
 TRACK = 'beta'  # Open testing track
-RELEASE_NOTES = os.environ.get('RELEASE_NOTES_ENV', 'Bug fixes and performance improvements')
+
+# Read release notes from file
+try:
+    release_notes_path = os.environ['RELEASE_NOTES_FILE_PATH']
+    print(f"Reading release notes from: {release_notes_path}")
+    with open(release_notes_path, 'r') as f:
+        RELEASE_NOTES = f.read().strip()
+    print(f"Release notes loaded successfully ({len(RELEASE_NOTES)} characters)")
+except Exception as e:
+    print(f"Warning: Could not read release notes file: {e}")
+    RELEASE_NOTES = 'Bug fixes and performance improvements'
 
 try:
     print(f"Loading credentials from: {os.environ['PLAY_STORE_CREDENTIALS_FILE']}")
@@ -337,10 +351,18 @@ if [ $? -eq 0 ]; then
     echo "Release Notes:"
     echo "$RELEASE_NOTES_TEXT"
     echo "======================================="
+    
+    # Clean up the release notes temp file
+    rm -f "$RELEASE_NOTES_FILE"
 else
     echo -e "${RED}❌ Failed to upload to Play Store${NC}"
+    # Clean up the release notes temp file
+    rm -f "$RELEASE_NOTES_FILE"
     exit 1
 fi
+
+# Clean up the release notes temp file (in case we didn't hit the above)
+rm -f "$RELEASE_NOTES_FILE" 2>/dev/null || true
 
 echo -e "\n${GREEN}🎉 Release process completed successfully!${NC}"
 echo "Next steps:"
