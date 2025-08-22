@@ -9,6 +9,7 @@ import com.sogo.golf.msl.domain.model.msl.v2.HolePayload
 import com.sogo.golf.msl.domain.model.msl.v2.ScoresContainer
 import com.sogo.golf.msl.domain.model.msl.v2.ScoresPayload
 import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
+import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.round.GetRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.SubmitRoundUseCase
 import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
@@ -33,6 +34,7 @@ import kotlinx.coroutines.launch
 class ReviewScoresViewModel @AssistedInject constructor(
     private val getRoundUseCase: GetRoundUseCase,
     private val roundRepository: RoundLocalDbRepository,
+    private val competitionRepository: MslCompetitionLocalDbRepository,
     private val submitRoundUseCase: SubmitRoundUseCase,
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
@@ -58,6 +60,14 @@ class ReviewScoresViewModel @AssistedInject constructor(
     val roundSubmitState: StateFlow<RoundSubmitState> = _roundSubmitState.asStateFlow()
 
     val currentRound = _currentRoundId
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+    
+    // Get competition from local storage
+    val currentCompetition = competitionRepository.getCompetition()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

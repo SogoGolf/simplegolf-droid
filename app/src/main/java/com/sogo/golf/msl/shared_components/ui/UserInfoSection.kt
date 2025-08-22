@@ -99,7 +99,7 @@ fun UserInfoSection(
                 verticalArrangement = Arrangement.spacedBy((-5).dp)
             ) {
                 val dailyHcap = if (game?.startingHoleNumber != 0 && game?.startingHoleNumber != null) {
-                    "${game.dailyHandicap}"
+                    game.dailyHandicap?.toString() ?: "--"
                 } else {
                     "-"
                 }

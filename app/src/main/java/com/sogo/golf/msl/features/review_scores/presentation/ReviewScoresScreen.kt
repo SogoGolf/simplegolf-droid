@@ -44,6 +44,7 @@ fun ReviewScoresScreen(
             factory.create(navController)
         }
         val uiState by viewModel.uiState.collectAsState()
+        val currentCompetition by viewModel.currentCompetition.collectAsState()
         
         // Load the round data
         LaunchedEffect(roundId) {
@@ -54,7 +55,7 @@ fun ReviewScoresScreen(
         
         ScorecardScreen(
             round = uiState.round,
-            mslCompetition = null
+            mslCompetition = currentCompetition
         )
     } else {
         ReviewScoresPortrait(

@@ -16,7 +16,7 @@ data class MslPlayerDto(
     val slopeRating: Int,
     val scratchRating: Double,
     val gender: String?,
-    val holes: List<MslHoleDto>
+    val holes: List<MslHoleDto>?
 )
 
 fun MslPlayerDto.toDomainModel(): MslPlayer {
@@ -34,6 +34,6 @@ fun MslPlayerDto.toDomainModel(): MslPlayer {
         slopeRating = slopeRating,
         scratchRating = scratchRating,
         gender = gender,
-        holes = holes.map { it.toDomainModel() }
+        holes = holes?.map { it.toDomainModel() } ?: emptyList()
     )
 }
