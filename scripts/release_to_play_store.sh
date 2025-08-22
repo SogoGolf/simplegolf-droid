@@ -223,10 +223,11 @@ echo "$RELEASE_NOTES_TEXT"
 echo ""
 
 # Upload to Google Play with release notes
-# Escape release notes for Python (replace single quotes and backslashes)
-ESCAPED_RELEASE_NOTES=$(echo "$RELEASE_NOTES_TEXT" | sed "s/'/\\\\'/g" | sed 's/\\/\\\\/g')
+# Export release notes as environment variable to avoid shell escaping issues
+export RELEASE_NOTES_ENV="$RELEASE_NOTES_TEXT"
+export AAB_PATH_ENV="$AAB_PATH"
 
-python3 - <<EOF
+python3 - <<'PYTHON_EOF'
 import sys
 import os
 import json
@@ -236,9 +237,9 @@ from googleapiclient.http import MediaFileUpload
 
 SCOPES = ['https://www.googleapis.com/auth/androidpublisher']
 PACKAGE_NAME = 'com.sogo.golf.msl'
-AAB_FILE = '$AAB_PATH'
+AAB_FILE = os.environ['AAB_PATH_ENV']
 TRACK = 'beta'  # Open testing track
-RELEASE_NOTES = '''$ESCAPED_RELEASE_NOTES'''
+RELEASE_NOTES = os.environ.get('RELEASE_NOTES_ENV', 'Bug fixes and performance improvements')
 
 try:
     print(f"Loading credentials from: {os.environ['PLAY_STORE_CREDENTIALS_FILE']}")
@@ -320,7 +321,7 @@ except Exception as e:
     import traceback
     traceback.print_exc()
     sys.exit(1)
-EOF
+PYTHON_EOF
 
 if [ $? -eq 0 ]; then
     echo -e "\n${GREEN}✅ Successfully uploaded to Google Play Store Open Testing!${NC}"
