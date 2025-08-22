@@ -304,19 +304,37 @@ private fun Screen4Portrait(
             
             val partnerDailyHandicap = playingPartner?.dailyHandicap ?: 0
             
-            // Extract game data
-            val teeColor = localGameValue?.teeColourName ?: "Black"
+            // Extract tee colors from round data (each golfer has their own tee)
+            val mainGolferTeeColor = currentRoundValue?.teeColor?.capitalize() ?: localGameValue?.teeColourName ?: "Black"
+            val partnerTeeColor = currentRoundValue?.playingPartnerRound?.teeColor?.capitalize() ?: localGameValue?.teeColourName ?: "Black"
             
             // Extract competition data
             val competitionType = localCompetitionValue?.players?.firstOrNull()?.scoreType ?: "Stableford"
             
-            // Extract hole data for current hole
-            val currentHole = localCompetitionValue?.players?.firstOrNull()?.holes?.find { 
+            // Get hole data from the actual round data instead of competition
+            // Main golfer's hole data
+            val mainGolferHoleData = currentRoundValue?.holeScores?.find { 
                 it.holeNumber == currentHoleNumber 
             }
-            val par = currentHole?.par ?: 5
-            val distance = currentHole?.distance ?: 441
-            val strokeIndexes = currentHole?.strokeIndexes?.joinToString("/") ?: "1/22/40"
+            val mainGolferPar = mainGolferHoleData?.par ?: 0
+            val mainGolferDistance = mainGolferHoleData?.meters ?: 0
+            val mainGolferStrokeIndexes = listOfNotNull(
+                mainGolferHoleData?.index1?.takeIf { it > 0 },
+                mainGolferHoleData?.index2?.takeIf { it > 0 },
+                mainGolferHoleData?.index3?.takeIf { it > 0 }
+            ).joinToString("/").ifEmpty { "-" }
+            
+            // Playing partner's hole data
+            val partnerHoleData = currentRoundValue?.playingPartnerRound?.holeScores?.find { 
+                it.holeNumber == currentHoleNumber 
+            }
+            val partnerPar = partnerHoleData?.par ?: 0
+            val partnerDistance = partnerHoleData?.meters ?: 0
+            val partnerStrokeIndexes = listOfNotNull(
+                partnerHoleData?.index1?.takeIf { it > 0 },
+                partnerHoleData?.index2?.takeIf { it > 0 },
+                partnerHoleData?.index3?.takeIf { it > 0 }
+            ).joinToString("/").ifEmpty { "-" }
             
             // Extract stroke data from Round object for current hole
             val mainGolferStrokes = currentRoundValue?.holeScores?.find { 
@@ -337,25 +355,25 @@ private fun Screen4Portrait(
             }?.isBallPickedUp ?: false
 
             // Calculate current points for display
-            val mainGolferCurrentPoints = if (mainGolferStrokes > 0 && currentHole != null) {
+            val mainGolferCurrentPoints = if (mainGolferStrokes > 0 && mainGolferHoleData != null) {
                 playRoundViewModel.calculateCurrentPoints(
                     strokes = mainGolferStrokes,
-                    par = par,
-                    index1 = currentHole.strokeIndexes.getOrNull(0) ?: 0,
-                    index2 = currentHole.strokeIndexes.getOrNull(1) ?: 0,
-                    index3 = currentHole.strokeIndexes.getOrNull(2) ?: 0,
+                    par = mainGolferPar,
+                    index1 = mainGolferHoleData.index1,
+                    index2 = mainGolferHoleData.index2,
+                    index3 = mainGolferHoleData.index3 ?: 0,
                     dailyHandicap = mainGolferDailyHandicap.toDouble(),
                     scoreType = competitionType
                 )
             } else 0
 
-            val partnerCurrentPoints = if (partnerStrokes > 0 && currentHole != null) {
+            val partnerCurrentPoints = if (partnerStrokes > 0 && partnerHoleData != null) {
                 playRoundViewModel.calculateCurrentPoints(
                     strokes = partnerStrokes,
-                    par = par,
-                    index1 = currentHole.strokeIndexes.getOrNull(0) ?: 0,
-                    index2 = currentHole.strokeIndexes.getOrNull(1) ?: 0,
-                    index3 = currentHole.strokeIndexes.getOrNull(2) ?: 0,
+                    par = partnerPar,
+                    index1 = partnerHoleData.index1,
+                    index2 = partnerHoleData.index2,
+                    index3 = partnerHoleData.index3 ?: 0,
                     dailyHandicap = partnerDailyHandicap.toDouble(),
                     scoreType = competitionType
                 )
@@ -365,14 +383,14 @@ private fun Screen4Portrait(
             HoleCardTest(
                 golferName = partnerDisplayName,
                 backgroundColor = mslBlue,
-                teeColor = teeColor,
+                teeColor = partnerTeeColor,
                 competitionType = competitionType,
                 dailyHandicap = partnerDailyHandicap,
                 strokes = partnerStrokes,
                 currentPoints = partnerCurrentPoints,
-                par = par,
-                distance = distance,
-                strokeIndex = strokeIndexes,
+                par = partnerPar,
+                distance = partnerDistance,
+                strokeIndex = partnerStrokeIndexes,
                 totalScore = currentRoundValue?.playingPartnerRound?.holeScores?.sumOf { it.score.toInt() } ?: 0,
                 onSwipeNext = { playRoundViewModel.navigateToNextHole(navController) },
                 onSwipePrevious = { 
@@ -402,14 +420,14 @@ private fun Screen4Portrait(
             HoleCardTest(
                 golferName = mainGolferName,
                 backgroundColor = mslGrey,
-                teeColor = teeColor,
+                teeColor = mainGolferTeeColor,
                 competitionType = competitionType,
                 dailyHandicap = mainGolferDailyHandicap,
                 strokes = mainGolferStrokes,
                 currentPoints = mainGolferCurrentPoints,
-                par = par,
-                distance = distance,
-                strokeIndex = strokeIndexes,
+                par = mainGolferPar,
+                distance = mainGolferDistance,
+                strokeIndex = mainGolferStrokeIndexes,
                 totalScore = currentRoundValue?.holeScores?.sumOf { it.score.toInt() } ?: 0,
                 onSwipeNext = { playRoundViewModel.navigateToNextHole(navController) },
                 onSwipePrevious = { 

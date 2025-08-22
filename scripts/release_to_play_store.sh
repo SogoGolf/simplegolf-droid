@@ -223,6 +223,9 @@ echo "$RELEASE_NOTES_TEXT"
 echo ""
 
 # Upload to Google Play with release notes
+# Escape release notes for Python (replace single quotes and backslashes)
+ESCAPED_RELEASE_NOTES=$(echo "$RELEASE_NOTES_TEXT" | sed "s/'/\\\\'/g" | sed 's/\\/\\\\/g')
+
 python3 - <<EOF
 import sys
 import os
@@ -235,7 +238,7 @@ SCOPES = ['https://www.googleapis.com/auth/androidpublisher']
 PACKAGE_NAME = 'com.sogo.golf.msl'
 AAB_FILE = '$AAB_PATH'
 TRACK = 'beta'  # Open testing track
-RELEASE_NOTES = '''$RELEASE_NOTES_TEXT'''
+RELEASE_NOTES = '''$ESCAPED_RELEASE_NOTES'''
 
 try:
     print(f"Loading credentials from: {os.environ['PLAY_STORE_CREDENTIALS_FILE']}")

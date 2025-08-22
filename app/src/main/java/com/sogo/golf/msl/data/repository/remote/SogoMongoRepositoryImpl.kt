@@ -78,9 +78,17 @@ class SogoMongoRepositoryImpl @Inject constructor(
 
                 sogoGolfer
             } else {
-                Log.e(TAG, "Failed to get SogoGolfer: ${response.code()} - ${response.message()}")
+                val errorCode = response.code()
+                Log.e(TAG, "Failed to get SogoGolfer: $errorCode - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
-                throw Exception("Failed to get SogoGolfer: ${response.message()}")
+                
+                // Include the error code in the exception message so we can detect 404s later
+                // 404 for SOGO golfer means the golfer doesn't exist yet (which is OK for new users)
+                if (errorCode == 404) {
+                    throw Exception("SogoGolfer not found (404): ${response.message()}")
+                } else {
+                    throw Exception("Failed to get SogoGolfer ($errorCode): ${response.message()}")
+                }
             }
         }
     }

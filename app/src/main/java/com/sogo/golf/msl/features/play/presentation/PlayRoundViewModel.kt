@@ -33,6 +33,7 @@ import android.util.Log
 import com.sogo.golf.msl.data.network.NetworkState
 import com.sogo.golf.msl.shared.utils.DateUtils
 import com.sogo.golf.msl.analytics.AnalyticsManager
+import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -705,16 +706,20 @@ class PlayRoundViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val round = currentRound.value
-                val competition = localCompetition.value
                 val currentHole = currentHoleNumber.value
                 
-                if (round == null || competition == null) {
-                    android.util.Log.w("PlayRoundVM", "Cannot update strokes - missing round or competition data")
+                if (round == null) {
+                    android.util.Log.w("PlayRoundVM", "Cannot update strokes - missing round data")
                     return@launch
                 }
 
-                // Get par for current hole
-                val par = getParForHole(competition, currentHole) ?: 4 // Default to par 4
+                // Get par for current hole from main golfer's data
+                val par = getParForHole(round, currentHole, isMainGolfer = true) ?: 0
+                
+                if (par == 0) {
+                    android.util.Log.w("PlayRoundVM", "Cannot update strokes - par is 0 for hole $currentHole")
+                    return@launch
+                }
                 
                 // Get current strokes for this hole
                 val holeIndex = getHoleIndex(currentHole)
@@ -744,16 +749,20 @@ class PlayRoundViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val round = currentRound.value
-                val competition = localCompetition.value
                 val currentHole = currentHoleNumber.value
                 
-                if (round == null || competition == null) {
-                    android.util.Log.w("PlayRoundVM", "Cannot update strokes - missing round or competition data")
+                if (round == null) {
+                    android.util.Log.w("PlayRoundVM", "Cannot update strokes - missing round data")
                     return@launch
                 }
 
-                // Get par for current hole
-                val par = getParForHole(competition, currentHole) ?: 4 // Default to par 4
+                // Get par for current hole from partner's data
+                val par = getParForHole(round, currentHole, isMainGolfer = false) ?: 0
+                
+                if (par == 0) {
+                    android.util.Log.w("PlayRoundVM", "Cannot update strokes - par is 0 for hole $currentHole")
+                    return@launch
+                }
                 
                 // Get current strokes for this hole
                 val holeIndex = getHoleIndex(currentHole)
@@ -779,12 +788,18 @@ class PlayRoundViewModel @Inject constructor(
         }
     }
 
-    private fun getParForHole(competition: com.sogo.golf.msl.domain.model.msl.MslCompetition, holeNumber: Int): Int? {
+    private fun getParForHole(round: com.sogo.golf.msl.domain.model.Round?, holeNumber: Int, isMainGolfer: Boolean): Int? {
         return try {
-            // Find the hole data in competition structure
-            competition.players.firstOrNull()?.holes?.find { hole ->
-                hole.holeNumber == holeNumber
-            }?.par
+            if (round == null) return null
+            
+            // Get the par from the correct golfer's hole scores in the Round data
+            val holeScore = if (isMainGolfer) {
+                round.holeScores.find { it.holeNumber == holeNumber }
+            } else {
+                round.playingPartnerRound?.holeScores?.find { it.holeNumber == holeNumber }
+            }
+            
+            holeScore?.par
         } catch (e: Exception) {
             android.util.Log.w("PlayRoundVM", "Error getting par for hole $holeNumber", e)
             null
@@ -1048,12 +1063,14 @@ class PlayRoundViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val round = currentRound.value ?: return@launch
-                val competition = localCompetition.value ?: return@launch
                 val game = localGame.value ?: return@launch
                 val currentHole = _currentHoleNumber.value
                 
-                val holeData = competition.players.firstOrNull()?.holes?.find { 
-                    it.holeNumber == currentHole 
+                // Get hole data from the correct golfer's round data
+                val holeData = if (isMainGolfer) {
+                    round.holeScores.find { it.holeNumber == currentHole }
+                } else {
+                    round.playingPartnerRound?.holeScores?.find { it.holeNumber == currentHole }
                 } ?: return@launch
                 
                 val dailyHandicap = if (isMainGolfer) {
@@ -1089,9 +1106,9 @@ class PlayRoundViewModel @Inject constructor(
                     isMainGolfer = isMainGolfer,
                     dailyHandicap = dailyHandicap,
                     par = holeData.par,
-                    index1 = holeData.strokeIndexes.getOrNull(0) ?: 0,
-                    index2 = holeData.strokeIndexes.getOrNull(1) ?: 0,
-                    index3 = holeData.strokeIndexes.getOrNull(2)
+                    index1 = holeData.index1,
+                    index2 = holeData.index2,
+                    index3 = holeData.index3
                 )
                 
                 // Reload round to update UI immediately

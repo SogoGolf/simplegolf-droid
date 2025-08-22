@@ -658,6 +658,16 @@ class PlayingPartnerViewModel @Inject constructor(
         Log.d("PlayingPartnerVM", "  - Include round: $includeRoundValue")
 
         val golfer = competitionData?.players?.find { it.golfLinkNumber == currentGolferData.golfLinkNo }
+        
+        Log.d("PlayingPartnerVM", "📝 Looking for current golfer in competition data:")
+        Log.d("PlayingPartnerVM", "  - Searching for GL#: ${currentGolferData.golfLinkNo}")
+        Log.d("PlayingPartnerVM", "  - Found golfer: ${if (golfer != null) "${golfer.firstName} ${golfer.lastName}" else "NOT FOUND"}")
+        if (golfer == null) {
+            Log.w("PlayingPartnerVM", "⚠️ Current golfer not found in competition players list")
+            competitionData?.players?.forEach { player ->
+                Log.d("PlayingPartnerVM", "  Available player: ${player.firstName} ${player.lastName} (GL#: ${player.golfLinkNumber})")
+            }
+        }
 
         val playingPartnerRound = createPlayingPartnerRound(
             selectedPartner = selectedPartner,
@@ -666,7 +676,7 @@ class PlayingPartnerViewModel @Inject constructor(
             sogoGolferData = sogoGolferData
         )
 
-        val holeScores = createHoleScores(competitionData)
+        val holeScores = createHoleScores(competitionData, golfer)
 
         return Round(
             id = ObjectIdUtils.generateObjectId(),
@@ -693,8 +703,8 @@ class PlayingPartnerViewModel @Inject constructor(
             markerFirstName = selectedPartner.firstName,
             markerLastName = selectedPartner.lastName,
             markerGLNumber = selectedPartner.golfLinkNumber,
-            compType = gameData.competitions.firstOrNull()?.name?.lowercase(Locale.ROOT),
-            teeColor = gameData.teeColourName?.lowercase(),
+            compType = golfer?.scoreType?.lowercase(Locale.ROOT) ?: "unknown",
+            teeColor = golfer?.teeColourName?.lowercase() ?: gameData.teeColourName?.lowercase(),
             isClubComp = true,
             isSubmitted = false,
             isApproved = false,
@@ -706,12 +716,17 @@ class PlayingPartnerViewModel @Inject constructor(
     }
 
     private fun createHoleScores(competitionData: MslCompetition?, specificPlayer: MslPlayer? = null): List<HoleScore> {
-        val playerToUse = specificPlayer ?: competitionData?.players?.firstOrNull()
-        val holes = playerToUse?.holes ?: emptyList()
+        // Only use the specific player's data if provided, don't fall back to first player
+        val holes = specificPlayer?.holes ?: emptyList()
 
-        Log.d("PlayingPartnerVM", "🏌️ Creating hole scores for ${holes.size} holes")
+        Log.d("PlayingPartnerVM", "🏌️ Creating hole scores for player: ${specificPlayer?.firstName} ${specificPlayer?.lastName}")
+        Log.d("PlayingPartnerVM", "🏌️ Number of holes: ${holes.size}")
         holes.forEach { hole ->
-            Log.d("PlayingPartnerVM", "  - Hole ${hole.holeNumber}: par=${hole.par}, distance=${hole.distance}")
+            Log.d("PlayingPartnerVM", "  - Hole ${hole.holeNumber}: par=${hole.par}, distance=${hole.distance}, indexes=${hole.strokeIndexes}")
+        }
+        
+        if (holes.isEmpty()) {
+            Log.w("PlayingPartnerVM", "⚠️ No hole data found for player")
         }
         
         return holes.map { holeData ->
@@ -740,6 +755,14 @@ class PlayingPartnerViewModel @Inject constructor(
         val nowUtc = LocalDateTime.now()
 
         val partnerGolfer = competitionData?.players?.find { it.golfLinkNumber == selectedPartner.golfLinkNumber }
+        
+        Log.d("PlayingPartnerVM", "📝 Looking for playing partner in competition data:")
+        Log.d("PlayingPartnerVM", "  - Searching for GL#: ${selectedPartner.golfLinkNumber}")
+        Log.d("PlayingPartnerVM", "  - Found partner: ${if (partnerGolfer != null) "${partnerGolfer.firstName} ${partnerGolfer.lastName}" else "NOT FOUND"}")
+        if (partnerGolfer == null) {
+            Log.w("PlayingPartnerVM", "⚠️ Playing partner not found in competition players list")
+        }
+
         val holeScores = createHoleScores(competitionData, partnerGolfer)
 
         return PlayingPartnerRound(
@@ -755,8 +778,8 @@ class PlayingPartnerViewModel @Inject constructor(
             scratchRating = partnerGolfer?.scratchRating?.toFloat(),
             slopeRating = partnerGolfer?.slopeRating?.toFloat(),
             compScoreTotal = 0,
-            teeColor = gameData.teeColourName?.lowercase(),
-            compType = gameData.competitions.firstOrNull()?.name?.lowercase(Locale.ROOT),
+            teeColor = partnerGolfer?.teeColourName?.lowercase() ?: gameData.teeColourName?.lowercase(),
+            compType = partnerGolfer?.scoreType?.lowercase(Locale.ROOT) ?: "unknown",
             isSubmitted = false,
             golferId = null, /////////////////////////////////////// todo:
             golferFirstName = selectedPartner.firstName,
