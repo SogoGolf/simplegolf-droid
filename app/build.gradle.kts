@@ -153,6 +153,9 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.logging.interceptor)
 
+    //OneSignal
+    implementation(libs.onesignal)
+
     //Mixpanel
     implementation(libs.mixpanel.android)
 

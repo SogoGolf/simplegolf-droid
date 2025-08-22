@@ -8,6 +8,7 @@ import com.revenuecat.purchases.LogLevel
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
 import com.google.firebase.messaging.FirebaseMessaging
+import com.onesignal.OneSignal
 import dagger.hilt.android.HiltAndroidApp
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -17,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlin.coroutines.cancellation.CancellationException
+
 
 @HiltAndroidApp
 class MyApp : Application() {
@@ -87,6 +89,13 @@ class MyApp : Application() {
         Purchases.logLevel = LogLevel.DEBUG
         Purchases.configure(PurchasesConfiguration.Builder(this, BuildConfig.REVENUECAT).build())
         Log.d("MyApp", "Revenuecat initialised...")
+
+        //OneSignal SDK init
+        // Enable verbose logging for debugging (remove in production)
+        OneSignal.Debug.logLevel = com.onesignal.debug.LogLevel.VERBOSE
+        // Initialize with your OneSignal App ID
+        OneSignal.initWithContext(this, "f65531f8-5975-47ff-8562-2b9a5bea9f1c")
+
 
         // Initialize FCM token after a delay to ensure Firebase is ready
         CoroutineScope(Dispatchers.Main).launch {
