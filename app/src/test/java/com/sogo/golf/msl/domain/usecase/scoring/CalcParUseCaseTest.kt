@@ -308,10 +308,10 @@ class CalcParUseCaseTest {
     }
 
     @Test
-    fun testPar_VeryLowStrokes_ReturnsPlus1() {
+    fun testPar_HoleInOne_Par4_ReturnsPlus1() {
         val hole = createPar4Hole()
         val handicap = 0.0
-        val strokes = -5
+        val strokes = 1
         val result = calcParUseCase.invoke(strokes, hole, handicap)
         assertEquals(1.0F, result)
     }

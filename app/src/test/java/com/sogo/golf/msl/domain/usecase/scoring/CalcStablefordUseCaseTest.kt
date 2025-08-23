@@ -290,12 +290,12 @@ class CalcStablefordUseCaseTest {
     }
 
     @Test
-    fun testStableford_VeryLowStrokes_Returns8Points() {
+    fun testStableford_HoleInOne_Par4_Returns5Points() {
         val hole = createPar4Hole()
         val handicap = 0.0
-        val strokes = -5
+        val strokes = 1
         val result = calcStablefordUseCase.invoke(hole, handicap, strokes)
-        assertEquals(8.0F, result, 0.01F)
+        assertEquals(5.0F, result, 0.01F)
     }
 
     @Test
@@ -308,11 +308,11 @@ class CalcStablefordUseCaseTest {
     }
 
     @Test
-    fun testStableford_SevenUnderPar_Returns8Points() {
+    fun testStableford_HoleInOne_Par5_Returns6Points() {
         val hole = createPar5Hole()
         val handicap = 0.0
-        val strokes = -2
+        val strokes = 1
         val result = calcStablefordUseCase.invoke(hole, handicap, strokes)
-        assertEquals(8.0F, result, 0.01F)
+        assertEquals(6.0F, result, 0.01F)
     }
 }

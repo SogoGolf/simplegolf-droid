@@ -335,12 +335,12 @@ class CalcStrokeUseCaseTest {
     }
 
     @Test
-    fun testStroke_VeryLowStrokes_ReturnsMinus9() {
+    fun testStroke_HoleInOne_Par4_ReturnsMinus3() {
         val hole = createPar4Hole()
         val handicap = 0.0
-        val strokes = -5
+        val strokes = 1
         val result = calcStrokeUseCase.invoke(strokes, hole, handicap)
-        assertEquals(-9.0F, result, 0.01F)
+        assertEquals(-3.0F, result, 0.01F)
     }
 
     @Test

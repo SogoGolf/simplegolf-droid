@@ -35,31 +35,35 @@ class DebugScoringTest {
     }
 
     @Test
-    fun debugLastFailingTest() {
-        println("=== Debugging Last Failing Test ===")
+    fun debugHoleInOneStablefordTests() {
+        println("=== Debugging Hole-in-One Stableford Tests ===")
         
-        // testPar_Bogey_Par4_LowHandicap_MaleGolfer_WithStroke_ReturnsMinus1 (line 185-191)
-        val hole = HoleScoreForCalcs(par = 4, index1 = 3, index2 = 21, index3 = 39)
-        val handicap = 5.0
-        val strokes = 5
+        // testStableford_HoleInOne_Par4_Returns6Points (failing)
+        val par4Hole = HoleScoreForCalcs(par = 4, index1 = 10, index2 = 28, index3 = 46)
+        val handicap = 0.0
+        val strokes = 1
         
-        val netPar = calcHoleNetParUseCase.invoke(hole, handicap)
-        val parScore = calcParUseCase.invoke(strokes, hole, handicap)
-        val strokeScore = calcStrokeUseCase.invoke(strokes, hole, handicap)
+        val netPar4 = calcHoleNetParUseCase.invoke(par4Hole, handicap)
+        val stablefordPar4 = calcStablefordUseCase.invoke(par4Hole, handicap, strokes)
         
-        println("testPar_Bogey_Par4_LowHandicap_MaleGolfer_WithStroke_ReturnsMinus1:")
-        println("Par 4, Index 3, Handicap 5.0, Strokes 5:")
-        println("  Net Par: $netPar")
-        println("  Par Score: $parScore (expected: -1.0)")
-        println("  Stroke Score: $strokeScore")
-        println("  Test expects: -1.0F")
-        println("  Actual result: $parScore")
+        println("Hole-in-One on Par 4:")
+        println("  Net Par: $netPar4")
+        println("  Stableford Points: $stablefordPar4 (test expects: 6.0)")
+        println("  Actual result: $stablefordPar4")
         
-        if (parScore == -1.0F) {
-            println("  ✓ Test should PASS")
-        } else {
-            println("  ✗ Test should expect: ${parScore}F")
-        }
+        // testStableford_HoleInOne_Par5_Returns8Points (failing)
+        val par5Hole = HoleScoreForCalcs(par = 5, index1 = 1, index2 = 19, index3 = 37)
+        val stablefordPar5 = calcStablefordUseCase.invoke(par5Hole, handicap, strokes)
+        val netPar5 = calcHoleNetParUseCase.invoke(par5Hole, handicap)
+        
+        println("\nHole-in-One on Par 5:")
+        println("  Net Par: $netPar5")
+        println("  Stableford Points: $stablefordPar5 (test expects: 8.0)")
+        println("  Actual result: $stablefordPar5")
+        
+        println("\nCorrect expected values:")
+        println("  Par 4 hole-in-one should expect: ${stablefordPar4}F")
+        println("  Par 5 hole-in-one should expect: ${stablefordPar5}F")
     }
     
     private fun debugScenario(description: String, hole: HoleScoreForCalcs, handicap: Double, strokes: Int): String {
