@@ -16,3 +16,9 @@ local.properties
 
 # Android App Bundle files
 *.aab
+
+# Keystore files - NEVER commit these
+*.keystore
+*.jks
+**/msl_keystore*
+app/msl_keystore.jks
