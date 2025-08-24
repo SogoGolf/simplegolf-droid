@@ -27,6 +27,7 @@ import com.sogo.golf.msl.domain.usecase.round.BulkSyncRoundUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcStablefordUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcParUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcStrokeUseCase
+import com.sogo.golf.msl.domain.usecase.scoring.CalcAmbroseUseCase
 import com.sogo.golf.msl.domain.model.HoleScoreForCalcs
 import com.sogo.golf.msl.data.network.NetworkStateMonitor
 import android.util.Log
@@ -59,6 +60,7 @@ class PlayRoundViewModel @Inject constructor(
     private val calcStablefordUseCase: CalcStablefordUseCase,
     private val calcParUseCase: CalcParUseCase,
     private val calcStrokeUseCase: CalcStrokeUseCase,
+    private val calcAmbroseUseCase: CalcAmbroseUseCase,
     private val networkStateMonitor: NetworkStateMonitor,
     private val holeStatePreferences: HoleStatePreferences,
     private val mslRepository: MslRepository,
@@ -953,6 +955,7 @@ class PlayRoundViewModel @Inject constructor(
                 "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
                 "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap) ?: 0f
                 "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap)
+                "ambrose" -> calcAmbroseUseCase(strokes, holeScoreForCalcs, dailyHandicap)
                 else -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
             }
 

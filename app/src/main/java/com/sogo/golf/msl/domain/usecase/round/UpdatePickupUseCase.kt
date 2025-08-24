@@ -9,6 +9,7 @@ import com.sogo.golf.msl.domain.usecase.scoring.CalcHoleNetParUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcStablefordUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcParUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcStrokeUseCase
+import com.sogo.golf.msl.domain.usecase.scoring.CalcAmbroseUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import kotlinx.coroutines.flow.first
@@ -21,6 +22,7 @@ class UpdatePickupUseCase @Inject constructor(
     private val calcStablefordUseCase: CalcStablefordUseCase,
     private val calcParUseCase: CalcParUseCase,
     private val calcStrokeUseCase: CalcStrokeUseCase,
+    private val calcAmbroseUseCase: CalcAmbroseUseCase,
     private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
     private val getLocalGameUseCase: GetLocalGameUseCase
 ) {
@@ -164,6 +166,7 @@ class UpdatePickupUseCase @Inject constructor(
                 "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
                 "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap) ?: 0f
                 "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap)
+                "ambrose" -> calcAmbroseUseCase(strokes, holeScoreForCalcs, dailyHandicap)
                 else -> {
                     Log.w("UpdatePickup", "Unknown score type: $scoreType, defaulting to Stableford")
                     calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
