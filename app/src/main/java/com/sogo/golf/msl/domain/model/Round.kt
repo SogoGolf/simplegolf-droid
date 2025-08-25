@@ -62,6 +62,7 @@ data class Round(
     val compType: String? = null,
     val holeScores: List<HoleScore> = emptyList(),
     val sogoAppVersion: String? = null,
+    val mobileAppVersion: String? = null,
     val transactionId: String? = null,
     val playingPartnerRound: PlayingPartnerRound? = null,
     val roundApprovalSignatureUrl: String? = null,
