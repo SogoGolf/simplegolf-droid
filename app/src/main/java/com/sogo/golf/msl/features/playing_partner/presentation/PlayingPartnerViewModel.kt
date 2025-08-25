@@ -48,6 +48,7 @@ import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import com.sogo.golf.msl.analytics.AnalyticsManager
+import com.sogo.golf.msl.domain.usecase.app.GetMobileAppVersionUseCase
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
@@ -74,6 +75,7 @@ class PlayingPartnerViewModel @Inject constructor(
     private val createTransactionUseCase: CreateTransactionUseCase,
     private val includeRoundPreferences: IncludeRoundPreferences,
     private val updateTokenBalanceUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase,
+    private val getMobileAppVersionUseCase: GetMobileAppVersionUseCase,
     private val analyticsManager: AnalyticsManager
 ) : ViewModel() {
 
@@ -729,6 +731,7 @@ class PlayingPartnerViewModel @Inject constructor(
             holeScores = holeScores,
             playingPartnerRound = playingPartnerRound,
             mslMetaData = MslMetaData(isIncludeRoundOnSogo = includeRoundValue),
+            mobileAppVersion = getMobileAppVersionUseCase(),
             createdDate = nowUtc
         )
     }
