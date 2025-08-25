@@ -24,6 +24,8 @@ plugins {
     id("org.jetbrains.kotlin.kapt")
     id("kotlin-parcelize")
     alias(libs.plugins.google.services)
+
+    id("io.sentry.android.gradle") version "5.9.0"
 }
 
 android {
@@ -199,4 +201,14 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+}
+
+
+sentry {
+    org.set("sogo-yc")
+    projectName.set("simplegolf-prod")
+
+    // this will upload your source code to Sentry to show it as part of the stack traces
+    // disable if you don't want to expose your sources
+    includeSourceContext.set(true)
 }

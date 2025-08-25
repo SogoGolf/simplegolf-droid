@@ -48,6 +48,9 @@ import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import com.sogo.golf.msl.analytics.AnalyticsManager
+import io.sentry.Sentry
+import io.sentry.SentryEvent
+import io.sentry.SentryLevel
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -302,7 +305,7 @@ class PlayingPartnerViewModel @Inject constructor(
                         Log.d("PlayingPartnerVM", "✅ Golfer data saved to local DB")
                     }
                     is NetworkResult.Error -> {
-                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh golfer data: ${golferResult.error}")
+                        Log.w("PlayingPartnerVM", "⚠️ Failed to refresh golfer data: ${golferResult.error}")
                         allSuccessful = false
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
@@ -316,11 +319,12 @@ class PlayingPartnerViewModel @Inject constructor(
                         Log.d("PlayingPartnerVM", "Updated playing partners: ${gameResult.data.playingPartners.size}")
                     }
                     is NetworkResult.Error -> {
-                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
+                        Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
                         _uiState.value = _uiState.value.copy(
                             errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
                         )
                         allSuccessful = false
+                        Sentry.captureException(Exception(gameResult.error.toUserMessage()))
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
                 }
@@ -332,8 +336,9 @@ class PlayingPartnerViewModel @Inject constructor(
                         Log.d("PlayingPartnerVM", "✅ Competition data refreshed successfully")
                     }
                     is NetworkResult.Error -> {
-                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
+                        Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
                         allSuccessful = false
+                        Sentry.captureException(Exception(competitionResult.error.toUserMessage()))
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
                 }
@@ -347,13 +352,14 @@ class PlayingPartnerViewModel @Inject constructor(
                             Log.d("PlayingPartnerVM", "✅ Sogo golfer data refreshed successfully (Token balance: ${sogoGolferResult.data.tokenBalance})")
                         }
                         is NetworkResult.Error -> {
-                            android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh Sogo golfer data: ${sogoGolferResult.error}")
+                            Log.w("PlayingPartnerVM", "⚠️ Failed to refresh Sogo golfer data: ${sogoGolferResult.error}")
                             allSuccessful = false
+                            Sentry.captureException(Exception(sogoGolferResult.error.toUserMessage()))
                         }
                         is NetworkResult.Loading -> { /* Ignore */ }
                     }
                 } else {
-                    android.util.Log.w("PlayingPartnerVM", "⚠️ No golf link number available for current golfer - skipping Sogo golfer refresh")
+                    Log.w("PlayingPartnerVM", "⚠️ No golf link number available for current golfer - skipping Sogo golfer refresh")
                 }
                 
                 _uiState.value = _uiState.value.copy(
@@ -364,7 +370,7 @@ class PlayingPartnerViewModel @Inject constructor(
                 Log.d("PlayingPartnerVM", "✅ All data refresh operations completed")
                 allSuccessful
             } else {
-                android.util.Log.w("PlayingPartnerVM", "⚠️ No club selected, cannot refresh data")
+                Log.w("PlayingPartnerVM", "⚠️ No club selected, cannot refresh data")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = "No club selected"
@@ -372,11 +378,12 @@ class PlayingPartnerViewModel @Inject constructor(
                 false
             }
         } catch (e: Exception) {
-            android.util.Log.w("PlayingPartnerVM", "⚠️ Exception while refreshing data", e)
+            Log.w("PlayingPartnerVM", "⚠️ Exception while refreshing data", e)
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 errorMessage = "Refresh failed: ${e.message}"
             )
+            Sentry.captureException(e)
             false
         }
     }
@@ -391,9 +398,6 @@ class PlayingPartnerViewModel @Inject constructor(
             return
         }
         
-        // Track round started event
-        trackRoundStarted(selectedPartner)
-
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(
@@ -418,6 +422,7 @@ class PlayingPartnerViewModel @Inject constructor(
                         isLetsPlayLoading = false,
                         errorMessage = "Current golfer data not available. Please refresh the app."
                     )
+                    Sentry.captureMessage("Current golfer data not available (tapped Play button). Can not continue.")
                     return@launch
                 }
 
@@ -426,6 +431,7 @@ class PlayingPartnerViewModel @Inject constructor(
                         isLetsPlayLoading = false,
                         errorMessage = "Game data not available. Please refresh the app."
                     )
+                    Sentry.captureMessage("Game data not available (tapped Play button). Can not continue.")
                     return@launch
                 }
 
@@ -434,6 +440,7 @@ class PlayingPartnerViewModel @Inject constructor(
                         isLetsPlayLoading = false,
                         errorMessage = "Sogo golfer data not available. Please refresh the app."
                     )
+                    Sentry.captureMessage("Sogo golfer data not available (tapped Play button). Can not continue.")
                     return@launch
                 }
 
@@ -444,11 +451,12 @@ class PlayingPartnerViewModel @Inject constructor(
                         Log.d("PlayingPartnerVM", "✅ Marker selected successfully")
                     }
                     is NetworkResult.Error -> {
-                        android.util.Log.e("PlayingPartnerVM", "❌ Failed to select marker: ${markerResult.error}")
+                        Log.e("PlayingPartnerVM", "❌ Failed to select marker: ${markerResult.error}")
                         _uiState.value = _uiState.value.copy(
                             isLetsPlayLoading = false,
                             errorMessage = "Failed to select marker: ${markerResult.error.toUserMessage()}"
                         )
+                        Sentry.captureException(Exception(markerResult.error.toUserMessage()))
                         return@launch
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
@@ -467,11 +475,12 @@ class PlayingPartnerViewModel @Inject constructor(
                         Log.d("PlayingPartnerVM", "✅ Competition data refreshed successfully")
                     }
                     is NetworkResult.Error -> {
-                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
+                        Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
                         _uiState.value = _uiState.value.copy(
                             isLetsPlayLoading = false,
                             errorMessage = "Failed to re-fetch msl competition data: ${competitionResult.error.toUserMessage()}"
                         )
+                        Sentry.captureException(Exception(competitionResult.error.toUserMessage()))
                         return@launch
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
@@ -485,10 +494,11 @@ class PlayingPartnerViewModel @Inject constructor(
                         Log.d("PlayingPartnerVM", "Updated playing partners: ${gameResult.data.playingPartners.size}")
                     }
                     is NetworkResult.Error -> {
-                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
+                        Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
                         _uiState.value = _uiState.value.copy(
                             errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
                         )
+                        Sentry.captureException(Exception(gameResult.error.toUserMessage()))
                         return@launch
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
@@ -511,11 +521,12 @@ class PlayingPartnerViewModel @Inject constructor(
                     // Get mainCompetitionId from game data
                     val mainCompetitionId = gameData.mainCompetitionId
                     if (mainCompetitionId == null) {
-                        android.util.Log.e("PlayingPartnerVM", "❌ No mainCompetitionId found in game data")
+                        Log.e("PlayingPartnerVM", "❌ No mainCompetitionId found in game data")
                         _uiState.value = _uiState.value.copy(
                             isLetsPlayLoading = false,
                             errorMessage = "Game data missing competition ID. Please refresh and try again."
                         )
+                        Sentry.captureMessage("Game data missing competition ID. Can not continue.")
                         return@launch
                     }
                     
@@ -530,7 +541,7 @@ class PlayingPartnerViewModel @Inject constructor(
                                 
                                 // Check sufficient balance
                                 if (sogoGolferData.tokenBalance < currentTokenCost) {
-                                    android.util.Log.e("PlayingPartnerVM", "❌ Insufficient token balance: ${sogoGolferData.tokenBalance} < $currentTokenCost")
+                                    Log.e("PlayingPartnerVM", "❌ Insufficient token balance: ${sogoGolferData.tokenBalance} < $currentTokenCost")
                                     _uiState.value = _uiState.value.copy(
                                         isLetsPlayLoading = false,
                                         errorMessage = "Insufficient token balance. Please purchase more tokens."
@@ -564,7 +575,7 @@ class PlayingPartnerViewModel @Inject constructor(
                                                     Log.d("PlayingPartnerVM", "✅ Token balance updated successfully to ${updatedGolfer.tokenBalance}")
                                                 },
                                                 onFailure = { balanceError ->
-                                                    android.util.Log.e("PlayingPartnerVM", "❌ Failed to update token balance: ${balanceError.message}")
+                                                    Log.e("PlayingPartnerVM", "❌ Failed to update token balance: ${balanceError.message}")
                                                     // Continue with round creation even if balance update fails
                                                     // The transaction was already created successfully
                                                 }
@@ -572,7 +583,7 @@ class PlayingPartnerViewModel @Inject constructor(
                                         }
                                     },
                                     onFailure = { error ->
-                                        android.util.Log.e("PlayingPartnerVM", "❌ Failed to create transaction: ${error.message}")
+                                        Log.e("PlayingPartnerVM", "❌ Failed to create transaction: ${error.message}")
                                         _uiState.value = _uiState.value.copy(
                                             isLetsPlayLoading = false,
                                             errorMessage = "Failed to process payment: ${error.message}"
@@ -583,11 +594,12 @@ class PlayingPartnerViewModel @Inject constructor(
                             }
                         },
                         onFailure = { error ->
-                            android.util.Log.e("PlayingPartnerVM", "❌ Failed to check existing transactions: ${error.message}")
+                            Log.e("PlayingPartnerVM", "❌ Failed to check existing transactions: ${error.message}")
                             _uiState.value = _uiState.value.copy(
                                 isLetsPlayLoading = false,
                                 errorMessage = "Failed to verify payment status: ${error.message}"
                             )
+                            Sentry.captureException(Exception(error.message))
                             return@launch
                         }
                     )
@@ -613,7 +625,8 @@ class PlayingPartnerViewModel @Inject constructor(
                         roundRepository.saveRound(syncedRound)
                     }
                     is NetworkResult.Error -> {
-                        android.util.Log.w("PlayingPartnerVM", "⚠️ Failed to sync round to MongoDB: ${createRoundResult.error}")
+                        Log.w("PlayingPartnerVM", "⚠️ Failed to sync round to MongoDB: ${createRoundResult.error}")
+                        Sentry.captureException(Exception(createRoundResult.error.toUserMessage()))
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
                 }
@@ -625,14 +638,19 @@ class PlayingPartnerViewModel @Inject constructor(
 
                 // Step 8: Navigate to PlayRound screen
                 Log.d("PlayingPartnerVM", "🔄 Step 8: Navigating to PlayRound screen...")
+
+                // Track round started event
+                trackRoundStarted(selectedPartner)
+                
                 onNavigateToPlayRound()
 
             } catch (e: Exception) {
-                android.util.Log.e("PlayingPartnerVM", "❌ Exception in Let's Play flow", e)
+                Log.e("PlayingPartnerVM", "❌ Exception in Let's Play flow", e)
                 _uiState.value = _uiState.value.copy(
                     isLetsPlayLoading = false,
                     errorMessage = "Let's Play failed: ${e.message}"
                 )
+                Sentry.captureException(e)
             }
         }
     }

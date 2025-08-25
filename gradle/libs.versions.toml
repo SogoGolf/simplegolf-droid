@@ -28,8 +28,7 @@ purchasesUi = "8.21.0"
 retrofit = "2.11.0"
 room = "2.7.2"
 securityCrypto = "1.1.0-beta01"
-sentryAndroid = "8.17.0"
-sentryAndroidVersion = "8.18.0"
+sentryAndroidVersion = "8.19.1"
 signaturePad = "0.1.2"
 threetenabp = "1.4.6"
 workRuntimeKtx = "2.10.2"
@@ -87,7 +86,6 @@ retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-sentry-android = { module = "io.sentry:sentry-android", version.ref = "sentryAndroid" }
 sentry-android-v8180 = { module = "io.sentry:sentry-android", version.ref = "sentryAndroidVersion" }
 signature-pad = { module = "se.warting.signature:signature-pad", version.ref = "signaturePad" }
 threetenabp = { module = "com.jakewharton.threetenabp:threetenabp", version.ref = "threetenabp" }

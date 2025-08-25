@@ -46,6 +46,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import com.sogo.golf.msl.ui.theme.MSLGolfTheme
 import kotlinx.coroutines.launch
+import io.sentry.Sentry
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

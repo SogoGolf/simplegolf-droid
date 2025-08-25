@@ -22,3 +22,7 @@ local.properties
 *.jks
 **/msl_keystore*
 app/msl_keystore.jks
+
+# Sentry Config File
+sentry.properties
+/sentry-wizard
