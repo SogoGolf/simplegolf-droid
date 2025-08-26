@@ -112,7 +112,9 @@ echo -e "\n${CYAN}📝 Release Notes${NC}"
 echo "======================================="
 
 # Create a temporary file for release notes
-TEMP_RELEASE_NOTES=$(mktemp /tmp/release_notes_XXXXXX.txt)
+TEMP_RELEASE_NOTES=$(mktemp /tmp/release_notes_XXXXXX)
+mv "$TEMP_RELEASE_NOTES" "${TEMP_RELEASE_NOTES}.txt"
+TEMP_RELEASE_NOTES="${TEMP_RELEASE_NOTES}.txt"
 
 # Create simple template in temp file
 cat > "$TEMP_RELEASE_NOTES" << 'EOF'
@@ -148,7 +150,9 @@ RELEASE_NOTES_TEXT=$(cat "$TEMP_RELEASE_NOTES" | \
     sed '/^$/d')
 
 # Save processed release notes to a file for Python to read
-RELEASE_NOTES_FILE=$(mktemp /tmp/release_notes_final_XXXXXX.txt)
+RELEASE_NOTES_FILE=$(mktemp /tmp/release_notes_final_XXXXXX)
+mv "$RELEASE_NOTES_FILE" "${RELEASE_NOTES_FILE}.txt"
+RELEASE_NOTES_FILE="${RELEASE_NOTES_FILE}.txt"
 echo "$RELEASE_NOTES_TEXT" > "$RELEASE_NOTES_FILE"
 
 # Clean up original temp file

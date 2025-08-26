@@ -3,29 +3,39 @@ package com.sogo.golf.msl.features.playing_partner.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.revenuecat.purchases.paywalls.components.common.ComponentOverride
+import com.sogo.golf.msl.analytics.AnalyticsManager
+import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.sogo.golf.msl.data.network.NetworkChecker
-import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
-import com.sogo.golf.msl.domain.usecase.fees.GetFeesUseCase
-import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
-import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
-import com.sogo.golf.msl.domain.usecase.marker.SelectMarkerUseCase
-import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
-import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
-import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
-import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
-import com.sogo.golf.msl.domain.model.Round
-import com.sogo.golf.msl.domain.model.PlayingPartnerRound
 import com.sogo.golf.msl.domain.model.HoleScore
 import com.sogo.golf.msl.domain.model.MslMetaData
 import com.sogo.golf.msl.domain.model.NetworkResult
+import com.sogo.golf.msl.domain.model.PlayingPartnerRound
+import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
+import com.sogo.golf.msl.domain.model.msl.MslGame
 import com.sogo.golf.msl.domain.model.msl.MslPlayer
-import org.threeten.bp.LocalDateTime
-import java.util.UUID
-import java.util.Locale
+import com.sogo.golf.msl.domain.model.msl.MslPlayingPartner
+import com.sogo.golf.msl.domain.model.msl.SelectedClub
+import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
+import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
+import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
+import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
+import com.sogo.golf.msl.domain.repository.remote.MslRepository
+import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
+import com.sogo.golf.msl.domain.usecase.fees.GetFeesUseCase
+import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
+import com.sogo.golf.msl.domain.usecase.marker.SelectMarkerUseCase
+import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
+import com.sogo.golf.msl.domain.usecase.round.CreateRoundUseCase
+import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
+import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
+import com.sogo.golf.msl.domain.usecase.transaction.CheckExistingTransactionUseCase
+import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
+import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.sentry.Sentry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,24 +44,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
-import javax.inject.Inject
-import com.sogo.golf.msl.domain.model.msl.MslPlayingPartner
-import com.sogo.golf.msl.domain.model.msl.MslGame
-import com.sogo.golf.msl.domain.model.msl.SelectedClub
-import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
-import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
-import com.sogo.golf.msl.domain.repository.remote.MslRepository
-import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
-import com.sogo.golf.msl.domain.usecase.round.CreateRoundUseCase
-import com.sogo.golf.msl.domain.usecase.transaction.CheckExistingTransactionUseCase
-import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
-import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
-import com.sogo.golf.msl.shared.utils.ObjectIdUtils
-import com.sogo.golf.msl.analytics.AnalyticsManager
-import io.sentry.Sentry
-import io.sentry.SentryEvent
-import io.sentry.SentryLevel
 import kotlinx.coroutines.launch
+import org.threeten.bp.LocalDateTime
+import java.util.Locale
+import java.util.UUID
+import javax.inject.Inject
 
 @HiltViewModel
 class PlayingPartnerViewModel @Inject constructor(
@@ -324,7 +321,6 @@ class PlayingPartnerViewModel @Inject constructor(
                             errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
                         )
                         allSuccessful = false
-                        Sentry.captureException(Exception(gameResult.error.toUserMessage()))
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
                 }
@@ -338,7 +334,6 @@ class PlayingPartnerViewModel @Inject constructor(
                     is NetworkResult.Error -> {
                         Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
                         allSuccessful = false
-                        Sentry.captureException(Exception(competitionResult.error.toUserMessage()))
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
                 }
@@ -354,7 +349,6 @@ class PlayingPartnerViewModel @Inject constructor(
                         is NetworkResult.Error -> {
                             Log.w("PlayingPartnerVM", "⚠️ Failed to refresh Sogo golfer data: ${sogoGolferResult.error}")
                             allSuccessful = false
-                            Sentry.captureException(Exception(sogoGolferResult.error.toUserMessage()))
                         }
                         is NetworkResult.Loading -> { /* Ignore */ }
                     }
@@ -456,7 +450,7 @@ class PlayingPartnerViewModel @Inject constructor(
                             isLetsPlayLoading = false,
                             errorMessage = "Failed to select marker: ${markerResult.error.toUserMessage()}"
                         )
-                        Sentry.captureException(Exception(markerResult.error.toUserMessage()))
+                        Sentry.captureMessage("Call PUT marker failed.")
                         return@launch
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
@@ -480,7 +474,6 @@ class PlayingPartnerViewModel @Inject constructor(
                             isLetsPlayLoading = false,
                             errorMessage = "Failed to re-fetch msl competition data: ${competitionResult.error.toUserMessage()}"
                         )
-                        Sentry.captureException(Exception(competitionResult.error.toUserMessage()))
                         return@launch
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
@@ -498,7 +491,6 @@ class PlayingPartnerViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(
                             errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
                         )
-                        Sentry.captureException(Exception(gameResult.error.toUserMessage()))
                         return@launch
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
@@ -599,7 +591,6 @@ class PlayingPartnerViewModel @Inject constructor(
                                 isLetsPlayLoading = false,
                                 errorMessage = "Failed to verify payment status: ${error.message}"
                             )
-                            Sentry.captureException(Exception(error.message))
                             return@launch
                         }
                     )
@@ -626,7 +617,7 @@ class PlayingPartnerViewModel @Inject constructor(
                     }
                     is NetworkResult.Error -> {
                         Log.w("PlayingPartnerVM", "⚠️ Failed to sync round to MongoDB: ${createRoundResult.error}")
-                        Sentry.captureException(Exception(createRoundResult.error.toUserMessage()))
+                        Sentry.captureException(Exception("Failed to save round to MongoDB"))
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
                 }
@@ -728,6 +719,7 @@ class PlayingPartnerViewModel @Inject constructor(
             isApproved = false,
             holeScores = holeScores,
             playingPartnerRound = playingPartnerRound,
+            sogoAppVersion = "",
             mslMetaData = MslMetaData(isIncludeRoundOnSogo = includeRoundValue),
             createdDate = nowUtc
         )

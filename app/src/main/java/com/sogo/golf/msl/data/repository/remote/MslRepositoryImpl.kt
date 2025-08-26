@@ -13,6 +13,8 @@ import com.sogo.golf.msl.data.network.api.GolfApiService
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.api.SogoApiService
 import com.sogo.golf.msl.data.repository.BaseRepository
+import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import io.sentry.Sentry
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,8 +24,9 @@ class MslRepositoryImpl @Inject constructor(
     private val sogoApiService: SogoApiService,
     private val mpsAuthApiService: MpsAuthApiService,
     private val networkChecker: NetworkChecker,
-    private val mslTokenManager: MslTokenManager
-) : BaseRepository(networkChecker), MslRepository {
+    private val mslTokenManager: MslTokenManager,
+    private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
+    ) : BaseRepository(networkChecker), MslRepository {
 
     companion object {
         private const val TAG = "MslRepository"
@@ -232,6 +235,7 @@ class MslRepositoryImpl @Inject constructor(
             } else {
                 Log.e(TAG, "Failed to get competition: ${response.code()} - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+
                 throw Exception("Failed to get competition: ${response.message()}")
             }
         }
@@ -243,8 +247,13 @@ class MslRepositoryImpl @Inject constructor(
             Log.d(TAG, "Selecting marker for player: $playerGolfLinkNumber")
 
             val request = PutMarkerRequestDto(playerGolfLinkNumber = playerGolfLinkNumber)
+
+            val selectedClub = getMslClubAndTenantIdsUseCase()
+                ?: throw Exception("No club selected. Please login again.")
+            val clubIdStr = selectedClub.clubId.toString()
+
             val response = golfApiService.putMarker(
-                companyCode = BuildConfig.MSL_COMPANY_CODE,
+                companyCode = clubIdStr,
                 request = request
             )
 
@@ -274,9 +283,13 @@ class MslRepositoryImpl @Inject constructor(
         return safeNetworkCall {
             Log.d(TAG, "Removing marker for player: $playerGolfLinkNumber")
 
+            val selectedClub = getMslClubAndTenantIdsUseCase()
+                ?: throw Exception("No club selected. Please login again.")
+            val clubIdStr = selectedClub.clubId.toString()
+
             val request = DeleteMarkerRequestDto(playerGolfLinkNumber = playerGolfLinkNumber)
             val response = golfApiService.deleteMarker(
-                companyCode = BuildConfig.MSL_COMPANY_CODE,
+                companyCode = clubIdStr,
                 request = request
             )
 

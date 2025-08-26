@@ -17,6 +17,7 @@ import com.sogo.golf.msl.domain.repository.SogoGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.TransactionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.domain.usecase.round.CheckActiveTodayRoundUseCase
+import io.sentry.Sentry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -96,6 +97,7 @@ class AuthRepositoryImpl @Inject constructor(
             _authState.value = _authState.value.copy(isLoggedIn = true)
             Result.success(Unit)
         } catch (e: Exception) {
+            Sentry.captureException(e)
             Result.failure(e)
         }
     }
@@ -143,6 +145,7 @@ class AuthRepositoryImpl @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             android.util.Log.e("AuthRepository", "❌ Failed to clear data on logout", e)
+            Sentry.captureException(e)
             Result.failure(e)
         }
     }
@@ -155,6 +158,7 @@ class AuthRepositoryImpl @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             android.util.Log.e("AuthRepository", "Failed to refresh active round state", e)
+            Sentry.captureException(e)
             Result.failure(e)
         }
     }

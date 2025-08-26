@@ -26,6 +26,8 @@ import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateGolferUseCase
 import com.sogo.golf.msl.features.sogo_home.presentation.state.CountryDataState
 import com.sogo.golf.msl.features.sogo_home.presentation.state.SogoGolferDataState
 import com.sogo.golf.msl.analytics.AnalyticsManager
+import io.sentry.Sentry
+import io.sentry.protocol.User
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,10 +45,6 @@ class HomeViewModel @Inject constructor(
         val getMslGolferUseCase: GetMslGolferUseCase,
         private val getLocalGameUseCase: GetLocalGameUseCase,
         private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
-        // NEW: Add fetching use cases
-        private val fetchAndSaveGameUseCase: FetchAndSaveGameUseCase,
-        private val fetchAndSaveCompetitionUseCase: FetchAndSaveCompetitionUseCase,
-        private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
         private val appUpdateManager: com.sogo.golf.msl.app.update.AppUpdateManager,
         private val fetchAndSaveFeesUseCase: FetchAndSaveFeesUseCase, // ✅ ADD THIS
         private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
@@ -124,6 +122,24 @@ class HomeViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
         )
+        
+        init {
+            // Set Sentry user if SogoGolfer data already exists (for returning users)
+            viewModelScope.launch {
+                sogoGolfer.collect { golfer ->
+                    if (golfer != null && !golfer.email.isNullOrBlank()) {
+                        setSentryUser(
+                            email = golfer.email,
+                            golfLinkNo = golfer.golfLinkNo ?: "",
+                            firstName = golfer.firstName ?: "",
+                            lastName = golfer.lastName ?: ""
+                        )
+                        // Only set it once when we have valid data
+                        return@collect
+                    }
+                }
+            }
+        }
 
         private var cameFromRoundSubmission = false
         
@@ -408,6 +424,24 @@ class HomeViewModel @Inject constructor(
             }
         }
 
+    private fun setSentryUser(email: String, golfLinkNo: String, firstName: String, lastName: String) {
+        try {
+            val user = User().apply {
+                this.email = email
+                this.id = email // Using email as the unique identifier
+                this.username = golfLinkNo
+                this.data = mapOf(
+                    "golf_link_number" to golfLinkNo,
+                    "name" to "$firstName $lastName"
+                )
+            }
+            Sentry.setUser(user)
+            Log.d(TAG, "✅ Sentry user set: $email (GL#: $golfLinkNo)")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to set Sentry user", e)
+        }
+    }
+    
     suspend fun processGolferConfirmationData(
         firstName: String,
         lastName: String,
@@ -472,6 +506,9 @@ class HomeViewModel @Inject constructor(
                     is NetworkResult.Success -> {
                         Log.d(TAG, "✅ Golfer updated successfully")
                         
+                        // Set Sentry user identification with email
+                        setSentryUser(currentEmail, golfLinkNo, firstName, lastName)
+                        
                         // Track success event
                         trackConfirmGolferDataSuccess(mapOf(
                             "action" to "update",
@@ -534,6 +571,9 @@ class HomeViewModel @Inject constructor(
                         when (val fetchResult = fetchAndSaveSogoGolferUseCase(golfLinkNo)) {
                             is NetworkResult.Success -> {
                                 Log.d(TAG, "✅ Newly created golfer fetched and saved locally")
+                                
+                                // Set Sentry user identification with email
+                                setSentryUser(currentEmail, golfLinkNo, firstName, lastName)
                                 
                                 // Track success event
                                 trackConfirmGolferDataSuccess(mapOf(
