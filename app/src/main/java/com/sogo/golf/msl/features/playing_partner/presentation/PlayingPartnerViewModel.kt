@@ -405,9 +405,6 @@ class PlayingPartnerViewModel @Inject constructor(
                     errorMessage = null
                 )
 
-                // Initialize transaction ID for round creation (will be set if payment occurs)
-                var roundTransactionId: String? = null
-
                 // Step 1: Verify we have required data from Room
                 val currentGolferData = currentGolfer.value
                 val gameData = localGame.value
@@ -511,6 +508,9 @@ class PlayingPartnerViewModel @Inject constructor(
                 val freshCompetitionData = localCompetition.value
                 Log.d("PlayingPartnerVM", "Fresh competition data: ${freshCompetitionData?.players?.size ?: 0} players")
 
+                // Initialize transaction ID for round creation (will be set if payment occurs)
+                var roundTransactionId: String? = null
+
                 // Step 4: Handle fee charging with duplicate prevention
                 Log.d("PlayingPartnerVM", "🔄 Step 4: Checking for duplicate transactions and handling fees...")
                 val includeRoundValue = _includeRound.value
@@ -551,7 +551,6 @@ class PlayingPartnerViewModel @Inject constructor(
                                 }
                                 
                                 // Create transaction and capture ID for round creation
-                                var roundTransactionId: String? = null
                                 val transactionId = ObjectIdUtils.generateObjectId()
                                 createTransactionUseCase(
                                     tokens = currentTokenCost.toInt(),
