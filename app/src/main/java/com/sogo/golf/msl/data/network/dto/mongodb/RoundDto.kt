@@ -47,6 +47,12 @@ data class RoundDto(
     @SerializedName("golflinkNo")
     val golflinkNo: String? = null,
     
+    @SerializedName("scorecardUrl")
+    val scorecardUrl: String? = null,
+    
+    @SerializedName("roundRefCode")
+    val roundRefCode: String? = null,
+    
     @SerializedName("roundDate")
     val roundDate: String? = null,
     
@@ -71,6 +77,84 @@ data class RoundDto(
     @SerializedName("compScoreTotal")
     val compScoreTotal: Int? = null,
     
+    @SerializedName("whsFrontScoreStableford")
+    val whsFrontScoreStableford: Int? = null,
+    
+    @SerializedName("whsBackScoreStableford")
+    val whsBackScoreStableford: Int? = null,
+    
+    @SerializedName("whsFrontScorePar")
+    val whsFrontScorePar: Int? = null,
+    
+    @SerializedName("whsBackScorePar")
+    val whsBackScorePar: Int? = null,
+    
+    @SerializedName("whsFrontScoreStroke")
+    val whsFrontScoreStroke: Int? = null,
+    
+    @SerializedName("whsBackScoreStroke")
+    val whsBackScoreStroke: Int? = null,
+    
+    @SerializedName("whsFrontScoreMaximumScore")
+    val whsFrontScoreMaximumScore: Int? = null,
+    
+    @SerializedName("whsBackScoreMaximumScore")
+    val whsBackScoreMaximumScore: Int? = null,
+    
+    @SerializedName("roundApprovedBy")
+    val roundApprovedBy: String? = null,
+    
+    @SerializedName("comment")
+    val comment: String? = null,
+    
+    @SerializedName("updateDate")
+    val updateDate: String? = null,
+    
+    @SerializedName("updateUserId")
+    val updateUserId: String? = null,
+    
+    @SerializedName("courseId")
+    val courseId: String? = null,
+    
+    @SerializedName("courseUuid")
+    val courseUuid: String? = null,
+    
+    @SerializedName("isClubSubmitted")
+    val isClubSubmitted: Boolean? = null,
+    
+    @SerializedName("isValidated")
+    val isValidated: Boolean? = null,
+    
+    @SerializedName("isMarkedForReview")
+    val isMarkedForReview: Boolean? = null,
+    
+    @SerializedName("isDeleted")
+    val isDeleted: Boolean? = null,
+    
+    @SerializedName("isAbandoned")
+    val isAbandoned: Boolean? = null,
+    
+    @SerializedName("clubId")
+    val clubId: String? = null,
+    
+    @SerializedName("clubUuid")
+    val clubUuid: String? = null,
+    
+    @SerializedName("golferId")
+    val golferId: String? = null,
+    
+    @SerializedName("golferGender")
+    val golferGender: String? = null,
+    
+    @SerializedName("golferEmail")
+    val golferEmail: String? = null,
+    
+    @SerializedName("golferImageUrl")
+    val golferImageUrl: String? = null,
+    
+    @SerializedName("clubState")
+    val clubState: StateInfoDto? = null,
+    
     @SerializedName("clubName")
     val clubName: String? = null,
     
@@ -88,6 +172,9 @@ data class RoundDto(
     
     @SerializedName("markerLastName")
     val markerLastName: String? = null,
+    
+    @SerializedName("markerEmail")
+    val markerEmail: String? = null,
     
     @SerializedName("markerGLNumber")
     val markerGLNumber: String? = null,
@@ -110,8 +197,20 @@ data class RoundDto(
     @SerializedName("holeScores")
     val holeScores: List<HoleScoreDto> = emptyList(),
     
+    @SerializedName("sogoAppVersion")
+    val sogoAppVersion: String? = null,
+    
+    @SerializedName("transactionId")
+    val transactionId: String? = null,
+    
     @SerializedName("playingPartnerRound")
     val playingPartnerRound: PlayingPartnerRoundDto? = null,
+    
+    @SerializedName("roundApprovalSignatureUrl")
+    val roundApprovalSignatureUrl: String? = null,
+    
+    @SerializedName("thirdPartyScorecardId")
+    val thirdPartyScorecardId: String? = null,
     
     @SerializedName("mslMetaData")
     val mslMetaData: MslMetaDataDto? = null,
@@ -214,6 +313,17 @@ data class PlayingPartnerRoundDto(
     val createdDate: String? = null
 )
 
+data class StateInfoDto(
+    @SerializedName("alpha2")
+    val alpha2: String = "",
+    
+    @SerializedName("name")
+    val name: String = "",
+    
+    @SerializedName("shortName")
+    val shortName: String = ""
+)
+
 data class MslMetaDataDto(
     @SerializedName("isIncludeRoundOnSogo")
     val isIncludeRoundOnSogo: Boolean? = null
@@ -228,7 +338,9 @@ fun Round.toDto(): RoundDto {
         dailyHandicap = dailyHandicap,
         golfLinkHandicap = golfLinkHandicap,
         golflinkNo = golflinkNo,
-roundDate = formatUtc(roundDate),
+        scorecardUrl = scorecardUrl,
+        roundRefCode = roundRefCode,
+        roundDate = formatUtc(roundDate),
         roundType = roundType,
         startTime = formatUtc(startTime),
         finishTime = formatUtc(finishTime),
@@ -236,12 +348,39 @@ roundDate = formatUtc(roundDate),
         slopeRating = slopeRating,
         submittedTime = formatUtc(submittedTime),
         compScoreTotal = compScoreTotal,
+        whsFrontScoreStableford = whsFrontScoreStableford,
+        whsBackScoreStableford = whsBackScoreStableford,
+        whsFrontScorePar = whsFrontScorePar,
+        whsBackScorePar = whsBackScorePar,
+        whsFrontScoreStroke = whsFrontScoreStroke,
+        whsBackScoreStroke = whsBackScoreStroke,
+        whsFrontScoreMaximumScore = whsFrontScoreMaximumScore,
+        whsBackScoreMaximumScore = whsBackScoreMaximumScore,
+        roundApprovedBy = roundApprovedBy,
+        comment = comment,
+        updateDate = updateDate,
+        updateUserId = updateUserId,
+        courseId = courseId,
+        courseUuid = courseUuid,
+        isClubSubmitted = isClubSubmitted,
+        isValidated = isValidated,
+        isMarkedForReview = isMarkedForReview,
+        isDeleted = isDeleted,
+        isAbandoned = isAbandoned,
+        clubId = clubId,
+        clubUuid = clubUuid,
+        golferId = golferId,
+        golferGender = golferGender,
+        golferEmail = golferEmail,
+        golferImageUrl = golferImageUrl,
+        clubState = clubState?.toDto(),
         clubName = clubName,
         golferFirstName = golferFirstName,
         golferLastName = golferLastName,
         golferGLNumber = golferGLNumber,
         markerFirstName = markerFirstName,
         markerLastName = markerLastName,
+        markerEmail = markerEmail,
         markerGLNumber = markerGLNumber,
         compType = compType,
         teeColor = teeColor,
@@ -249,7 +388,11 @@ roundDate = formatUtc(roundDate),
         isSubmitted = isSubmitted,
         isApproved = isApproved,
         holeScores = holeScores.map { it.toDto() },
+        sogoAppVersion = sogoAppVersion,
+        transactionId = transactionId,
         playingPartnerRound = playingPartnerRound?.toDto(),
+        roundApprovalSignatureUrl = roundApprovalSignatureUrl,
+        thirdPartyScorecardId = thirdPartyScorecardId,
         mslMetaData = mslMetaData?.toDto(),
         createdDate = formatUtc(createdDate)
     )
@@ -292,6 +435,14 @@ roundDate = formatUtc(roundDate),
         golferGender = golferGender,
         holeScores = holeScores.map { it.toDto() },
         createdDate = formatUtc(createdDate)
+    )
+}
+
+fun StateInfo.toDto(): StateInfoDto {
+    return StateInfoDto(
+        alpha2 = alpha2,
+        name = name,
+        shortName = shortName
     )
 }
 

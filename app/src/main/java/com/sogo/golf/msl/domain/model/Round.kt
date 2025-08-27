@@ -38,6 +38,7 @@ data class Round(
     val courseUuid: String? = null,
     val isClubSubmitted: Boolean? = null,
     val isSubmitted: Boolean? = null,
+    val isValidated: Boolean? = null,
     val isMarkedForReview: Boolean? = null,
     val isApproved: Boolean? = null,
     val teeColor: String? = null,
