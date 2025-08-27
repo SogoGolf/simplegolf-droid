@@ -405,6 +405,9 @@ class PlayingPartnerViewModel @Inject constructor(
                     errorMessage = null
                 )
 
+                // Initialize transaction ID for round creation (will be set if payment occurs)
+                var roundTransactionId: String? = null
+
                 // Step 1: Verify we have required data from Room
                 val currentGolferData = currentGolfer.value
                 val gameData = localGame.value
@@ -547,7 +550,8 @@ class PlayingPartnerViewModel @Inject constructor(
                                     return@launch
                                 }
                                 
-                                // Create transaction
+                                // Create transaction and capture ID for round creation
+                                var roundTransactionId: String? = null
                                 val transactionId = ObjectIdUtils.generateObjectId()
                                 createTransactionUseCase(
                                     tokens = currentTokenCost.toInt(),
@@ -562,6 +566,7 @@ class PlayingPartnerViewModel @Inject constructor(
                                 ).fold(
                                     onSuccess = {
                                         Log.d("PlayingPartnerVM", "✅ Transaction created successfully")
+                                        roundTransactionId = transactionId
                                         
                                         // Update token balance locally and on server
                                         val newBalance = sogoGolferData.tokenBalance - currentTokenCost.toInt()
@@ -606,7 +611,7 @@ class PlayingPartnerViewModel @Inject constructor(
 
                 // Step 5: Create Round object using fresh Room data
                 Log.d("PlayingPartnerVM", "🔄 Step 5: Creating Round object from fresh Room data...")
-                val round = createRoundFromRoomData(selectedPartner, currentGolferData, gameData, sogoGolferData, freshCompetitionData, selectedClub)
+                val round = createRoundFromRoomData(selectedPartner, currentGolferData, gameData, sogoGolferData, freshCompetitionData, selectedClub, roundTransactionId)
 
                 // Step 6: Save Round to Room
                 Log.d("PlayingPartnerVM", "🔄 Step 6: Saving Round to database...")
@@ -658,7 +663,8 @@ class PlayingPartnerViewModel @Inject constructor(
         gameData: MslGame,
         sogoGolferData: SogoGolfer,
         competitionData: MslCompetition?,
-        selectedClub: SelectedClub?
+        selectedClub: SelectedClub?,
+        transactionId: String? = null
     ): Round {
         val includeRoundValue = _includeRound.value
 
@@ -764,7 +770,7 @@ class PlayingPartnerViewModel @Inject constructor(
 
             thirdPartyScorecardId = null,
 
-            transactionId = null,       //get devin to add this
+            transactionId = transactionId,
             updateDate = null,
             updateUserId = null,
             uuid = null,
