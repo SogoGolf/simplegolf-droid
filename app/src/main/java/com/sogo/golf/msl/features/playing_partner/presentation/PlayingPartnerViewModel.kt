@@ -749,13 +749,17 @@ class PlayingPartnerViewModel @Inject constructor(
             sogoAppVersion = "",
 
             startTime = nowUtc,
+
             submittedTime = null,
+
             teeColor = golfer?.teeColourName?.lowercase() ?: gameData.teeColourName?.lowercase(),
+
             thirdPartyScorecardId = null,
-            transactionId = null,
+
+            transactionId = null,       //get devin to add this
             updateDate = null,
             updateUserId = null,
-            uuid = UUID.randomUUID().toString(),
+            uuid = null,
             whsBackScoreMaximumScore = null,
             whsBackScorePar = null,
             whsBackScoreStableford = null,
