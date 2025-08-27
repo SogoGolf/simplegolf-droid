@@ -34,6 +34,7 @@ import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCas
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CheckExistingTransactionUseCase
 import com.sogo.golf.msl.domain.usecase.app.GetAppVersionUseCase
+import com.sogo.golf.msl.domain.usecase.app.GetStateInfoUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -74,7 +75,8 @@ class PlayingPartnerViewModel @Inject constructor(
     private val includeRoundPreferences: IncludeRoundPreferences,
     private val updateTokenBalanceUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase,
     private val analyticsManager: AnalyticsManager,
-    private val getAppVersionUseCase: GetAppVersionUseCase
+    private val getAppVersionUseCase: GetAppVersionUseCase,
+    private val getStateInfoUseCase: GetStateInfoUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -693,13 +695,7 @@ class PlayingPartnerViewModel @Inject constructor(
         return Round(
             clubId = null,
             clubName = selectedClub?.clubName,
-            clubState = selectedClub?.clubName?.let { clubName ->
-                StateInfo(
-                    alpha2 = "",
-                    name = clubName,
-                    shortName = clubName
-                )
-            },
+            clubState = getStateInfoUseCase(sogoGolferData.state?.shortName),
             clubUuid = null,
             comment = null,
             compScoreTotal = 0,
