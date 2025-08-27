@@ -57,6 +57,7 @@ import javax.inject.Inject
 class PlayingPartnerViewModel @Inject constructor(
     private val networkChecker: NetworkChecker,
     private val getMslGolferUseCase: GetMslGolferUseCase,
+    private val mslGolferRepository: MslGolferLocalDbRepository,
     private val gameRepository: MslGameLocalDbRepository,
     private val competitionRepository: MslCompetitionLocalDbRepository,
     private val getSogoGolferUseCase: GetSogoGolferUseCase,
@@ -651,7 +652,7 @@ class PlayingPartnerViewModel @Inject constructor(
         }
     }
 
-    private fun createRoundFromRoomData(
+    private suspend fun createRoundFromRoomData(
         selectedPartner: MslPlayingPartner,
         currentGolferData: com.sogo.golf.msl.domain.model.msl.MslGolfer,
         gameData: MslGame,
@@ -692,6 +693,12 @@ class PlayingPartnerViewModel @Inject constructor(
 
         val holeScores = createHoleScores(competitionData, golfer)
 
+        // Get partner's email from MslGolfer data
+        val partnerMslGolfer = selectedPartner.golfLinkNumber?.let { golfLinkNo ->
+            mslGolferRepository.getGolferByGolfLinkNo(golfLinkNo)
+        }
+        val partnerEmail = partnerMslGolfer?.email
+
         return Round(
             clubId = null,
             clubName = selectedClub?.clubName,
@@ -730,7 +737,7 @@ class PlayingPartnerViewModel @Inject constructor(
             isSubmitted = false,
             isValidated = false,
 
-            markerEmail = null, //???????????????????????????????
+            markerEmail = partnerEmail,
             markerFirstName = selectedPartner.firstName,
             markerGLNumber = selectedPartner.golfLinkNumber,
             markerLastName = selectedPartner.lastName,
