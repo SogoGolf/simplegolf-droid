@@ -185,6 +185,22 @@ class ReviewScoresViewModel @AssistedInject constructor(
 
                             roundRepository.saveRound(updatedRound)
                             
+                            // Update MongoDB round submission status immediately after MSL submission succeeds
+                            android.util.Log.d(TAG, "Updating MongoDB round submission status to true after MSL success")
+                            viewModelScope.launch {
+                                when (val mongoResult = sogoMongoRepository.updateRoundSubmissionStatus(currentRound.id, true)) {
+                                    is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
+                                        android.util.Log.d(TAG, "✅ Successfully updated MongoDB round submission status")
+                                    }
+                                    is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
+                                        android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round submission status: ${mongoResult.error.toUserMessage()}")
+                                    }
+                                    is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
+                                        android.util.Log.d(TAG, "MongoDB round submission status update in progress...")
+                                    }
+                                }
+                            }
+                            
                             _uiState.value = _uiState.value.copy(
                                 isSubmitting = false,
                                 isSubmitted = true,
@@ -399,20 +415,7 @@ class ReviewScoresViewModel @AssistedInject constructor(
                 
                 android.util.Log.d(TAG, "Starting post-submission cleanup after user dismissed dialog")
                 
-                // Update MongoDB round with isSubmitted = true using minimal payload
-                android.util.Log.d(TAG, "Updating MongoDB round submission status to true")
-                when (val mongoResult = sogoMongoRepository.updateRoundSubmissionStatus(currentRound.id, true)) {
-                    is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
-                        android.util.Log.d(TAG, "✅ Successfully updated MongoDB round submission status")
-                    }
-                    is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
-                        android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round submission status: ${mongoResult.error.toUserMessage()}")
-                    }
-                    is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
-                        android.util.Log.d(TAG, "MongoDB round submission status update in progress...")
-                    }
-                }
-                
+                // Clear hole state and reset stale data
                 holeStatePreferences.clearCurrentHole(currentRound.id)
                 
                 resetStaleDataUseCase()
