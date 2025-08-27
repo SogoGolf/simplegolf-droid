@@ -690,7 +690,9 @@ class PlayingPartnerViewModel @Inject constructor(
         return Round(
             clubId = null,
             clubName = selectedClub?.clubName,
-            clubState = null,
+
+            clubState = null,   //// devin
+
             clubUuid = null,
             comment = null,
             compScoreTotal = 0,
@@ -708,24 +710,32 @@ class PlayingPartnerViewModel @Inject constructor(
             golferImageUrl = null,
             golferLastName = sogoGolferData.lastName,
             golferId = sogoGolferData.id,
+
             golfLinkHandicap = gameData.gaHandicap,
             golflinkNo = currentGolferData.golfLinkNo,
+
             holeScores = holeScores,
+
             id = ObjectIdUtils.generateObjectId(),
-            isAbandoned = null,
+
+            isAbandoned = false,
             isApproved = false,
             isClubComp = true,
-            isClubSubmitted = null,
-            isDeleted = null,
-            isMarkedForReview = null,
+            isClubSubmitted = false,
+            isDeleted = false,
+            isMarkedForReview = false,
             isSubmitted = false,
-            isValidated = null,
-            markerEmail = null,
+            isValidated = false,
+
+            markerEmail = null, //???????????????????????????????
             markerFirstName = selectedPartner.firstName,
             markerGLNumber = selectedPartner.golfLinkNumber,
             markerLastName = selectedPartner.lastName,
+
             mslMetaData = MslMetaData(isIncludeRoundOnSogo = includeRoundValue),
+
             playingPartnerRound = playingPartnerRound,
+
             roundApprovalSignatureUrl = null,
             roundApprovedBy = null,
             roundDate = nowUtc,
@@ -735,7 +745,9 @@ class PlayingPartnerViewModel @Inject constructor(
             scorecardUrl = null,
             scratchRating = golfer?.scratchRating?.toFloat(),
             slopeRating = golfer?.slopeRating?.toFloat(),
+
             sogoAppVersion = "",
+
             startTime = nowUtc,
             submittedTime = null,
             teeColor = golfer?.teeColourName?.lowercase() ?: gameData.teeColourName?.lowercase(),
