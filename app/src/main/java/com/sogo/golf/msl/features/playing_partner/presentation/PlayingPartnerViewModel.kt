@@ -11,6 +11,7 @@ import com.sogo.golf.msl.domain.model.MslMetaData
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.PlayingPartnerRound
 import com.sogo.golf.msl.domain.model.Round
+import com.sogo.golf.msl.domain.model.StateInfo
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import com.sogo.golf.msl.domain.model.msl.MslGame
@@ -32,6 +33,7 @@ import com.sogo.golf.msl.domain.usecase.round.CreateRoundUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CheckExistingTransactionUseCase
+import com.sogo.golf.msl.domain.usecase.app.GetAppVersionUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -71,7 +73,8 @@ class PlayingPartnerViewModel @Inject constructor(
     private val createTransactionUseCase: CreateTransactionUseCase,
     private val includeRoundPreferences: IncludeRoundPreferences,
     private val updateTokenBalanceUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase,
-    private val analyticsManager: AnalyticsManager
+    private val analyticsManager: AnalyticsManager,
+    private val getAppVersionUseCase: GetAppVersionUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -690,9 +693,13 @@ class PlayingPartnerViewModel @Inject constructor(
         return Round(
             clubId = null,
             clubName = selectedClub?.clubName,
-
-            clubState = null,   //// devin
-
+            clubState = selectedClub?.clubName?.let { clubName ->
+                StateInfo(
+                    alpha2 = "",
+                    name = clubName,
+                    shortName = clubName
+                )
+            },
             clubUuid = null,
             comment = null,
             compScoreTotal = 0,
@@ -745,9 +752,7 @@ class PlayingPartnerViewModel @Inject constructor(
             scorecardUrl = null,
             scratchRating = golfer?.scratchRating?.toFloat(),
             slopeRating = golfer?.slopeRating?.toFloat(),
-
-            sogoAppVersion = "",
-
+            sogoAppVersion = getAppVersionUseCase(),
             startTime = nowUtc,
 
             submittedTime = null,
