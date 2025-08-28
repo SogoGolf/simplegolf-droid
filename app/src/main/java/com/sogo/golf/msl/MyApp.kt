@@ -51,6 +51,7 @@ class MyApp : Application() {
             options.isAttachViewHierarchy = true
             options.isEnableAppStartProfiling = true
             options.tracesSampleRate = 1.0
+            options.logs.isEnabled = true
 
             // Unified beforeSend filter
             options.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
