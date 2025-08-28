@@ -587,17 +587,21 @@ class PlayRoundViewModel @Inject constructor(
     fun navigateToHole(holeNumber: Int) {
         val game = localGame.value
         if (game != null) {
-            val minHole = game.startingHoleNumber
-            val maxHole = getMaxHoleNumber(game)
+            val startingHole = game.startingHoleNumber
+            val numberOfHoles = game.numberOfHoles ?: 18
             
-            if (holeNumber in minHole..maxHole) {
+            // Get the cycle of holes for this round to validate if hole is in cycle
+            val cycle = getCycleIndices(startingHole, numberOfHoles)
+            val isValidHole = cycle.contains(holeNumber - 1)
+            
+            if (isValidHole) {
                 _currentHoleNumber.value = holeNumber
-                android.util.Log.d("PlayRoundVM", "Navigated to hole: $holeNumber")
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: $holeNumber (cycle-aware navigation)")
                 saveCurrentHoleState(holeNumber)
                 triggerHoleNavigationUpdate()
                 updateBackButtonVisibility(currentRound.value)
             } else {
-                android.util.Log.w("PlayRoundVM", "Invalid hole number: $holeNumber (valid range: $minHole-$maxHole)")
+                android.util.Log.w("PlayRoundVM", "Invalid hole number: $holeNumber (not in cycle for starting hole: $startingHole)")
             }
         }
     }
