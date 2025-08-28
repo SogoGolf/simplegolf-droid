@@ -898,8 +898,66 @@ class PlayRoundViewModel @Inject constructor(
     private fun getHoleIndex(holeNumber: Int): Int {
         val game = localGame.value
         val startingHole = game?.startingHoleNumber ?: 1
-        return holeNumber - startingHole
+        val numberOfHoles = game?.numberOfHoles ?: 18
+        
+        val cycle = getCycleIndices(startingHole, numberOfHoles)
+        return cycle.indexOf(holeNumber - 1)
     }
+
+    private fun getCycleIndices(startingHole: Int, numberOfHoles: Int): List<Int> {
+        val size = numberOfHoles
+        val startIndex = startingHole - 1
+        return (startIndex until size).toList() + (0 until startIndex).toList()
+    }
+
+    private fun getCurrentHoleScore(holeNumber: Int, isMainGolfer: Boolean): com.sogo.golf.msl.domain.model.HoleScore? {
+        val round = currentRound.value ?: return null
+        val holeScores = if (isMainGolfer) {
+            round.holeScores
+        } else {
+            round.playingPartnerRound?.holeScores
+        }
+        
+        val game = localGame.value ?: return null
+        val cycle = getCycleIndices(game.startingHoleNumber, game.numberOfHoles ?: 18)
+        val currentCyclePosition = cycle.indexOf(holeNumber - 1)
+        
+        return if (currentCyclePosition >= 0 && currentCyclePosition < (holeScores?.size ?: 0)) {
+            holeScores?.getOrNull(currentCyclePosition)
+        } else {
+            null
+        }
+    }
+
+    fun getCurrentHoleData(holeNumber: Int, isMainGolfer: Boolean): HoleData? {
+        val holeScore = getCurrentHoleScore(holeNumber, isMainGolfer)
+        
+        return holeScore?.let { hole ->
+            HoleData(
+                strokes = hole.strokes,
+                par = hole.par,
+                meters = hole.meters,
+                index1 = hole.index1,
+                index2 = hole.index2,
+                index3 = hole.index3 ?: 0,
+                score = hole.score.toInt(),
+                isBallPickedUp = hole.isBallPickedUp ?: false,
+                holeNumber = hole.holeNumber
+            )
+        }
+    }
+
+    data class HoleData(
+        val strokes: Int,
+        val par: Int,
+        val meters: Int,
+        val index1: Int,
+        val index2: Int,
+        val index3: Int,
+        val score: Int,
+        val isBallPickedUp: Boolean,
+        val holeNumber: Int
+    )
 
     fun clearCurrentHoleForRound() {
         viewModelScope.launch {
@@ -1084,7 +1142,7 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "Pickup button clicked - updating local state immediately")
                 
                 // Check current pickup state before updating to track the new state
-                val holeIndex = currentHole - (localGame.value?.startingHoleNumber ?: 1)
+                val holeIndex = getHoleIndex(currentHole)
                 val currentPickupState = if (isMainGolfer) {
                     if (holeIndex >= 0 && holeIndex < round.holeScores.size) {
                         round.holeScores[holeIndex].isBallPickedUp ?: false

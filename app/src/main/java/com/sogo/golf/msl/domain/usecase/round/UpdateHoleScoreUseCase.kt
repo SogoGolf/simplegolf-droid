@@ -173,6 +173,15 @@ class UpdateHoleScoreUseCase @Inject constructor(
     private suspend fun getHoleIndex(holeNumber: Int): Int {
         val game = getLocalGameUseCase().first()
         val startingHole = game?.startingHoleNumber ?: 1
-        return holeNumber - startingHole
+        val numberOfHoles = game?.numberOfHoles ?: 18
+        
+        val cycle = getCycleIndices(startingHole, numberOfHoles)
+        return cycle.indexOf(holeNumber - 1)
+    }
+
+    private fun getCycleIndices(startingHole: Int, numberOfHoles: Int): List<Int> {
+        val size = numberOfHoles
+        val startIndex = startingHole - 1
+        return (startIndex until size).toList() + (0 until startIndex).toList()
     }
 }
