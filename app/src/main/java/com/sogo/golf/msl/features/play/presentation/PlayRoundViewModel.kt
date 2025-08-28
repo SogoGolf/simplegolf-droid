@@ -628,12 +628,16 @@ class PlayRoundViewModel @Inject constructor(
         }
         
         val startingHole = game.startingHoleNumber
-        val maxHole = getMaxHoleNumber(game)
+        val numberOfHoles = game.numberOfHoles ?: 18
         
-        android.util.Log.d("PlayRoundVM", "Checking completion for holes $startingHole to $maxHole")
+        // Get the cycle of holes for this round (same logic as navigation)
+        val cycle = getCycleIndices(startingHole, numberOfHoles)
+        val holeNumbers = cycle.map { it + 1 } // Convert from 0-based to 1-based hole numbers
         
-        // Check all holes from starting hole to max hole
-        for (holeNumber in startingHole..maxHole) {
+        android.util.Log.d("PlayRoundVM", "Checking completion for cycle holes: $holeNumbers")
+        
+        // Check all holes in the cycle
+        for (holeNumber in holeNumbers) {
             // Check main golfer strokes
             val mainGolferHole = round.holeScores.find { it.holeNumber == holeNumber }
             val mainGolferStrokes = mainGolferHole?.strokes ?: 0
@@ -651,7 +655,7 @@ class PlayRoundViewModel @Inject constructor(
             }
         }
         
-        android.util.Log.d("PlayRoundVM", "All holes completed!")
+        android.util.Log.d("PlayRoundVM", "All holes in cycle completed!")
         return true
     }
 
