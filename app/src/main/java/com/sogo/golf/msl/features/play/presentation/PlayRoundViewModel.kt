@@ -910,9 +910,25 @@ class PlayRoundViewModel @Inject constructor(
     }
 
     private fun getCycleIndices(startingHole: Int, numberOfHoles: Int): List<Int> {
-        val size = numberOfHoles
-        val startIndex = startingHole - 1
-        return (startIndex until size).toList() + (0 until startIndex).toList()
+        val maxHole = when {
+            startingHole == 1 && numberOfHoles == 18 -> 18
+            startingHole == 1 && numberOfHoles == 9 -> 9
+            startingHole == 10 && numberOfHoles == 9 -> 18
+            else -> startingHole + numberOfHoles - 1
+        }
+        
+        val holeNumbers = mutableListOf<Int>()
+        var currentHole = startingHole
+        
+        repeat(numberOfHoles) {
+            holeNumbers.add(currentHole)
+            currentHole++
+            if (currentHole > maxHole) {
+                currentHole = if (maxHole == 18 && startingHole >= 10) 10 else 1
+            }
+        }
+        
+        return holeNumbers.map { it - 1 }
     }
 
 
