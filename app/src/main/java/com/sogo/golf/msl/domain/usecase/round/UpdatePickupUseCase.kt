@@ -74,42 +74,44 @@ class UpdatePickupUseCase @Inject constructor(
         isMainGolfer: Boolean,
         newStrokes: Int
     ): Round {
-        val holeIndex = getHoleIndex(holeNumber)
-        
         return if (isMainGolfer) {
-            val updatedHoleScores = round.holeScores.toMutableList()
-            if (holeIndex >= 0 && holeIndex < updatedHoleScores.size) {
-                val currentHoleScore = updatedHoleScores[holeIndex]
-                val newPickupState = !(currentHoleScore.isBallPickedUp ?: false)
-                val finalStrokes = if (newPickupState) newStrokes else currentHoleScore.strokes
-                val newScore = calculateScore(finalStrokes, currentHoleScore, isMainGolfer, newPickupState)
-                
-                Log.d("UpdatePickup", "Main golfer - Pickup: $newPickupState, Strokes: $finalStrokes, Score: $newScore")
-                
-                updatedHoleScores[holeIndex] = currentHoleScore.copy(
-                    isBallPickedUp = newPickupState,
-                    strokes = finalStrokes,
-                    score = newScore
-                )
+            val updatedHoleScores = round.holeScores.map { holeScore ->
+                if (holeScore.holeNumber == holeNumber) {
+                    val newPickupState = !(holeScore.isBallPickedUp ?: false)
+                    val finalStrokes = if (newPickupState) newStrokes else holeScore.strokes
+                    val newScore = calculateScore(finalStrokes, holeScore, isMainGolfer, newPickupState)
+                    
+                    Log.d("UpdatePickup", "Main golfer - Pickup: $newPickupState, Strokes: $finalStrokes, Score: $newScore")
+                    
+                    holeScore.copy(
+                        isBallPickedUp = newPickupState,
+                        strokes = finalStrokes,
+                        score = newScore
+                    )
+                } else {
+                    holeScore
+                }
             }
             round.copy(holeScores = updatedHoleScores)
         } else {
             val partnerRound = round.playingPartnerRound
             if (partnerRound != null) {
-                val updatedPartnerHoleScores = partnerRound.holeScores.toMutableList()
-                if (holeIndex >= 0 && holeIndex < updatedPartnerHoleScores.size) {
-                    val currentHoleScore = updatedPartnerHoleScores[holeIndex]
-                    val newPickupState = !(currentHoleScore.isBallPickedUp ?: false)
-                    val finalStrokes = if (newPickupState) newStrokes else currentHoleScore.strokes
-                    val newScore = calculateScore(finalStrokes, currentHoleScore, isMainGolfer, newPickupState)
-                    
-                    Log.d("UpdatePickup", "Partner - Pickup: $newPickupState, Strokes: $finalStrokes, Score: $newScore")
-                    
-                    updatedPartnerHoleScores[holeIndex] = currentHoleScore.copy(
-                        isBallPickedUp = newPickupState,
-                        strokes = finalStrokes,
-                        score = newScore
-                    )
+                val updatedPartnerHoleScores = partnerRound.holeScores.map { holeScore ->
+                    if (holeScore.holeNumber == holeNumber) {
+                        val newPickupState = !(holeScore.isBallPickedUp ?: false)
+                        val finalStrokes = if (newPickupState) newStrokes else holeScore.strokes
+                        val newScore = calculateScore(finalStrokes, holeScore, isMainGolfer, newPickupState)
+                        
+                        Log.d("UpdatePickup", "Partner - Pickup: $newPickupState, Strokes: $finalStrokes, Score: $newScore")
+                        
+                        holeScore.copy(
+                            isBallPickedUp = newPickupState,
+                            strokes = finalStrokes,
+                            score = newScore
+                        )
+                    } else {
+                        holeScore
+                    }
                 }
                 round.copy(
                     playingPartnerRound = partnerRound.copy(holeScores = updatedPartnerHoleScores)
@@ -178,18 +180,4 @@ class UpdatePickupUseCase @Inject constructor(
         }
     }
 
-    private suspend fun getHoleIndex(holeNumber: Int): Int {
-        val game = getLocalGameUseCase().first()
-        val startingHole = game?.startingHoleNumber ?: 1
-        val numberOfHoles = game?.numberOfHoles ?: 18
-        
-        val cycle = getCycleIndices(startingHole, numberOfHoles)
-        return cycle.indexOf(holeNumber - 1)
-    }
-
-    private fun getCycleIndices(startingHole: Int, numberOfHoles: Int): List<Int> {
-        val size = numberOfHoles
-        val startIndex = startingHole - 1
-        return (startIndex until size).toList() + (0 until startIndex).toList()
-    }
 }

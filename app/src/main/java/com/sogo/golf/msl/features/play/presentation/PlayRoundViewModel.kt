@@ -1077,15 +1077,10 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "Pickup button clicked - updating local state immediately")
                 
                 // Check current pickup state before updating to track the new state
-                val holeIndex = getHoleIndex(currentHole)
                 val currentPickupState = if (isMainGolfer) {
-                    if (holeIndex >= 0 && holeIndex < round.holeScores.size) {
-                        round.holeScores[holeIndex].isBallPickedUp ?: false
-                    } else false
+                    round.holeScores.find { it.holeNumber == currentHole }?.isBallPickedUp ?: false
                 } else {
-                    if (round.playingPartnerRound != null && holeIndex >= 0 && holeIndex < round.playingPartnerRound.holeScores.size) {
-                        round.playingPartnerRound.holeScores[holeIndex].isBallPickedUp ?: false
-                    } else false
+                    round.playingPartnerRound?.holeScores?.find { it.holeNumber == currentHole }?.isBallPickedUp ?: false
                 }
                 val newPickupState = !currentPickupState
                 
