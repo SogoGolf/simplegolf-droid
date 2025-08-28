@@ -523,17 +523,24 @@ class PlayRoundViewModel @Inject constructor(
         val game = localGame.value
         if (game != null) {
             val currentHole = _currentHoleNumber.value
-            val maxHole = getMaxHoleNumber(game)
+            val startingHole = game.startingHoleNumber
+            val numberOfHoles = game.numberOfHoles ?: 18
             
-            if (currentHole < maxHole) {
-                val newHole = currentHole + 1
+            // Get the cycle of holes for this round
+            val cycle = getCycleIndices(startingHole, numberOfHoles)
+            val currentIndex = cycle.indexOf(currentHole - 1)
+            
+            if (currentIndex >= 0 && currentIndex < cycle.size - 1) {
+                // Move to next hole in cycle
+                val nextIndex = currentIndex + 1
+                val newHole = cycle[nextIndex] + 1
                 _currentHoleNumber.value = newHole
-                android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole")
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole (cycle index: $nextIndex)")
                 saveCurrentHoleState(newHole)
                 triggerHoleNavigationUpdate()
                 updateBackButtonVisibility(currentRound.value)
             } else {
-                android.util.Log.d("PlayRoundVM", "On last hole: $maxHole - checking completion status")
+                android.util.Log.d("PlayRoundVM", "On last hole of cycle - checking completion status")
                 if (areAllHolesCompleted()) {
                     android.util.Log.d("PlayRoundVM", "All holes completed - navigating to review screen")
                     val currentRoundId = currentRound.value?.id ?: ""
@@ -555,17 +562,24 @@ class PlayRoundViewModel @Inject constructor(
         val game = localGame.value
         if (game != null) {
             val currentHole = _currentHoleNumber.value
-            val minHole = game.startingHoleNumber
+            val startingHole = game.startingHoleNumber
+            val numberOfHoles = game.numberOfHoles ?: 18
             
-            if (currentHole > minHole) {
-                val newHole = currentHole - 1
+            // Get the cycle of holes for this round
+            val cycle = getCycleIndices(startingHole, numberOfHoles)
+            val currentIndex = cycle.indexOf(currentHole - 1)
+            
+            if (currentIndex > 0) {
+                // Move to previous hole in cycle
+                val prevIndex = currentIndex - 1
+                val newHole = cycle[prevIndex] + 1
                 _currentHoleNumber.value = newHole
-                android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole")
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole (cycle index: $prevIndex)")
                 saveCurrentHoleState(newHole)
                 triggerHoleNavigationUpdate()
                 updateBackButtonVisibility(currentRound.value)
             } else {
-                android.util.Log.d("PlayRoundVM", "Already at first hole: $minHole")
+                android.util.Log.d("PlayRoundVM", "Already at first hole in cycle: $startingHole")
             }
         }
     }
