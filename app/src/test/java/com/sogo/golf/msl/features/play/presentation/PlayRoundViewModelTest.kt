@@ -28,6 +28,18 @@ class PlayRoundViewModelTest {
     }
 
     @Test
+    fun testGetCycleIndices_9HoleRound_StartingAtHole5_ReturnsCorrectOrder() {
+        val startingHole = 5
+        val numberOfHoles = 9
+        val cycle = getCycleIndicesForTest(startingHole, numberOfHoles)
+        
+        // 9-hole round starting at hole 5: holes 5,6,7,8,9,1,2,3,4
+        // This should wrap from hole 9 back to hole 1 (1-9 range)
+        val expected = listOf(4, 5, 6, 7, 8, 0, 1, 2, 3)
+        assertEquals(expected, cycle)
+    }
+
+    @Test
     fun testGetCycleIndices_10to18HoleRound_StartingAtHole12_ReturnsCorrectOrder() {
         val startingHole = 12
         val numberOfHoles = 9
@@ -66,10 +78,9 @@ class PlayRoundViewModelTest {
 
     private fun getCycleIndicesForTest(startingHole: Int, numberOfHoles: Int): List<Int> {
         val maxHole = when {
-            startingHole == 1 && numberOfHoles == 18 -> 18
-            startingHole == 1 && numberOfHoles == 9 -> 9
-            startingHole >= 10 && numberOfHoles == 9 -> 18  // 10-18 hole range
             numberOfHoles == 18 -> 18  // Any 18-hole round uses holes 1-18
+            startingHole >= 10 && numberOfHoles == 9 -> 18  // 10-18 hole range
+            startingHole >= 1 && startingHole <= 9 && numberOfHoles == 9 -> 9  // 1-9 hole range
             else -> startingHole + numberOfHoles - 1
         }
         
@@ -80,7 +91,12 @@ class PlayRoundViewModelTest {
             holeNumbers.add(currentHole)
             currentHole++
             if (currentHole > maxHole) {
-                currentHole = if (maxHole == 18 && startingHole >= 10 && numberOfHoles == 9) 10 else 1
+                currentHole = when {
+                    // 10-18 hole rounds: wrap from 18 back to 10
+                    startingHole >= 10 && numberOfHoles == 9 -> 10
+                    // All other rounds: wrap back to 1
+                    else -> 1
+                }
             }
         }
         

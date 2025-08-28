@@ -911,10 +911,9 @@ class PlayRoundViewModel @Inject constructor(
 
     private fun getCycleIndices(startingHole: Int, numberOfHoles: Int): List<Int> {
         val maxHole = when {
-            startingHole == 1 && numberOfHoles == 18 -> 18
-            startingHole == 1 && numberOfHoles == 9 -> 9
-            startingHole >= 10 && numberOfHoles == 9 -> 18  // 10-18 hole range
             numberOfHoles == 18 -> 18  // Any 18-hole round uses holes 1-18
+            startingHole >= 10 && numberOfHoles == 9 -> 18  // 10-18 hole range
+            startingHole >= 1 && startingHole <= 9 && numberOfHoles == 9 -> 9  // 1-9 hole range
             else -> startingHole + numberOfHoles - 1
         }
         
@@ -925,7 +924,12 @@ class PlayRoundViewModel @Inject constructor(
             holeNumbers.add(currentHole)
             currentHole++
             if (currentHole > maxHole) {
-                currentHole = if (maxHole == 18 && startingHole >= 10 && numberOfHoles == 9) 10 else 1
+                currentHole = when {
+                    // 10-18 hole rounds: wrap from 18 back to 10
+                    startingHole >= 10 && numberOfHoles == 9 -> 10
+                    // All other rounds: wrap back to 1
+                    else -> 1
+                }
             }
         }
         
