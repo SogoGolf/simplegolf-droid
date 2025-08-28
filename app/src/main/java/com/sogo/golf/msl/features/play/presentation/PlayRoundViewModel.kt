@@ -913,7 +913,8 @@ class PlayRoundViewModel @Inject constructor(
         val maxHole = when {
             startingHole == 1 && numberOfHoles == 18 -> 18
             startingHole == 1 && numberOfHoles == 9 -> 9
-            startingHole == 10 && numberOfHoles == 9 -> 18
+            startingHole >= 10 && numberOfHoles == 9 -> 18  // 10-18 hole range
+            numberOfHoles == 18 -> 18  // Any 18-hole round uses holes 1-18
             else -> startingHole + numberOfHoles - 1
         }
         
@@ -924,7 +925,7 @@ class PlayRoundViewModel @Inject constructor(
             holeNumbers.add(currentHole)
             currentHole++
             if (currentHole > maxHole) {
-                currentHole = if (maxHole == 18 && startingHole >= 10) 10 else 1
+                currentHole = if (maxHole == 18 && startingHole >= 10 && numberOfHoles == 9) 10 else 1
             }
         }
         
