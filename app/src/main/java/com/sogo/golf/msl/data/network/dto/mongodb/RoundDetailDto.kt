@@ -20,10 +20,10 @@ data class RoundDetailDto(
     val clubName: String? = null,
     
     @SerializedName("scratchRating")
-    val scratchRating: Int? = null,
+    val scratchRating: Float? = null,
     
     @SerializedName("slopeRating")
-    val slopeRating: Int? = null,
+    val slopeRating: Float? = null,
     
     @SerializedName("teeColor")
     val teeColor: String? = null,
