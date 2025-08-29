@@ -9,7 +9,10 @@ import com.sogo.golf.msl.data.network.mappers.toDomainModel
 import com.sogo.golf.msl.domain.model.msl.MslTokens
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.Protocol
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import javax.inject.Inject
 
 class GolfApiAuthInterceptor @Inject constructor(
@@ -57,6 +60,14 @@ class GolfApiAuthInterceptor @Inject constructor(
                 return chain.proceed(retryRequest)
             } else {
                 Log.e(TAG, "❌ Token refresh did not yield a new token; not retrying or retrying would be futile")
+                // Create a synthetic 401 response instead of returning the closed one
+                return Response.Builder()
+                    .request(originalRequest)
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(401)
+                    .message("Unauthorized - Token refresh failed")
+                    .body("".toResponseBody("text/plain".toMediaType()))
+                    .build()
             }
         }
 
