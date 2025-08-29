@@ -52,7 +52,9 @@ fun PlayRoundDebug(
 
     if (isLandscape) {
         // Show scorecard in landscape
-        ScorecardScreen()
+        ScorecardScreen(
+            calculateScore = null
+        )
     } else {
         // Show normal Screen4 content in portrait
         Screen4PortraitDebug(navController, viewModel, playRoundDebugViewModel)

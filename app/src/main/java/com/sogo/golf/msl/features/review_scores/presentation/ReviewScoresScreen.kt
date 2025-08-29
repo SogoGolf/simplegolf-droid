@@ -55,7 +55,8 @@ fun ReviewScoresScreen(
         
         ScorecardScreen(
             round = uiState.round,
-            mslCompetition = currentCompetition
+            mslCompetition = currentCompetition,
+            calculateScore = null
         )
     } else {
         ReviewScoresPortrait(

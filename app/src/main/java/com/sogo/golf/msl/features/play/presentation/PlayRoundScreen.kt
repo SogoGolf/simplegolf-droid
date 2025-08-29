@@ -75,7 +75,8 @@ fun PlayRoundScreen(
         // Show scorecard in landscape
         ScorecardScreen(
             round = currentRound,
-            mslCompetition = localCompetition
+            mslCompetition = localCompetition,
+            calculateScore = playRoundViewModel::calculateCurrentPoints
         )
     } else {
         // Show normal Screen4 content in portrait
