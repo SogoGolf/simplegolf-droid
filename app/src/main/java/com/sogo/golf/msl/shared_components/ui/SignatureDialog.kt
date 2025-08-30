@@ -41,6 +41,11 @@ import com.sogo.golf.msl.ui.theme.MSLGolfTheme
 import se.warting.signaturepad.SignaturePadAdapter
 import se.warting.signaturepad.SignaturePadView
 import java.io.ByteArrayOutputStream
+import kotlin.math.min
+
+private const val SIGNATURE_COMPRESSION_QUALITY = 60
+private const val MAX_SIGNATURE_WIDTH = 800
+private const val MAX_SIGNATURE_HEIGHT = 400
 
 @Composable
 fun SignatureDialog(
@@ -147,9 +152,35 @@ fun SignatureDialog(
 
 private fun bitmapToBase64(bitmap: Bitmap): String {
     val outputStream = ByteArrayOutputStream()
-    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+    
+    val scaledBitmap = scaleBitmapIfNeeded(bitmap, MAX_SIGNATURE_WIDTH, MAX_SIGNATURE_HEIGHT)
+    
+    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, SIGNATURE_COMPRESSION_QUALITY, outputStream)
+    
+    if (scaledBitmap != bitmap) {
+        scaledBitmap.recycle()
+    }
+    
     val byteArray = outputStream.toByteArray()
     return Base64.encodeToString(byteArray, Base64.DEFAULT)
+}
+
+private fun scaleBitmapIfNeeded(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
+    val width = bitmap.width
+    val height = bitmap.height
+    
+    if (width <= maxWidth && height <= maxHeight) {
+        return bitmap
+    }
+    
+    val scaleWidth = maxWidth.toFloat() / width
+    val scaleHeight = maxHeight.toFloat() / height
+    val scale = min(scaleWidth, scaleHeight)
+    
+    val newWidth = (width * scale).toInt()
+    val newHeight = (height * scale).toInt()
+    
+    return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
 }
 
 @Composable
