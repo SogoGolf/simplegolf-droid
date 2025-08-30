@@ -36,6 +36,7 @@ import com.sogo.golf.msl.shared.utils.DateUtils
 import com.sogo.golf.msl.analytics.AnalyticsManager
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.sentry.Sentry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -1039,19 +1040,22 @@ class PlayRoundViewModel @Inject constructor(
                 
                 if (partnerGolfLinkNumber != null) {
                     android.util.Log.d("PlayRoundVM", "Removing marker from playing partner: $partnerGolfLinkNumber")
-                    when (val markerResult = removeMarkerUseCase(partnerGolfLinkNumber)) {
-                        is NetworkResult.Success -> {
-                            android.util.Log.d("PlayRoundVM", "✅ Marker removed successfully")
+                    try {
+                        when (val markerResult = removeMarkerUseCase(partnerGolfLinkNumber)) {
+                            is NetworkResult.Success -> {
+                                android.util.Log.d("PlayRoundVM", "✅ Marker removed successfully")
+                            }
+                            is NetworkResult.Error -> {
+                                android.util.Log.e("PlayRoundVM", "❌ Failed to remove marker: ${markerResult.error.toUserMessage()}")
+                                Sentry.captureException(Exception("Failed to remove marker during round abandonment: ${markerResult.error.toUserMessage()}"))
+                            }
+                            is NetworkResult.Loading -> {
+                                android.util.Log.w("PlayRoundVM", "Unexpected loading state during marker removal")
+                            }
                         }
-                        is NetworkResult.Error -> {
-                            android.util.Log.e("PlayRoundVM", "❌ Failed to remove marker: ${markerResult.error.toUserMessage()}")
-                            _isAbandoningRound.value = false
-                            _abandonError.value = "Failed to remove marker: ${markerResult.error.toUserMessage()}"
-                            return@launch
-                        }
-                        is NetworkResult.Loading -> {
-                            android.util.Log.w("PlayRoundVM", "Unexpected loading state during marker removal")
-                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("PlayRoundVM", "❌ Exception during marker removal", e)
+                        Sentry.captureException(e)
                     }
                 } else {
                     android.util.Log.d("PlayRoundVM", "No marker to remove, proceeding to round deletion")
