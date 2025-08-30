@@ -82,6 +82,12 @@ class MyApp : Application() {
                     }
                 }
 
+                // 4) Filter out "Job was cancelled" error messages
+                val message = event.message?.message ?: ""
+                if (message.contains("Job was cancelled", ignoreCase = true)) {
+                    return@BeforeSendCallback null
+                }
+
                 // otherwise keep the event
                 event
             }
