@@ -14,6 +14,7 @@ import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.api.SogoApiService
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import com.sogo.golf.msl.shared.utils.SentryUtils.sentryLog
 import io.sentry.Sentry
 import io.sentry.Sentry.logger
 import io.sentry.SentryLogLevel
@@ -306,14 +307,24 @@ class MslRepositoryImpl @Inject constructor(
                     Unit // Return Unit for success
                 } else {
                     Log.e(TAG, "❌ API returned error: Request to delete marker failed.. ${markerResponse.errorMessage}")
-                    logger().log(SentryLogLevel.ERROR, "DELETE marker API returned error - playerGolfLinkNumber: $playerGolfLinkNumber, clubId: $clubIdStr, errorMessage: ${markerResponse.errorMessage}")
+                    sentryLog(SentryLogLevel.ERROR, "DELETE marker API returned error", mapOf(
+                        "playerGolfLinkNumber" to playerGolfLinkNumber,
+                        "clubId" to clubIdStr,
+                        "errorMessage" to markerResponse.errorMessage
+                    ))
                     Unit
                 }
             } else {
                 Log.e(TAG, "❌ Failed to remove marker: ${response.code()} - ${response.message()}")
                 val errorBody = response.errorBody()?.string()
                 Log.e(TAG, "Response body: $errorBody")
-                logger().log(SentryLogLevel.ERROR, "DELETE marker HTTP request failed - playerGolfLinkNumber: $playerGolfLinkNumber, clubId: $clubIdStr, httpCode: ${response.code()}, httpMessage: ${response.message()}, responseBody: $errorBody")
+                sentryLog(SentryLogLevel.ERROR, "DELETE marker HTTP request failed", mapOf(
+                    "playerGolfLinkNumber" to playerGolfLinkNumber,
+                    "clubId" to clubIdStr,
+                    "httpCode" to response.code(),
+                    "httpMessage" to response.message(),
+                    "responseBody" to errorBody
+                ))
                 Unit
             }
         }
