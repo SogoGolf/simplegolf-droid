@@ -37,6 +37,8 @@ import com.sogo.golf.msl.domain.usecase.app.GetAppVersionUseCase
 import com.sogo.golf.msl.domain.usecase.app.GetStateInfoUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
+import com.sogo.golf.msl.shared.utils.SentryUtils.sentryLogException
+import com.sogo.golf.msl.shared.utils.SentryUtils.sentryLogMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.sentry.Sentry
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -388,7 +390,7 @@ class PlayingPartnerViewModel @Inject constructor(
                 isRefreshLoading = false,
                 errorMessage = "Refresh failed: ${e.message}"
             )
-            Sentry.captureException(e)
+            sentryLogException(e)
             false
         }
     }
@@ -427,7 +429,7 @@ class PlayingPartnerViewModel @Inject constructor(
                         isLetsPlayLoading = false,
                         errorMessage = "Current golfer data not available. Please refresh the app."
                     )
-                    Sentry.captureMessage("Current golfer data not available (tapped Play button). Can not continue.")
+                    sentryLogMessage("Current golfer data not available (tapped Play button). Can not continue.")
                     return@launch
                 }
 
@@ -436,7 +438,7 @@ class PlayingPartnerViewModel @Inject constructor(
                         isLetsPlayLoading = false,
                         errorMessage = "Game data not available. Please refresh the app."
                     )
-                    Sentry.captureMessage("Game data not available (tapped Play button). Can not continue.")
+                    sentryLogMessage("Game data not available (tapped Play button). Can not continue.")
                     return@launch
                 }
 
@@ -445,7 +447,7 @@ class PlayingPartnerViewModel @Inject constructor(
                         isLetsPlayLoading = false,
                         errorMessage = "Sogo golfer data not available. Please refresh the app."
                     )
-                    Sentry.captureMessage("Sogo golfer data not available (tapped Play button). Can not continue.")
+                    sentryLogMessage("Sogo golfer data not available (tapped Play button). Can not continue.")
                     return@launch
                 }
 
@@ -461,7 +463,7 @@ class PlayingPartnerViewModel @Inject constructor(
                             isLetsPlayLoading = false,
                             errorMessage = "Failed to select marker: ${markerResult.error.toUserMessage()}"
                         )
-                        Sentry.captureMessage("Call PUT marker failed.")
+                        sentryLogMessage("Call PUT marker failed.")
                         return@launch
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
@@ -532,7 +534,7 @@ class PlayingPartnerViewModel @Inject constructor(
                             isLetsPlayLoading = false,
                             errorMessage = "Game data missing competition ID. Please refresh and try again."
                         )
-                        Sentry.captureMessage("Game data missing competition ID. Can not continue.")
+                        sentryLogMessage("Game data missing competition ID. Can not continue.")
                         return@launch
                     }
                     
@@ -656,7 +658,7 @@ class PlayingPartnerViewModel @Inject constructor(
                     isLetsPlayLoading = false,
                     errorMessage = "Let's Play failed: ${e.message}"
                 )
-                Sentry.captureException(e)
+                sentryLogException(e)
             }
         }
     }
