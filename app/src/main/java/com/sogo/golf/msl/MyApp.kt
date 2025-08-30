@@ -87,13 +87,22 @@ class MyApp : Application() {
             }
         }
 
-        Purchases.logLevel = LogLevel.DEBUG
+        if (BuildConfig.DEBUG) {
+            Purchases.logLevel = LogLevel.DEBUG
+        } else {
+            Purchases.logLevel = LogLevel.ERROR
+        }
         Purchases.configure(PurchasesConfiguration.Builder(this, BuildConfig.REVENUECAT).build())
         Log.d("MyApp", "Revenuecat initialised...")
 
         //OneSignal SDK init
         // Enable verbose logging for debugging (remove in production)
-        OneSignal.Debug.logLevel = com.onesignal.debug.LogLevel.VERBOSE
+        if (BuildConfig.DEBUG) {
+            OneSignal.Debug.logLevel = com.onesignal.debug.LogLevel.VERBOSE
+        } else {
+            OneSignal.Debug.logLevel = com.onesignal.debug.LogLevel.ERROR
+        }
+
         // Initialize with your OneSignal App ID
         OneSignal.initWithContext(this, "f65531f8-5975-47ff-8562-2b9a5bea9f1c")
 
