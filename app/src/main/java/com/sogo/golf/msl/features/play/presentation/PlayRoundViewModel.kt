@@ -36,7 +36,6 @@ import com.sogo.golf.msl.shared.utils.DateUtils
 import com.sogo.golf.msl.analytics.AnalyticsManager
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.sentry.Sentry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -1047,7 +1046,6 @@ class PlayRoundViewModel @Inject constructor(
                             }
                             is NetworkResult.Error -> {
                                 android.util.Log.e("PlayRoundVM", "❌ Failed to remove marker: ${markerResult.error.toUserMessage()}")
-                                Sentry.captureException(Exception("Failed to remove marker during round abandonment: ${markerResult.error.toUserMessage()}"))
                             }
                             is NetworkResult.Loading -> {
                                 android.util.Log.w("PlayRoundVM", "Unexpected loading state during marker removal")
@@ -1055,7 +1053,6 @@ class PlayRoundViewModel @Inject constructor(
                         }
                     } catch (e: Exception) {
                         android.util.Log.e("PlayRoundVM", "❌ Exception during marker removal", e)
-                        Sentry.captureException(e)
                     }
                 } else {
                     android.util.Log.d("PlayRoundVM", "No marker to remove, proceeding to round deletion")

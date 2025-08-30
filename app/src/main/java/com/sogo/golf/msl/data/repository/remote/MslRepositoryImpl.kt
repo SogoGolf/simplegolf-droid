@@ -15,6 +15,8 @@ import com.sogo.golf.msl.data.network.api.SogoApiService
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import io.sentry.Sentry
+import io.sentry.Sentry.logger
+import io.sentry.SentryLogLevel
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -304,12 +306,15 @@ class MslRepositoryImpl @Inject constructor(
                     Unit // Return Unit for success
                 } else {
                     Log.e(TAG, "❌ API returned error: ${markerResponse.errorMessage}")
-                    throw Exception("Failed to remove marker: ${markerResponse.errorMessage}")
+                    logger().log(SentryLogLevel.ERROR, "DELETE marker API returned error - playerGolfLinkNumber: $playerGolfLinkNumber, clubId: $clubIdStr, errorMessage: ${markerResponse.errorMessage}")
+                    Unit
                 }
             } else {
                 Log.e(TAG, "❌ Failed to remove marker: ${response.code()} - ${response.message()}")
-                Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
-                throw Exception("Failed to remove marker: ${response.message()}")
+                val errorBody = response.errorBody()?.string()
+                Log.e(TAG, "Response body: $errorBody")
+                logger().log(SentryLogLevel.ERROR, "DELETE marker HTTP request failed - playerGolfLinkNumber: $playerGolfLinkNumber, clubId: $clubIdStr, httpCode: ${response.code()}, httpMessage: ${response.message()}, responseBody: $errorBody")
+                Unit
             }
         }
     }
