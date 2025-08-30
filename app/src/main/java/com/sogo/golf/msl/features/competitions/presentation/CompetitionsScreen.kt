@@ -219,6 +219,7 @@ fun CompetitionsScreen(
                 sogoGolfer = sogoGolfer,
                 tokenCost = tokenCost,
                 game = localGame,
+                uiState = uiState,
                 onIncludeRoundChanged = { newValue ->
                     competitionViewModel.setIncludeRound(newValue)
                 },
@@ -352,6 +353,7 @@ fun FooterContent(
     sogoGolfer: SogoGolfer?,
     tokenCost: Double,
     game: com.sogo.golf.msl.domain.model.msl.MslGame?,
+    uiState: CompetitionUiState,
     onIncludeRoundChanged: (Boolean) -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -399,10 +401,11 @@ fun FooterContent(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Next button - disable if there's an error message or no competitions
+        // Next button - disable if there's an error message, no competitions, or data is being fetched
         val hasError = !game?.errorMessage.isNullOrBlank()
         val hasCompetitions = game?.competitions?.isNotEmpty() == true
-        val canProceed = !hasError && hasCompetitions
+        val isDataFetching = uiState.isDataFetching
+        val canProceed = !hasError && hasCompetitions && !isDataFetching
         
         Box(
             modifier = Modifier

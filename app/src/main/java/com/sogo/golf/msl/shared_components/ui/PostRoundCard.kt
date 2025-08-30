@@ -211,11 +211,38 @@ private fun SignaturePlaceholder(signerName: String) {
 private fun decodeBase64ToBitmap(base64String: String): Bitmap? {
     return try {
         val cleanBase64 = base64String.replace("data:image/png;base64,", "")
+            .replace("data:image/jpeg;base64,", "")
         val decodedBytes = Base64.decode(cleanBase64, Base64.DEFAULT)
-        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+        
+        val options = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size, options)
+        
+        val maxDisplaySize = 400
+        options.inSampleSize = calculateInSampleSize(options, maxDisplaySize, maxDisplaySize)
+        options.inJustDecodeBounds = false
+        
+        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size, options)
     } catch (e: Exception) {
         null
     }
+}
+
+private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+    val height = options.outHeight
+    val width = options.outWidth
+    var inSampleSize = 1
+
+    if (height > reqHeight || width > reqWidth) {
+        val halfHeight = height / 2
+        val halfWidth = width / 2
+
+        while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+            inSampleSize *= 2
+        }
+    }
+    return inSampleSize
 }
 
 @Preview(showBackground = true)

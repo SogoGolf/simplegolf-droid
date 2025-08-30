@@ -211,4 +211,11 @@ sentry {
     // this will upload your source code to Sentry to show it as part of the stack traces
     // disable if you don't want to expose your sources
     includeSourceContext.set(true)
+    
+    tracingInstrumentation {
+        enabled = true
+        logcat {
+            enabled = false
+        }
+    }
 }

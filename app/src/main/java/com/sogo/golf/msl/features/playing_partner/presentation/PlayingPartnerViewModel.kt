@@ -277,13 +277,14 @@ class PlayingPartnerViewModel @Inject constructor(
         return try {
             if (!networkChecker.isNetworkAvailable()) {
                 // Start with loading state to acknowledge the gesture
-                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+                _uiState.value = _uiState.value.copy(isLoading = true, isRefreshLoading = true, errorMessage = null)
 
                 // Give the UI time to register the refresh gesture
                 kotlinx.coroutines.delay(100) // Small delay
 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
+                    isRefreshLoading = false,
                     errorMessage = "No internet connection"
                 )
 
@@ -295,6 +296,7 @@ class PlayingPartnerViewModel @Inject constructor(
             if (selectedClub?.clubId != null) {
                 val clubIdStr = selectedClub.clubId.toString()
                 
+                _uiState.value = _uiState.value.copy(isLoading = true, isRefreshLoading = true, errorMessage = null)
                 Log.d("PlayingPartnerVM", "🔄 Starting data refresh...")
                 
                 var allSuccessful = true
@@ -364,6 +366,7 @@ class PlayingPartnerViewModel @Inject constructor(
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
+                    isRefreshLoading = false,
                     successMessage = if (allSuccessful) "Data refreshed successfully" else null
                 )
                 
@@ -373,6 +376,7 @@ class PlayingPartnerViewModel @Inject constructor(
                 Log.w("PlayingPartnerVM", "⚠️ No club selected, cannot refresh data")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
+                    isRefreshLoading = false,
                     errorMessage = "No club selected"
                 )
                 false
@@ -381,6 +385,7 @@ class PlayingPartnerViewModel @Inject constructor(
             Log.w("PlayingPartnerVM", "⚠️ Exception while refreshing data", e)
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
+                isRefreshLoading = false,
                 errorMessage = "Refresh failed: ${e.message}"
             )
             Sentry.captureException(e)
@@ -932,6 +937,7 @@ class PlayingPartnerViewModel @Inject constructor(
 
 data class PlayingPartnerUiState(
     val isLoading: Boolean = false,
+    val isRefreshLoading: Boolean = false,
     val isLetsPlayLoading: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null

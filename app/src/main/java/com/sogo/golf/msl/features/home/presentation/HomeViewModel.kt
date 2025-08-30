@@ -29,6 +29,7 @@ import com.sogo.golf.msl.analytics.AnalyticsManager
 import io.sentry.Sentry
 import io.sentry.protocol.User
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.sentry.Sentry.logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
