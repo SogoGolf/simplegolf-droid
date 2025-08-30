@@ -305,11 +305,14 @@ class MslRepositoryImpl @Inject constructor(
                     Log.d(TAG, "✅ Successfully removed marker for player: $playerGolfLinkNumber")
                     Unit // Return Unit for success
                 } else {
+                    Log.e(TAG, "❌ API returned error: ${markerResponse.errorMessage}")
                     logger().log(SentryLogLevel.ERROR, "DELETE marker API returned error - playerGolfLinkNumber: $playerGolfLinkNumber, clubId: $clubIdStr, errorMessage: ${markerResponse.errorMessage}")
                     Unit
                 }
             } else {
+                Log.e(TAG, "❌ Failed to remove marker: ${response.code()} - ${response.message()}")
                 val errorBody = response.errorBody()?.string()
+                Log.e(TAG, "Response body: $errorBody")
                 logger().log(SentryLogLevel.ERROR, "DELETE marker HTTP request failed - playerGolfLinkNumber: $playerGolfLinkNumber, clubId: $clubIdStr, httpCode: ${response.code()}, httpMessage: ${response.message()}, responseBody: $errorBody")
                 Unit
             }
