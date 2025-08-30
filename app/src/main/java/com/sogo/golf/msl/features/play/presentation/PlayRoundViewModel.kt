@@ -27,6 +27,7 @@ import com.sogo.golf.msl.domain.usecase.round.BulkSyncRoundUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcStablefordUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcParUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcStrokeUseCase
+import com.sogo.golf.msl.domain.usecase.scoring.CalcHoleNetParUseCase
 import com.sogo.golf.msl.domain.model.HoleScoreForCalcs
 import com.sogo.golf.msl.data.network.NetworkStateMonitor
 import android.util.Log
@@ -59,6 +60,7 @@ class PlayRoundViewModel @Inject constructor(
     private val calcStablefordUseCase: CalcStablefordUseCase,
     private val calcParUseCase: CalcParUseCase,
     private val calcStrokeUseCase: CalcStrokeUseCase,
+    private val calcHoleNetParUseCase: CalcHoleNetParUseCase,
     private val networkStateMonitor: NetworkStateMonitor,
     private val holeStatePreferences: HoleStatePreferences,
     private val mslRepository: MslRepository,
@@ -985,12 +987,31 @@ class PlayRoundViewModel @Inject constructor(
                 index3 = index3
             )
 
+            // Debug logging for scoring discrepancy investigation
+            Log.d("PlayRoundVM", "=== SCORING DEBUG ===")
+            Log.d("PlayRoundVM", "Input parameters:")
+            Log.d("PlayRoundVM", "  strokes: $strokes")
+            Log.d("PlayRoundVM", "  par: $par")
+            Log.d("PlayRoundVM", "  index1: $index1")
+            Log.d("PlayRoundVM", "  index2: $index2")
+            Log.d("PlayRoundVM", "  index3: $index3")
+            Log.d("PlayRoundVM", "  dailyHandicap: $dailyHandicap")
+            Log.d("PlayRoundVM", "  scoreType: $scoreType")
+            
+            // Calculate net par to see intermediate result
+            val netPar = calcHoleNetParUseCase.invoke(holeScoreForCalcs, dailyHandicap)
+            Log.d("PlayRoundVM", "  calculated netPar: $netPar")
+
             val score = when (scoreType.lowercase()) {
                 "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
                 "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap) ?: 0f
                 "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap)
                 else -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
             }
+
+            Log.d("PlayRoundVM", "  calculated score (float): $score")
+            Log.d("PlayRoundVM", "  final score (int): ${score.toInt()}")
+            Log.d("PlayRoundVM", "=== END SCORING DEBUG ===")
 
             score.toInt()
         } catch (e: Exception) {
