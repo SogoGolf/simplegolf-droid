@@ -305,7 +305,7 @@ class MslRepositoryImpl @Inject constructor(
                     Log.d(TAG, "✅ Successfully removed marker for player: $playerGolfLinkNumber")
                     Unit // Return Unit for success
                 } else {
-                    Log.e(TAG, "❌ API returned error: ${markerResponse.errorMessage}")
+                    Log.e(TAG, "❌ API returned error: Request to delete marker failed.. ${markerResponse.errorMessage}")
                     logger().log(SentryLogLevel.ERROR, "DELETE marker API returned error - playerGolfLinkNumber: $playerGolfLinkNumber, clubId: $clubIdStr, errorMessage: ${markerResponse.errorMessage}")
                     Unit
                 }
