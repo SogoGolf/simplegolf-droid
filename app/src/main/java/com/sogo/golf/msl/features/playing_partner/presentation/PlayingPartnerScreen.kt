@@ -138,7 +138,7 @@ fun PlayingPartnerScreen(
             }
 
             // "Let's Play" button with spinner - disabled until partner selected
-            val isButtonEnabled = selectedPartner != null && !uiState.isLetsPlayLoading
+            val isButtonEnabled = selectedPartner != null && !uiState.isLetsPlayLoading && !uiState.isRefreshLoading
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
