@@ -187,17 +187,15 @@ class ReviewScoresViewModel @AssistedInject constructor(
                             
                             // Update MongoDB round submission status immediately after MSL submission succeeds
                             android.util.Log.d(TAG, "Updating MongoDB round submission status to true after MSL success")
-                            viewModelScope.launch {
-                                when (val mongoResult = sogoMongoRepository.updateRoundSubmissionStatus(currentRound.id, true)) {
-                                    is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
-                                        android.util.Log.d(TAG, "✅ Successfully updated MongoDB round submission status")
-                                    }
-                                    is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
-                                        android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round submission status: ${mongoResult.error.toUserMessage()}")
-                                    }
-                                    is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
-                                        android.util.Log.d(TAG, "MongoDB round submission status update in progress...")
-                                    }
+                            when (val mongoResult = sogoMongoRepository.updateRoundSubmissionStatus(currentRound.id, true)) {
+                                is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
+                                    android.util.Log.d(TAG, "✅ Successfully updated MongoDB round submission status")
+                                }
+                                is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
+                                    android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round submission status: ${mongoResult.error.toUserMessage()}")
+                                }
+                                is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
+                                    android.util.Log.d(TAG, "MongoDB round submission status update in progress...")
                                 }
                             }
                             
