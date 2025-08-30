@@ -8,6 +8,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
 import retrofit2.HttpException
 import java.io.IOException
+import kotlinx.coroutines.CancellationException
 
 abstract class BaseRepository(
     private val networkChecker: NetworkChecker
@@ -30,6 +31,10 @@ abstract class BaseRepository(
 
             NetworkResult.Success(result)
 
+        } catch (e: CancellationException) {
+            // Don't treat coroutine cancellation as an error - just re-throw
+            // This allows normal cancellation to propagate up the coroutine hierarchy
+            throw e
         } catch (e: TimeoutCancellationException) {
             Sentry.captureException(e)
             NetworkResult.Error(NetworkError.Timeout)

@@ -27,6 +27,7 @@ import com.sogo.golf.msl.domain.usecase.round.BulkSyncRoundUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcStablefordUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcParUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcStrokeUseCase
+import com.sogo.golf.msl.domain.usecase.scoring.CalcHoleNetParUseCase
 import com.sogo.golf.msl.domain.model.HoleScoreForCalcs
 import com.sogo.golf.msl.data.network.NetworkStateMonitor
 import android.util.Log
@@ -59,6 +60,7 @@ class PlayRoundViewModel @Inject constructor(
     private val calcStablefordUseCase: CalcStablefordUseCase,
     private val calcParUseCase: CalcParUseCase,
     private val calcStrokeUseCase: CalcStrokeUseCase,
+    private val calcHoleNetParUseCase: CalcHoleNetParUseCase,
     private val networkStateMonitor: NetworkStateMonitor,
     private val holeStatePreferences: HoleStatePreferences,
     private val mslRepository: MslRepository,
@@ -523,17 +525,24 @@ class PlayRoundViewModel @Inject constructor(
         val game = localGame.value
         if (game != null) {
             val currentHole = _currentHoleNumber.value
-            val maxHole = getMaxHoleNumber(game)
+            val startingHole = game.startingHoleNumber
+            val numberOfHoles = game.numberOfHoles ?: 18
             
-            if (currentHole < maxHole) {
-                val newHole = currentHole + 1
+            // Get the cycle of holes for this round
+            val cycle = getCycleIndices(startingHole, numberOfHoles)
+            val currentIndex = cycle.indexOf(currentHole - 1)
+            
+            if (currentIndex >= 0 && currentIndex < cycle.size - 1) {
+                // Move to next hole in cycle
+                val nextIndex = currentIndex + 1
+                val newHole = cycle[nextIndex] + 1
                 _currentHoleNumber.value = newHole
-                android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole")
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole (cycle index: $nextIndex)")
                 saveCurrentHoleState(newHole)
                 triggerHoleNavigationUpdate()
                 updateBackButtonVisibility(currentRound.value)
             } else {
-                android.util.Log.d("PlayRoundVM", "On last hole: $maxHole - checking completion status")
+                android.util.Log.d("PlayRoundVM", "On last hole of cycle - checking completion status")
                 if (areAllHolesCompleted()) {
                     android.util.Log.d("PlayRoundVM", "All holes completed - navigating to review screen")
                     val currentRoundId = currentRound.value?.id ?: ""
@@ -555,17 +564,24 @@ class PlayRoundViewModel @Inject constructor(
         val game = localGame.value
         if (game != null) {
             val currentHole = _currentHoleNumber.value
-            val minHole = game.startingHoleNumber
+            val startingHole = game.startingHoleNumber
+            val numberOfHoles = game.numberOfHoles ?: 18
             
-            if (currentHole > minHole) {
-                val newHole = currentHole - 1
+            // Get the cycle of holes for this round
+            val cycle = getCycleIndices(startingHole, numberOfHoles)
+            val currentIndex = cycle.indexOf(currentHole - 1)
+            
+            if (currentIndex > 0) {
+                // Move to previous hole in cycle
+                val prevIndex = currentIndex - 1
+                val newHole = cycle[prevIndex] + 1
                 _currentHoleNumber.value = newHole
-                android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole")
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole (cycle index: $prevIndex)")
                 saveCurrentHoleState(newHole)
                 triggerHoleNavigationUpdate()
                 updateBackButtonVisibility(currentRound.value)
             } else {
-                android.util.Log.d("PlayRoundVM", "Already at first hole: $minHole")
+                android.util.Log.d("PlayRoundVM", "Already at first hole in cycle: $startingHole")
             }
         }
     }
@@ -573,17 +589,21 @@ class PlayRoundViewModel @Inject constructor(
     fun navigateToHole(holeNumber: Int) {
         val game = localGame.value
         if (game != null) {
-            val minHole = game.startingHoleNumber
-            val maxHole = getMaxHoleNumber(game)
+            val startingHole = game.startingHoleNumber
+            val numberOfHoles = game.numberOfHoles ?: 18
             
-            if (holeNumber in minHole..maxHole) {
+            // Get the cycle of holes for this round to validate if hole is in cycle
+            val cycle = getCycleIndices(startingHole, numberOfHoles)
+            val isValidHole = cycle.contains(holeNumber - 1)
+            
+            if (isValidHole) {
                 _currentHoleNumber.value = holeNumber
-                android.util.Log.d("PlayRoundVM", "Navigated to hole: $holeNumber")
+                android.util.Log.d("PlayRoundVM", "Navigated to hole: $holeNumber (cycle-aware navigation)")
                 saveCurrentHoleState(holeNumber)
                 triggerHoleNavigationUpdate()
                 updateBackButtonVisibility(currentRound.value)
             } else {
-                android.util.Log.w("PlayRoundVM", "Invalid hole number: $holeNumber (valid range: $minHole-$maxHole)")
+                android.util.Log.w("PlayRoundVM", "Invalid hole number: $holeNumber (not in cycle for starting hole: $startingHole)")
             }
         }
     }
@@ -610,12 +630,16 @@ class PlayRoundViewModel @Inject constructor(
         }
         
         val startingHole = game.startingHoleNumber
-        val maxHole = getMaxHoleNumber(game)
+        val numberOfHoles = game.numberOfHoles ?: 18
         
-        android.util.Log.d("PlayRoundVM", "Checking completion for holes $startingHole to $maxHole")
+        // Get the cycle of holes for this round (same logic as navigation)
+        val cycle = getCycleIndices(startingHole, numberOfHoles)
+        val holeNumbers = cycle.map { it + 1 } // Convert from 0-based to 1-based hole numbers
         
-        // Check all holes from starting hole to max hole
-        for (holeNumber in startingHole..maxHole) {
+        android.util.Log.d("PlayRoundVM", "Checking completion for cycle holes: $holeNumbers")
+        
+        // Check all holes in the cycle
+        for (holeNumber in holeNumbers) {
             // Check main golfer strokes
             val mainGolferHole = round.holeScores.find { it.holeNumber == holeNumber }
             val mainGolferStrokes = mainGolferHole?.strokes ?: 0
@@ -633,7 +657,7 @@ class PlayRoundViewModel @Inject constructor(
             }
         }
         
-        android.util.Log.d("PlayRoundVM", "All holes completed!")
+        android.util.Log.d("PlayRoundVM", "All holes in cycle completed!")
         return true
     }
 
@@ -721,14 +745,8 @@ class PlayRoundViewModel @Inject constructor(
                     return@launch
                 }
                 
-                // Get current strokes for this hole
-                val holeIndex = getHoleIndex(currentHole)
-                val currentHoleScore = if (holeIndex >= 0 && holeIndex < round.holeScores.size) {
-                    round.holeScores[holeIndex]
-                } else {
-                    null
-                }
-                
+                // Get current strokes for this hole using correct hole lookup
+                val currentHoleScore = round.holeScores.find { it.holeNumber == currentHole }
                 val currentStrokes = currentHoleScore?.strokes ?: 0
 
                 // Calculate new strokes using the provided logic
@@ -764,14 +782,8 @@ class PlayRoundViewModel @Inject constructor(
                     return@launch
                 }
                 
-                // Get current strokes for this hole
-                val holeIndex = getHoleIndex(currentHole)
-                val currentHoleScore = if (round.playingPartnerRound != null && holeIndex >= 0 && holeIndex < round.playingPartnerRound.holeScores.size) {
-                    round.playingPartnerRound.holeScores[holeIndex]
-                } else {
-                    null
-                }
-                
+                // Get current strokes for this hole using correct hole lookup
+                val currentHoleScore = round.playingPartnerRound?.holeScores?.find { it.holeNumber == currentHole }
                 val currentStrokes = currentHoleScore?.strokes ?: 0
 
                 // Calculate new strokes using the provided logic
@@ -829,14 +841,9 @@ class PlayRoundViewModel @Inject constructor(
                 val round = currentRound.value
                 if (round != null) {
                     val currentHole = _currentHoleNumber.value
-                    val holeIndex = getHoleIndex(currentHole)
                     
-                    val mainGolferStrokes = if (holeIndex >= 0 && holeIndex < round.holeScores.size) {
-                        round.holeScores[holeIndex]?.strokes ?: 0
-                    } else 0
-                    val partnerStrokes = if (round.playingPartnerRound != null && holeIndex >= 0 && holeIndex < round.playingPartnerRound.holeScores.size) {
-                        round.playingPartnerRound.holeScores[holeIndex]?.strokes ?: 0
-                    } else 0
+                    val mainGolferStrokes = round.holeScores.find { it.holeNumber == currentHole }?.strokes ?: 0
+                    val partnerStrokes = round.playingPartnerRound?.holeScores?.find { it.holeNumber == currentHole }?.strokes ?: 0
                     
                     if (mainGolferStrokes > 0) {
                         updateHoleScoreUseCase(round, currentHole, mainGolferStrokes, true)
@@ -898,8 +905,39 @@ class PlayRoundViewModel @Inject constructor(
     private fun getHoleIndex(holeNumber: Int): Int {
         val game = localGame.value
         val startingHole = game?.startingHoleNumber ?: 1
-        return holeNumber - startingHole
+        val numberOfHoles = game?.numberOfHoles ?: 18
+        
+        val cycle = getCycleIndices(startingHole, numberOfHoles)
+        return cycle.indexOf(holeNumber - 1)
     }
+
+    private fun getCycleIndices(startingHole: Int, numberOfHoles: Int): List<Int> {
+        val maxHole = when {
+            numberOfHoles == 18 -> 18  // Any 18-hole round uses holes 1-18
+            startingHole >= 10 && numberOfHoles == 9 -> 18  // 10-18 hole range
+            startingHole >= 1 && startingHole <= 9 && numberOfHoles == 9 -> 9  // 1-9 hole range
+            else -> startingHole + numberOfHoles - 1
+        }
+        
+        val holeNumbers = mutableListOf<Int>()
+        var currentHole = startingHole
+        
+        repeat(numberOfHoles) {
+            holeNumbers.add(currentHole)
+            currentHole++
+            if (currentHole > maxHole) {
+                currentHole = when {
+                    // 10-18 hole rounds: wrap from 18 back to 10
+                    startingHole >= 10 && numberOfHoles == 9 -> 10
+                    // All other rounds: wrap back to 1
+                    else -> 1
+                }
+            }
+        }
+        
+        return holeNumbers.map { it - 1 }
+    }
+
 
     fun clearCurrentHoleForRound() {
         viewModelScope.launch {
@@ -949,12 +987,31 @@ class PlayRoundViewModel @Inject constructor(
                 index3 = index3
             )
 
+            // Debug logging for scoring discrepancy investigation
+            Log.d("PlayRoundVM", "=== SCORING DEBUG ===")
+            Log.d("PlayRoundVM", "Input parameters:")
+            Log.d("PlayRoundVM", "  strokes: $strokes")
+            Log.d("PlayRoundVM", "  par: $par")
+            Log.d("PlayRoundVM", "  index1: $index1")
+            Log.d("PlayRoundVM", "  index2: $index2")
+            Log.d("PlayRoundVM", "  index3: $index3")
+            Log.d("PlayRoundVM", "  dailyHandicap: $dailyHandicap")
+            Log.d("PlayRoundVM", "  scoreType: $scoreType")
+            
+            // Calculate net par to see intermediate result
+            val netPar = calcHoleNetParUseCase.invoke(holeScoreForCalcs, dailyHandicap)
+            Log.d("PlayRoundVM", "  calculated netPar: $netPar")
+
             val score = when (scoreType.lowercase()) {
                 "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
                 "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap) ?: 0f
                 "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap)
                 else -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
             }
+
+            Log.d("PlayRoundVM", "  calculated score (float): $score")
+            Log.d("PlayRoundVM", "  final score (int): ${score.toInt()}")
+            Log.d("PlayRoundVM", "=== END SCORING DEBUG ===")
 
             score.toInt()
         } catch (e: Exception) {
@@ -982,19 +1039,20 @@ class PlayRoundViewModel @Inject constructor(
                 
                 if (partnerGolfLinkNumber != null) {
                     android.util.Log.d("PlayRoundVM", "Removing marker from playing partner: $partnerGolfLinkNumber")
-                    when (val markerResult = removeMarkerUseCase(partnerGolfLinkNumber)) {
-                        is NetworkResult.Success -> {
-                            android.util.Log.d("PlayRoundVM", "✅ Marker removed successfully")
+                    try {
+                        when (val markerResult = removeMarkerUseCase(partnerGolfLinkNumber)) {
+                            is NetworkResult.Success -> {
+                                android.util.Log.d("PlayRoundVM", "✅ Marker removed successfully")
+                            }
+                            is NetworkResult.Error -> {
+                                android.util.Log.e("PlayRoundVM", "❌ Failed to remove marker: ${markerResult.error.toUserMessage()}")
+                            }
+                            is NetworkResult.Loading -> {
+                                android.util.Log.w("PlayRoundVM", "Unexpected loading state during marker removal")
+                            }
                         }
-                        is NetworkResult.Error -> {
-                            android.util.Log.e("PlayRoundVM", "❌ Failed to remove marker: ${markerResult.error.toUserMessage()}")
-                            _isAbandoningRound.value = false
-                            _abandonError.value = "Failed to remove marker: ${markerResult.error.toUserMessage()}"
-                            return@launch
-                        }
-                        is NetworkResult.Loading -> {
-                            android.util.Log.w("PlayRoundVM", "Unexpected loading state during marker removal")
-                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("PlayRoundVM", "❌ Exception during marker removal", e)
                     }
                 } else {
                     android.util.Log.d("PlayRoundVM", "No marker to remove, proceeding to round deletion")
@@ -1084,15 +1142,10 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "Pickup button clicked - updating local state immediately")
                 
                 // Check current pickup state before updating to track the new state
-                val holeIndex = currentHole - (localGame.value?.startingHoleNumber ?: 1)
                 val currentPickupState = if (isMainGolfer) {
-                    if (holeIndex >= 0 && holeIndex < round.holeScores.size) {
-                        round.holeScores[holeIndex].isBallPickedUp ?: false
-                    } else false
+                    round.holeScores.find { it.holeNumber == currentHole }?.isBallPickedUp ?: false
                 } else {
-                    if (round.playingPartnerRound != null && holeIndex >= 0 && holeIndex < round.playingPartnerRound.holeScores.size) {
-                        round.playingPartnerRound.holeScores[holeIndex].isBallPickedUp ?: false
-                    } else false
+                    round.playingPartnerRound?.holeScores?.find { it.holeNumber == currentHole }?.isBallPickedUp ?: false
                 }
                 val newPickupState = !currentPickupState
                 

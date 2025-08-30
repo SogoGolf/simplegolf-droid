@@ -49,19 +49,13 @@ class UpdateHoleScoreUseCase @Inject constructor(
 
     private suspend fun syncToMongoDB(round: Round, holeNumber: Int) {
         try {
-            val holeIndex = getHoleIndex(holeNumber)
-            val mainGolferStrokes = if (holeIndex >= 0 && holeIndex < round.holeScores.size) {
-                round.holeScores[holeIndex]?.strokes ?: 0
-            } else 0
-            val mainGolferScore = if (holeIndex >= 0 && holeIndex < round.holeScores.size) {
-                round.holeScores[holeIndex]?.score?.toInt() ?: 0
-            } else 0
-            val partnerStrokes = if (round.playingPartnerRound != null && holeIndex >= 0 && holeIndex < round.playingPartnerRound.holeScores.size) {
-                round.playingPartnerRound.holeScores[holeIndex]?.strokes ?: 0
-            } else 0
-            val partnerScore = if (round.playingPartnerRound != null && holeIndex >= 0 && holeIndex < round.playingPartnerRound.holeScores.size) {
-                round.playingPartnerRound.holeScores[holeIndex]?.score?.toInt() ?: 0
-            } else 0
+            val mainGolferHoleScore = round.holeScores.find { it.holeNumber == holeNumber }
+            val mainGolferStrokes = mainGolferHoleScore?.strokes ?: 0
+            val mainGolferScore = mainGolferHoleScore?.score?.toInt() ?: 0
+            
+            val partnerHoleScore = round.playingPartnerRound?.holeScores?.find { it.holeNumber == holeNumber }
+            val partnerStrokes = partnerHoleScore?.strokes ?: 0
+            val partnerScore = partnerHoleScore?.score?.toInt() ?: 0
 
             when (val result = sogoMongoRepository.updateHoleScore(
                 roundId = round.id,
@@ -85,17 +79,17 @@ class UpdateHoleScoreUseCase @Inject constructor(
     }
 
     private suspend fun updateRoundHoleScores(round: Round, holeNumber: Int, newStrokes: Int, isMainGolfer: Boolean): Round {
-        val holeIndex = getHoleIndex(holeNumber)
-        
         return if (isMainGolfer) {
-            val updatedHoleScores = round.holeScores.toMutableList()
-            if (holeIndex >= 0 && holeIndex < updatedHoleScores.size) {
-                val currentHoleScore = updatedHoleScores[holeIndex]
-                val newScore = calculateScore(newStrokes, currentHoleScore, isMainGolfer = true)
-                updatedHoleScores[holeIndex] = currentHoleScore.copy(
-                    strokes = newStrokes,
-                    score = newScore
-                )
+            val updatedHoleScores = round.holeScores.map { holeScore ->
+                if (holeScore.holeNumber == holeNumber) {
+                    val newScore = calculateScore(newStrokes, holeScore, isMainGolfer = true)
+                    holeScore.copy(
+                        strokes = newStrokes,
+                        score = newScore
+                    )
+                } else {
+                    holeScore
+                }
             }
             round.copy(
                 holeScores = updatedHoleScores,
@@ -104,14 +98,16 @@ class UpdateHoleScoreUseCase @Inject constructor(
             )
         } else {
             val updatedPartnerRound = round.playingPartnerRound?.let { partnerRound ->
-                val updatedHoleScores = partnerRound.holeScores.toMutableList()
-                if (holeIndex >= 0 && holeIndex < updatedHoleScores.size) {
-                    val currentHoleScore = updatedHoleScores[holeIndex]
-                    val newScore = calculateScore(newStrokes, currentHoleScore, isMainGolfer = false)
-                    updatedHoleScores[holeIndex] = currentHoleScore.copy(
-                        strokes = newStrokes,
-                        score = newScore
-                    )
+                val updatedHoleScores = partnerRound.holeScores.map { holeScore ->
+                    if (holeScore.holeNumber == holeNumber) {
+                        val newScore = calculateScore(newStrokes, holeScore, isMainGolfer = false)
+                        holeScore.copy(
+                            strokes = newStrokes,
+                            score = newScore
+                        )
+                    } else {
+                        holeScore
+                    }
                 }
                 partnerRound.copy(holeScores = updatedHoleScores)
             }
@@ -170,9 +166,4 @@ class UpdateHoleScoreUseCase @Inject constructor(
         }
     }
 
-    private suspend fun getHoleIndex(holeNumber: Int): Int {
-        val game = getLocalGameUseCase().first()
-        val startingHole = game?.startingHoleNumber ?: 1
-        return holeNumber - startingHole
-    }
 }

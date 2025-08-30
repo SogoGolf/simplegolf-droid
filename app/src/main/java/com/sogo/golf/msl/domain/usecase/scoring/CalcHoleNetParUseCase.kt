@@ -19,11 +19,11 @@ class CalcHoleNetParUseCase @Inject constructor() {
                 }
             }
             dailyHandicap in 19.0..36.0 -> {
-                if (dailyHandicap >= roundHole.index2.toDouble()) {
-                    roundHole.par + 2.0
-                } else {
-                    roundHole.par + 1.0
-                }
+                // Base stroke: 1 per hole for handicap 19-36
+                val baseStroke = 1.0
+                // Extra stroke: if (handicap - 18) >= stroke index
+                val extraStroke = if ((dailyHandicap - 18.0) >= roundHole.index1.toDouble()) 1.0 else 0.0
+                roundHole.par.toDouble() + baseStroke + extraStroke
             }
             dailyHandicap > 36.0 -> {
                 if (dailyHandicap >= roundHole.index3.toDouble()) {

@@ -296,20 +296,21 @@ class CompetitionViewModel @Inject constructor(
             // First, check for network availability.
             if (!networkChecker.isNetworkAvailable()) {
                 // Start with loading state to acknowledge the gesture
-                _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+                _uiState.value = _uiState.value.copy(isLoading = true, isDataFetching = true, errorMessage = null)
 
                 // Give the UI time to register the refresh gesture
                 kotlinx.coroutines.delay(100) // Small delay
 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
+                    isDataFetching = false,
                     errorMessage = "No internet connection"
                 )
                 return@launch
             }
 
             // Network is available, so show the spinner and then yield.
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, isDataFetching = true, errorMessage = null)
             yield() // Ensures the spinner animation starts before doing more work.
 
             try {
@@ -329,7 +330,7 @@ class CompetitionViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(errorMessage = "Refresh failed: ${e.message}")
             } finally {
                 // This will always be executed, ensuring the spinner is hidden.
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = _uiState.value.copy(isLoading = false, isDataFetching = false)
             }
         }
     }

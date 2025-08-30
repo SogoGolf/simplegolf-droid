@@ -7,8 +7,8 @@ data class RoundDetail(
     val holeScores: List<RoundDetailHoleScore> = emptyList(),
     val compType: String? = null,
     val clubName: String? = null,
-    val scratchRating: Int? = null,
-    val slopeRating: Int? = null,
+    val scratchRating: Float? = null,
+    val slopeRating: Float? = null,
     val teeColor: String? = null,
     val startTime: LocalDateTime? = null
 )

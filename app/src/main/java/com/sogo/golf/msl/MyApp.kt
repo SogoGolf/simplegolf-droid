@@ -51,6 +51,7 @@ class MyApp : Application() {
             options.isAttachViewHierarchy = true
             options.isEnableAppStartProfiling = true
             options.tracesSampleRate = 1.0
+            options.logs.isEnabled = true
 
             // Unified beforeSend filter
             options.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
@@ -81,18 +82,33 @@ class MyApp : Application() {
                     }
                 }
 
+                // 4) Filter out "Job was cancelled" error messages
+                val message = event.message?.message ?: ""
+                if (message.contains("Job was cancelled", ignoreCase = true)) {
+                    return@BeforeSendCallback null
+                }
+
                 // otherwise keep the event
                 event
             }
         }
 
-        Purchases.logLevel = LogLevel.DEBUG
+        if (BuildConfig.DEBUG) {
+            Purchases.logLevel = LogLevel.DEBUG
+        } else {
+            Purchases.logLevel = LogLevel.ERROR
+        }
         Purchases.configure(PurchasesConfiguration.Builder(this, BuildConfig.REVENUECAT).build())
         Log.d("MyApp", "Revenuecat initialised...")
 
         //OneSignal SDK init
         // Enable verbose logging for debugging (remove in production)
-        OneSignal.Debug.logLevel = com.onesignal.debug.LogLevel.VERBOSE
+        if (BuildConfig.DEBUG) {
+            OneSignal.Debug.logLevel = com.onesignal.debug.LogLevel.VERBOSE
+        } else {
+            OneSignal.Debug.logLevel = com.onesignal.debug.LogLevel.ERROR
+        }
+
         // Initialize with your OneSignal App ID
         OneSignal.initWithContext(this, "f65531f8-5975-47ff-8562-2b9a5bea9f1c")
 
