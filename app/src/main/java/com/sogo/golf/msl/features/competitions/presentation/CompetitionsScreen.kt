@@ -34,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -111,6 +112,11 @@ fun CompetitionsScreen(
         localGame?.let {
             competitionViewModel.trackCompetitionsViewed()
         }
+    }
+
+    // Disable back navigation during data fetching
+    BackHandler(enabled = uiState.isDataFetching) {
+        // Do nothing - prevent back navigation while data is being fetched
     }
 
     ScreenWithDrawer(

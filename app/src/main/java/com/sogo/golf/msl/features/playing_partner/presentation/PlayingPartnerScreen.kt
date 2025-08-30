@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import androidx.activity.compose.BackHandler
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.domain.model.msl.MslGame
@@ -77,6 +78,11 @@ fun PlayingPartnerScreen(
         localGame?.let {
             playingPartnerViewModel.trackPlayingPartnerScreenViewed()
         }
+    }
+
+    // Disable back navigation during data fetching
+    BackHandler(enabled = uiState.isRefreshLoading) {
+        // Do nothing - prevent back navigation while data is being fetched
     }
 
     ScreenWithDrawer(
