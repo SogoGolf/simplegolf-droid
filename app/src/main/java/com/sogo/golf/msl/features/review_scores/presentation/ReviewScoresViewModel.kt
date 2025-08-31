@@ -3,6 +3,7 @@ package com.sogo.golf.msl.features.review_scores.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.google.gson.Gson
 import com.sogo.golf.msl.common.Resource
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.msl.v2.HolePayload
@@ -399,8 +400,49 @@ class ReviewScoresViewModel @AssistedInject constructor(
             }
         }
         
+        // Add MSL API payload split by player
+        try {
+            val scoresContainer = createScoresContainer(round)
+            val sanitizedPayload = createSanitizedPayload(scoresContainer)
+            
+            @Suppress("UNCHECKED_CAST")
+            val playerScores = sanitizedPayload["playerScores"] as List<Map<String, Any>>
+            
+            // Split payload by player to avoid Amplitude's 1024 character limit
+            if (playerScores.isNotEmpty()) {
+                val golferPayload = Gson().toJson(playerScores[0])
+                eventProperties["msl_golfer_payload"] = golferPayload
+                
+                if (playerScores.size > 1) {
+                    val partnerPayload = Gson().toJson(playerScores[1])
+                    eventProperties["msl_partner_payload"] = partnerPayload
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "Failed to serialize MSL payload for analytics", e)
+        }
+        
         analyticsManager.trackEvent(AnalyticsManager.EVENT_ROUND_SUBMITTED, eventProperties)
     }
+
+    private fun createSanitizedPayload(scoresContainer: ScoresContainer): Map<String, Any> {
+        return mapOf(
+            "playerScores" to scoresContainer.playerScores.map { scorePayload ->
+                mapOf(
+                    "gl" to scorePayload.golfLinkNumber,
+                    "hasSignature" to scorePayload.signature.isNotEmpty(),
+                    "holes" to scorePayload.holes.map { hole ->
+                        mapOf(
+                            "strokes" to hole.grossScore,
+                            "bpu" to hole.ballPickedUp,
+                            "np" to hole.notPlayed
+                        )
+                    }
+                )
+            }
+        )
+    }
+
 
     fun performPostSubmissionCleanup() {
         viewModelScope.launch {
