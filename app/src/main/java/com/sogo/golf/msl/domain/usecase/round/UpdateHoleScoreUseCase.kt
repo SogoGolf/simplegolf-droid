@@ -11,6 +11,7 @@ import com.sogo.golf.msl.domain.usecase.scoring.CalcParUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcStrokeUseCase
 import com.sogo.golf.msl.domain.usecase.competition.GetLocalCompetitionUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
+import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.model.HoleScoreForCalcs
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -23,7 +24,8 @@ class UpdateHoleScoreUseCase @Inject constructor(
     private val calcParUseCase: CalcParUseCase,
     private val calcStrokeUseCase: CalcStrokeUseCase,
     private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
-    private val getLocalGameUseCase: GetLocalGameUseCase
+    private val getLocalGameUseCase: GetLocalGameUseCase,
+    private val getMslGolferUseCase: GetMslGolferUseCase
 ) {
     suspend operator fun invoke(
         round: Round,
@@ -141,7 +143,11 @@ class UpdateHoleScoreUseCase @Inject constructor(
             val dailyHandicap = if (isMainGolfer) {
                 game.dailyHandicap?.toDouble() ?: 0.0
             } else {
-                game.playingPartners.firstOrNull()?.dailyHandicap?.toDouble() ?: 0.0
+                val currentGolfer = getMslGolferUseCase().first()
+                val correctPartner = game.playingPartners.find { partner ->
+                    partner.markedByGolfLinkNumber == currentGolfer?.golfLinkNo
+                }
+                correctPartner?.dailyHandicap?.toDouble() ?: 0.0
             }
 
             val holeScoreForCalcs = HoleScoreForCalcs(
