@@ -417,9 +417,6 @@ class ReviewScoresViewModel @AssistedInject constructor(
                     val partnerPayload = Gson().toJson(playerScores[1])
                     eventProperties["msl_partner_payload"] = partnerPayload
                 }
-                
-                // Add metadata
-                eventProperties["msl_player_count"] = playerScores.size
             }
         } catch (e: Exception) {
             android.util.Log.w(TAG, "Failed to serialize MSL payload for analytics", e)
