@@ -3,6 +3,7 @@ package com.sogo.golf.msl.features.review_scores.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.google.gson.Gson
 import com.sogo.golf.msl.common.Resource
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.msl.v2.HolePayload
@@ -399,7 +400,35 @@ class ReviewScoresViewModel @AssistedInject constructor(
             }
         }
         
+        // Add MSL API payload
+        try {
+            val scoresContainer = createScoresContainer(round)
+            val sanitizedPayload = createSanitizedPayload(scoresContainer)
+            val payloadJson = Gson().toJson(sanitizedPayload)
+            eventProperties["msl_api_payload"] = payloadJson
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "Failed to serialize MSL payload for analytics", e)
+        }
+        
         analyticsManager.trackEvent(AnalyticsManager.EVENT_ROUND_SUBMITTED, eventProperties)
+    }
+
+    private fun createSanitizedPayload(scoresContainer: ScoresContainer): Map<String, Any> {
+        return mapOf(
+            "playerScores" to scoresContainer.playerScores.map { scorePayload ->
+                mapOf(
+                    "golfLinkNumber" to scorePayload.golfLinkNumber,
+                    "hasSignature" to scorePayload.signature.isNotEmpty(),
+                    "holes" to scorePayload.holes.map { hole ->
+                        mapOf(
+                            "grossScore" to hole.grossScore,
+                            "ballPickedUp" to hole.ballPickedUp,
+                            "notPlayed" to hole.notPlayed
+                        )
+                    }
+                )
+            }
+        )
     }
 
     fun performPostSubmissionCleanup() {
