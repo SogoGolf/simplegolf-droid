@@ -78,6 +78,12 @@ class PlayRoundViewModel @Inject constructor(
     private val _isRemovingMarker = MutableStateFlow(false)
     val isRemovingMarker: StateFlow<Boolean> = _isRemovingMarker.asStateFlow()
 
+    // Flags to prevent race conditions during active play
+    private var isAppStartup = true
+    private var isLoadingRound = false
+    private var lastBulkSyncTime = 0L
+    private val BULK_SYNC_DEBOUNCE_MS = 2000L // 2 seconds
+
     private val _markerError = MutableStateFlow<String?>(null)
     val markerError: StateFlow<String?> = _markerError.asStateFlow()
 
@@ -216,13 +222,29 @@ class PlayRoundViewModel @Inject constructor(
     }
 
     private suspend fun loadCurrentRound() {
+        // Prevent concurrent loadCurrentRound calls
+        if (isLoadingRound) {
+            android.util.Log.d("PlayRoundVM", "🔄 Skipping loadCurrentRound - already loading")
+            return
+        }
+        
+        isLoadingRound = true
         try {
             val round = getActiveTodayRoundUseCase()
             _currentRound.value = round
-            android.util.Log.d("PlayRoundVM", "Loaded current round: ${round?.id}")
+            android.util.Log.d("PlayRoundVM", "✅ Current round loaded: ${round?.id}")
+            
+            // Update back button visibility based on current round
+            updateBackButtonVisibility(round)
+            
+            if (round != null) {
+                restoreCurrentHoleOnAppStart(round)
+            }
         } catch (e: Exception) {
-            android.util.Log.e("PlayRoundVM", "Error loading current round", e)
+            android.util.Log.e("PlayRoundVM", "❌ Error loading current round", e)
             _currentRound.value = null
+        } finally {
+            isLoadingRound = false
         }
     }
 
@@ -539,6 +561,7 @@ class PlayRoundViewModel @Inject constructor(
                 _currentHoleNumber.value = newHole
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole (cycle index: $nextIndex)")
                 saveCurrentHoleState(newHole)
+                android.util.Log.d("PlayRoundVM", "🔄 Saved hole state: $newHole before triggering navigation update")
                 triggerHoleNavigationUpdate()
                 updateBackButtonVisibility(currentRound.value)
             } else {
@@ -578,6 +601,7 @@ class PlayRoundViewModel @Inject constructor(
                 _currentHoleNumber.value = newHole
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $newHole (cycle index: $prevIndex)")
                 saveCurrentHoleState(newHole)
+                android.util.Log.d("PlayRoundVM", "🔄 Saved hole state: $newHole before triggering navigation update")
                 triggerHoleNavigationUpdate()
                 updateBackButtonVisibility(currentRound.value)
             } else {
@@ -600,6 +624,7 @@ class PlayRoundViewModel @Inject constructor(
                 _currentHoleNumber.value = holeNumber
                 android.util.Log.d("PlayRoundVM", "Navigated to hole: $holeNumber (cycle-aware navigation)")
                 saveCurrentHoleState(holeNumber)
+                android.util.Log.d("PlayRoundVM", "🔄 Saved hole state: $holeNumber before triggering navigation update")
                 triggerHoleNavigationUpdate()
                 updateBackButtonVisibility(currentRound.value)
             } else {
@@ -874,6 +899,12 @@ class PlayRoundViewModel @Inject constructor(
     private fun restoreCurrentHoleOnAppStart(round: com.sogo.golf.msl.domain.model.Round) {
         viewModelScope.launch {
             try {
+                // Only restore hole state on actual app startup, not during active play
+                if (!isAppStartup) {
+                    android.util.Log.d("PlayRoundVM", "🔄 Skipping hole restoration - not app startup")
+                    return@launch
+                }
+                
                 val savedCurrentHole = holeStatePreferences.getCurrentHole(round.id)
                 
                 val targetHole = savedCurrentHole ?: findStartingHole(round)
@@ -890,6 +921,9 @@ class PlayRoundViewModel @Inject constructor(
                     android.util.Log.d("PlayRoundVM", "🔄 App restart: No saved hole state, letting game data set starting hole")
                     // Don't override here - let the game data flow handle initial hole setting
                 }
+                
+                // Mark that app startup is complete
+                isAppStartup = false
                 
             } catch (e: Exception) {
                 android.util.Log.e("PlayRoundVM", "Error restoring current hole on app start", e)
@@ -956,6 +990,13 @@ class PlayRoundViewModel @Inject constructor(
     private fun triggerBulkSyncIfNeeded() {
         viewModelScope.launch {
             try {
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastBulkSyncTime < BULK_SYNC_DEBOUNCE_MS) {
+                    android.util.Log.d("PlayRoundVM", "🔄 Debouncing bulk sync - too soon since last sync")
+                    return@launch
+                }
+                
+                lastBulkSyncTime = currentTime
                 val syncResult = bulkSyncRoundUseCase()
                 if (syncResult) {
                     android.util.Log.d("PlayRoundVM", "✅ Bulk sync completed successfully")
