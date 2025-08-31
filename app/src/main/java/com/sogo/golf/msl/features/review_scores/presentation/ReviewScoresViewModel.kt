@@ -400,12 +400,19 @@ class ReviewScoresViewModel @AssistedInject constructor(
             }
         }
         
-        // Add MSL API payload
+        // Add MSL API payload with size validation
         try {
             val scoresContainer = createScoresContainer(round)
             val sanitizedPayload = createSanitizedPayload(scoresContainer)
             val payloadJson = Gson().toJson(sanitizedPayload)
-            eventProperties["msl_api_payload"] = payloadJson
+            
+            // Amplitude has a 1024 character limit for event properties
+            if (payloadJson.length <= 1024) {
+                eventProperties["msl_api_payload"] = payloadJson
+            } else {
+                // Handle large payloads by chunking or compressing
+                handleLargePayload(eventProperties, sanitizedPayload, payloadJson)
+            }
         } catch (e: Exception) {
             android.util.Log.w(TAG, "Failed to serialize MSL payload for analytics", e)
         }
@@ -429,6 +436,67 @@ class ReviewScoresViewModel @AssistedInject constructor(
                 )
             }
         )
+    }
+
+    private fun handleLargePayload(eventProperties: MutableMap<String, Any>, sanitizedPayload: Map<String, Any>, fullJson: String) {
+        android.util.Log.d(TAG, "MSL payload too large (${fullJson.length} chars), implementing chunking strategy")
+        
+        // Strategy 1: Try compressed summary first
+        val summaryPayload = createCompressedSummary(sanitizedPayload)
+        val summaryJson = Gson().toJson(summaryPayload)
+        
+        if (summaryJson.length <= 1024) {
+            eventProperties["msl_api_payload_summary"] = summaryJson
+            eventProperties["msl_payload_truncated"] = true
+            eventProperties["msl_payload_full_size"] = fullJson.length
+        } else {
+            // Strategy 2: Chunk into multiple events
+            chunkPayloadIntoMultipleEvents(sanitizedPayload)
+            eventProperties["msl_payload_chunked"] = true
+            eventProperties["msl_payload_full_size"] = fullJson.length
+        }
+    }
+
+    private fun createCompressedSummary(payload: Map<String, Any>): Map<String, Any> {
+        @Suppress("UNCHECKED_CAST")
+        val playerScores = payload["playerScores"] as List<Map<String, Any>>
+        
+        return mapOf(
+            "playerCount" to playerScores.size,
+            "players" to playerScores.map { player ->
+                @Suppress("UNCHECKED_CAST")
+                val holes = player["holes"] as List<Map<String, Any>>
+                mapOf(
+                    "golfLinkNumber" to player["golfLinkNumber"],
+                    "hasSignature" to player["hasSignature"],
+                    "holeCount" to holes.size,
+                    "totalStrokes" to holes.sumOf { (it["grossScore"] as Number).toInt() },
+                    "pickupCount" to holes.count { it["ballPickedUp"] as Boolean },
+                    "notPlayedCount" to holes.count { it["notPlayed"] as Boolean }
+                )
+            }
+        )
+    }
+
+    private fun chunkPayloadIntoMultipleEvents(payload: Map<String, Any>) {
+        @Suppress("UNCHECKED_CAST")
+        val playerScores = payload["playerScores"] as List<Map<String, Any>>
+        
+        playerScores.forEachIndexed { playerIndex, player ->
+            val playerPayload = mapOf("player" to player)
+            val playerJson = Gson().toJson(playerPayload)
+            
+            if (playerJson.length <= 1024) {
+                val chunkProperties = mapOf<String, Any>(
+                    "msl_payload_chunk" to playerJson,
+                    "chunk_index" to playerIndex,
+                    "total_chunks" to playerScores.size
+                )
+                analyticsManager.trackEvent("${AnalyticsManager.EVENT_ROUND_SUBMITTED}_chunk", chunkProperties)
+            } else {
+                android.util.Log.w(TAG, "Individual player payload still too large: ${playerJson.length} chars")
+            }
+        }
     }
 
     fun performPostSubmissionCleanup() {
