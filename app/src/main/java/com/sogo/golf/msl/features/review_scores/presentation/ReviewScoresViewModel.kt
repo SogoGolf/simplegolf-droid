@@ -432,13 +432,13 @@ class ReviewScoresViewModel @AssistedInject constructor(
         return mapOf(
             "playerScores" to scoresContainer.playerScores.map { scorePayload ->
                 mapOf(
-                    "golfLinkNumber" to scorePayload.golfLinkNumber,
+                    "gl" to scorePayload.golfLinkNumber,
                     "hasSignature" to scorePayload.signature.isNotEmpty(),
                     "holes" to scorePayload.holes.map { hole ->
                         mapOf(
-                            "grossScore" to hole.grossScore,
-                            "ballPickedUp" to hole.ballPickedUp,
-                            "notPlayed" to hole.notPlayed
+                            "strokes" to hole.grossScore,
+                            "bpu" to hole.ballPickedUp,
+                            "np" to hole.notPlayed
                         )
                     }
                 )
