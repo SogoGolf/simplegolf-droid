@@ -94,6 +94,23 @@ fun GetSupportWebView(
                                 override fun onPageFinished(view: WebView?, url: String?) {
                                     super.onPageFinished(view, url)
                                     isLoading = false
+                                    android.util.Log.d("GetSupportWebView", "Page finished loading: $url")
+                                }
+
+                                override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                                    super.onPageStarted(view, url, favicon)
+                                    android.util.Log.d("GetSupportWebView", "Page started loading: $url")
+                                }
+
+                                override fun onReceivedError(
+                                    view: WebView?,
+                                    errorCode: Int,
+                                    description: String?,
+                                    failingUrl: String?
+                                ) {
+                                    super.onReceivedError(view, errorCode, description, failingUrl)
+                                    android.util.Log.e("GetSupportWebView", "WebView error: $errorCode - $description for URL: $failingUrl")
+                                    isLoading = false
                                 }
                             }
 
@@ -101,6 +118,7 @@ fun GetSupportWebView(
                                 WebView.setWebContentsDebuggingEnabled(true)
                             }
 
+                            android.util.Log.d("GetSupportWebView", "Loading support URL: $supportUrl")
                             loadUrl(supportUrl)
                         }
                     }
