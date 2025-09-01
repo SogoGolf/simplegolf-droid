@@ -2,6 +2,7 @@ package com.sogo.golf.msl.shared_components.ui
 
 import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -111,6 +112,15 @@ fun GetSupportWebView(
                                     super.onReceivedError(view, errorCode, description, failingUrl)
                                     android.util.Log.e("GetSupportWebView", "WebView error: $errorCode - $description for URL: $failingUrl")
                                     isLoading = false
+                                }
+
+                                override fun shouldOverrideUrlLoading(
+                                    view: WebView?,
+                                    request: WebResourceRequest?
+                                ): Boolean {
+                                    val url = request?.url?.toString() ?: ""
+                                    android.util.Log.d("GetSupportWebView", "URL Loading: $url")
+                                    return false
                                 }
                             }
 
