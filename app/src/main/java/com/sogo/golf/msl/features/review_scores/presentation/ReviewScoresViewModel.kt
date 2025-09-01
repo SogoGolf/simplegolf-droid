@@ -391,6 +391,12 @@ class ReviewScoresViewModel @AssistedInject constructor(
     private fun trackRoundSubmitted(round: Round) {
         val eventProperties = mutableMapOf<String, Any>()
         
+        // Add compType and mongo ID
+        round.compType?.let { compType ->
+            eventProperties["comp_type"] = compType
+        }
+        eventProperties["mongo_id"] = round.id
+        
         // Add playing partner information if available
         round.playingPartnerRound?.let { partnerRound ->
             partnerRound.golferFirstName?.let { firstName ->
