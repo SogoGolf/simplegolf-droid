@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Support
 import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,6 +48,7 @@ import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 fun AppDrawer(
     navController: NavController,
     onCloseDrawer: () -> Unit,
+    onShowSupport: () -> Unit = {},
     drawerViewModel: DrawerViewModel = hiltViewModel(),
     navViewModel: NavViewModel = hiltViewModel()
 ) {
@@ -167,6 +169,14 @@ fun AppDrawer(
         ) {
             val isDarkTheme = false // Since we're using light theme primarily
 
+            DrawerItem(
+                icon = Icons.Default.Support,
+                label = "Get Support",
+                onClick = {
+                    onCloseDrawer()
+                    onShowSupport()
+                }
+            )
         }
 
         Spacer(modifier = Modifier.weight(1f))
