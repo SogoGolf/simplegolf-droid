@@ -36,6 +36,7 @@ class AnalyticsManager @Inject constructor(
         const val EVENT_PICKUP_TAPPED = "pickup_tapped"
         const val EVENT_SIGNATURE_CAPTURED = "signature_captured"
         const val EVENT_ROUND_SUBMITTED = "round_submitted"
+        const val EVENT_DELETE_MARKER_API_ERROR = "delete_marker_api_error"
     }
     
     fun setUserId(userId: String?) {
