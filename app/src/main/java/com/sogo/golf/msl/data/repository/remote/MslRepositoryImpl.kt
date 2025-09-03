@@ -202,6 +202,13 @@ class MslRepositoryImpl @Inject constructor(
             } else {
                 Log.e(TAG, "Failed to get game: ${response.code()} - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                
+                val tokens = mslTokenManager.getTokens()
+                if (tokens != null) {
+                    Sentry.setExtra("authToken", tokens.accessToken)
+                    Sentry.setExtra("refreshToken", tokens.refreshToken)
+                }
+                
                 throw Exception("Failed to get game: ${response.message()}")
             }
         }
@@ -237,6 +244,12 @@ class MslRepositoryImpl @Inject constructor(
             } else {
                 Log.e(TAG, "Failed to get competition: ${response.code()} - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+
+                val tokens = mslTokenManager.getTokens()
+                if (tokens != null) {
+                    Sentry.setExtra("authToken", tokens.accessToken)
+                    Sentry.setExtra("refreshToken", tokens.refreshToken)
+                }
 
                 throw Exception("Failed to get competition: ${response.message()}")
             }
