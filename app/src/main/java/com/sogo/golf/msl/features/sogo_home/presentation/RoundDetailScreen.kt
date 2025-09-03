@@ -39,7 +39,7 @@ fun RoundDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     
     LaunchedEffect(roundId) {
-        viewModel.fetchRoundDetail(roundId)
+        viewModel.fetchRoundDetail(roundId) // initapi - fetches round detail data on screen load
     }
     
     Scaffold(

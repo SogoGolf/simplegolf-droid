@@ -135,7 +135,7 @@ class CompetitionViewModel @Inject constructor(
     val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
 
     init {
-        // ✅ DEBUG: Log fee data when it loads
+        // ✅ DEBUG: Log fee data when it loads // initapi - monitors fees data which triggers API calls
         viewModelScope.launch {
             mslFees.collect { fees ->
                 android.util.Log.d("CompetitionViewModel", "=== MSL FEES LOADED ===")

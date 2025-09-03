@@ -91,7 +91,7 @@ class SogoGolfHomeViewModel @Inject constructor(
     )
 
     init {
-        initializeGolferData()
+        initializeGolferData() // initapi - initializes golfer data which may trigger API calls
     }
 
     private fun initializeGolferData() {

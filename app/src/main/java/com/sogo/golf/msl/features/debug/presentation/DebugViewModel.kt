@@ -229,7 +229,7 @@ class DebugViewModel @Inject constructor(
 
             android.util.Log.d("DebugViewModel", "=== FETCHING FEES AND SAVING TO DATABASE ===")
 
-            when (val result = fetchAndSaveFeesUseCase()) {
+            when (val result = fetchAndSaveFeesUseCase()) { // initapi - API call to fetch fees in debug screen
                 is NetworkResult.Success -> {
                     android.util.Log.d("DebugViewModel", "✅ SUCCESS: Fees fetched from API and saved to database")
                     android.util.Log.d("DebugViewModel", "  Fees count: ${result.data.size}")

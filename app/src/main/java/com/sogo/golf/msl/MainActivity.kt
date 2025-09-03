@@ -116,12 +116,12 @@ class MainActivity : ComponentActivity() {
                     // Build the "virtual" back stack if starting at play round screen
                     LaunchedEffect(startDestination, shouldBuildBackStack) {
                         if (shouldBuildBackStack && startDestination == "playroundscreen" && !hasBuiltBackStack) {
-                            navController.navigate("homescreen") {
+                            navController.navigate("homescreen") { // initapi - triggers HomeViewModel init and API calls
                                 popUpTo(0) { inclusive = true }
                             }
-                            navController.navigate("competitionscreen")
-                            navController.navigate("playingpartnerscreen")
-                            navController.navigate("playroundscreen")
+                            navController.navigate("competitionscreen") // initapi - triggers CompetitionViewModel init and API calls
+                            navController.navigate("playingpartnerscreen") // initapi - triggers PlayingPartnerViewModel init
+                            navController.navigate("playroundscreen") // initapi - triggers PlayRoundViewModel init
                             hasBuiltBackStack = true
                         }
                     }

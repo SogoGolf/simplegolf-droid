@@ -36,7 +36,7 @@ class ProcessMslAuthCodeUseCase @Inject constructor(
 
             // Step 1: Get preliminary token
             Log.d(TAG, "Getting preliminary token for club: $clubId")
-            val prelimTokenResult = mslRepository.getPreliminaryToken(clubId)
+            val prelimTokenResult = mslRepository.getPreliminaryToken(clubId) // initapi - API call to get preliminary token during login
 
             val prelimToken = when (prelimTokenResult) {
                 is NetworkResult.Success -> prelimTokenResult.data.token
@@ -64,7 +64,7 @@ class ProcessMslAuthCodeUseCase @Inject constructor(
 
             // Step 2: Exchange auth code for access tokens
             Log.d(TAG, "Exchanging auth code for tokens")
-            val tokensResult = mslRepository.exchangeAuthCodeForTokens(authCode, prelimToken)
+            val tokensResult = mslRepository.exchangeAuthCodeForTokens(authCode, prelimToken) // initapi - API call to exchange auth code for tokens during login
 
             when (tokensResult) {
                 is NetworkResult.Success -> {
@@ -87,7 +87,7 @@ class ProcessMslAuthCodeUseCase @Inject constructor(
 
                     // Step 3: Get golfer data (optional - to verify the auth worked)
                     try {
-                        val golferResult = mslRepository.getGolfer(clubId)
+                        val golferResult = mslRepository.getGolfer(clubId) // initapi - API call to fetch golfer data during login
                         when (golferResult) {
                             is NetworkResult.Success -> {
                                 val golfer = golferResult.data
