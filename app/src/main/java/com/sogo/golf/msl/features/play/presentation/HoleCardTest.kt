@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.em
 import com.sogo.golf.msl.ui.theme.MSLColors
+import com.sogo.golf.msl.ui.theme.rememberNormalizedDensity
 import kotlin.math.abs
 
 @Composable
@@ -52,8 +53,8 @@ fun HoleCardTest(
     onPickupButtonClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val density = LocalDensity.current
-    val swipeThreshold = with(density) { 100.dp.toPx() }
+    val normalizedDensity = rememberNormalizedDensity()
+    val swipeThreshold = with(normalizedDensity) { 100.dp.toPx() }
 
     Card(
         modifier = modifier,
