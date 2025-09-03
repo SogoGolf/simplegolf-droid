@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -134,26 +135,6 @@ private fun Screen4Portrait(
 
     Scaffold(
         topBar = {
-//            HoleHeader(
-//                holeNumber = 1, // TODO: Get from viewmodel
-//                onBack = {
-//                    // Show confirmation dialog before navigating back
-//                    showBackConfirmDialog = true
-//                },
-//                onClose = {
-//                    // TODO: Implement close functionality
-//                    // viewModel.logout(navController)
-//                },
-//                onNext = {
-//                    // TODO: Implement hole navigation
-//                    // playRoundViewModel.incrementHoleNumber()
-//                },
-//                onTapHoleNumber = {
-//                    // TODO: Implement hole selection dialog
-//                    // playRoundViewModel.showGoToHoleDialog()
-//                },
-//                showBackButton = showBackButton
-//            )
 
             Column(modifier = Modifier.padding(top = 6.dp)) {
 
@@ -166,7 +147,7 @@ private fun Screen4Portrait(
                 ) {
                     Box(
                         modifier = Modifier
-                            .weight(1f)
+                            .weight(2f)
                     ) {
                         if (showBackButton) {
                             IconButton(
@@ -181,13 +162,14 @@ private fun Screen4Portrait(
                                         playRoundViewModel.navigateToPreviousHole()
                                     }
                                 },
-                                modifier = Modifier.size(48.dp)
+                                modifier = Modifier.size(46.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                                     contentDescription = "Previous Hole",
                                     tint = MSLColors.mslGunMetal,
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier
+                                        .size(48.dp)
                                 )
                             }
                         }
@@ -195,7 +177,7 @@ private fun Screen4Portrait(
 
                     Row(
                         modifier = Modifier
-                            //.background(Color.Yellow)
+                            .background(Color.Yellow)
                             .weight(3f),
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -218,7 +200,7 @@ private fun Screen4Portrait(
 
                     Row(
                         modifier = Modifier
-                            .weight(1f)
+                            .weight(2f)
                         //.background(Color.Red),
                     ) {
 
@@ -229,7 +211,11 @@ private fun Screen4Portrait(
                             Icon(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Close",
-                                tint = MSLColors.mslGunMetal
+                                tint = MSLColors.mslGunMetal,
+                                modifier = Modifier
+//                                    .background(Color.Red)
+                                    .size(30.dp)
+
                             )
                         }
 
@@ -241,7 +227,11 @@ private fun Screen4Portrait(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = "Next Hole",
                                 tint = MSLColors.mslGunMetal,
-                                modifier = Modifier.size(32.dp)
+//                                modifier = Modifier.size(42.dp)
+                                        modifier = Modifier
+//                                            .background(Color.Red)
+                                            .size(46.dp)
+
                             )
                         }
                     }
