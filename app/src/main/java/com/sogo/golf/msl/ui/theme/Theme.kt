@@ -7,10 +7,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
 
 // MSL Golf Light Color Scheme - WCAG AA compliant
 private val MSLLightColorScheme = lightColorScheme(
@@ -90,11 +87,9 @@ fun MSLGolfTheme(
         else -> MSLLightColorScheme
     }
 
-    CompositionLocalProvider(LocalDensity provides Density(1.0f)) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = MSLMaterial3Typography,
-            content = content
-        )
-    }
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = MSLMaterial3Typography,
+        content = content
+    )
 }
