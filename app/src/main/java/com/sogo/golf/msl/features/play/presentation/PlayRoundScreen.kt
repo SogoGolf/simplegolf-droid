@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import com.sogo.golf.msl.ui.theme.rememberNormalizedDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
@@ -409,9 +410,9 @@ private fun Screen4Portrait(
                     .padding(horizontal = 10.dp)
             )
 
-            // Gap between cards
+            // Gap between cards using normalized density to prevent zoom issues
             //Spacer(modifier = Modifier.height(10.dp))
-            with(LocalDensity.current) {
+            with(rememberNormalizedDensity()) {
                 val spacingDp = (2 * density).dp
                 Spacer(modifier = Modifier.height(spacingDp))
             }

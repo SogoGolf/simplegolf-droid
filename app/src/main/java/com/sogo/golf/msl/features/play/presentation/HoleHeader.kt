@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sogo.golf.msl.ui.theme.MSLColors
+import com.sogo.golf.msl.ui.theme.rememberNormalizedDensity
 
 @Composable
 fun HoleHeader(
@@ -42,10 +43,11 @@ fun HoleHeader(
     onTapHoleNumber: () -> Unit,
     showBackButton: Boolean
 ) {
-    // Get the screen height
+    // Get the screen height using normalized density to prevent zoom issues
     val configuration = LocalConfiguration.current
-    val screenHeightPx = with(LocalDensity.current) { configuration.screenHeightDp.dp.toPx() }
-    val headerHeightDp = with(LocalDensity.current) { (screenHeightPx * headerHeightPercentage).toDp() }
+    val normalizedDensity = rememberNormalizedDensity()
+    val screenHeightPx = with(normalizedDensity) { configuration.screenHeightDp.dp.toPx() }
+    val headerHeightDp = with(normalizedDensity) { (screenHeightPx * headerHeightPercentage).toDp() }
 
     Box(
         modifier = modifier
