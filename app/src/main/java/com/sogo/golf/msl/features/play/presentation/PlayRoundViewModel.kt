@@ -1275,15 +1275,4 @@ class PlayRoundViewModel @Inject constructor(
         
         analyticsManager.trackEvent(AnalyticsManager.EVENT_PICKUP_TAPPED, eventProperties)
     }
-
-    private fun handleAuthenticationFailure() {
-        viewModelScope.launch {
-            try {
-                authRepository.logout()
-                android.util.Log.d("PlayRoundViewModel", "🔓 User logged out due to authentication failure")
-            } catch (e: Exception) {
-                android.util.Log.e("PlayRoundViewModel", "❌ Failed to logout after auth failure", e)
-            }
-        }
-    }
 }
