@@ -3,6 +3,7 @@ package com.sogo.golf.msl.features.debug.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
+import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
@@ -18,6 +19,7 @@ import com.sogo.golf.msl.domain.usecase.game.GetGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.shared.utils.DateUtils
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -44,7 +46,8 @@ class DebugViewModel @Inject constructor(
     private val gameDataTimestampPreferences: GameDataTimestampPreferences,
     private val validateGameDataFreshnessUseCase: ValidateGameDataFreshnessUseCase,
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
-    private val fetchAndSaveFeesUseCase: FetchAndSaveFeesUseCase
+    private val fetchAndSaveFeesUseCase: FetchAndSaveFeesUseCase,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DebugUiState())
@@ -163,6 +166,11 @@ class DebugViewModel @Inject constructor(
                 }
                 is NetworkResult.Error -> {
                     android.util.Log.e("DebugViewModel", "❌ ERROR: Failed to fetch and save game: ${result.error}")
+                    
+                    if (result.error is NetworkError.HttpError && result.error.code == 401 && result.error.isRefreshFailure) {
+                        handleAuthenticationFailure()
+                    }
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoadingGame = false,
                         gameErrorMessage = result.error.toUserMessage()
@@ -207,6 +215,11 @@ class DebugViewModel @Inject constructor(
                 }
                 is NetworkResult.Error -> {
                     android.util.Log.e("DebugViewModel", "❌ ERROR: Failed to fetch and save competition: ${result.error}")
+                    
+                    if (result.error is NetworkError.HttpError && result.error.code == 401 && result.error.isRefreshFailure) {
+                        handleAuthenticationFailure()
+                    }
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoadingCompetition = false,
                         competitionErrorMessage = result.error.toUserMessage()
@@ -229,7 +242,7 @@ class DebugViewModel @Inject constructor(
 
             android.util.Log.d("DebugViewModel", "=== FETCHING FEES AND SAVING TO DATABASE ===")
 
-            when (val result = fetchAndSaveFeesUseCase()) {
+            when (val result = fetchAndSaveFeesUseCase()) { // initapi - API call to fetch fees in debug screen
                 is NetworkResult.Success -> {
                     android.util.Log.d("DebugViewModel", "✅ SUCCESS: Fees fetched from API and saved to database")
                     android.util.Log.d("DebugViewModel", "  Fees count: ${result.data.size}")
@@ -608,6 +621,17 @@ class DebugViewModel @Inject constructor(
         viewModelScope.launch {
             gameDataTimestampPreferences.saveGameDataDate(date)
             android.util.Log.d("DebugViewModel", "🔧 DEBUG: Set stored game data date to: $date")
+        }
+    }
+
+    private fun handleAuthenticationFailure() {
+        viewModelScope.launch {
+            try {
+                authRepository.logout()
+                android.util.Log.d("DebugViewModel", "🔓 User logged out due to authentication failure")
+            } catch (e: Exception) {
+                android.util.Log.e("DebugViewModel", "❌ Failed to logout after auth failure", e)
+            }
         }
     }
 }

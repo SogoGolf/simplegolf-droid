@@ -8,6 +8,7 @@ import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.domain.model.HoleScore
 import com.sogo.golf.msl.domain.model.MslMetaData
+import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.PlayingPartnerRound
 import com.sogo.golf.msl.domain.model.Round
@@ -37,6 +38,7 @@ import com.sogo.golf.msl.domain.usecase.app.GetAppVersionUseCase
 import com.sogo.golf.msl.domain.usecase.app.GetStateInfoUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.sentry.Sentry
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,7 +79,8 @@ class PlayingPartnerViewModel @Inject constructor(
     private val updateTokenBalanceUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase,
     private val analyticsManager: AnalyticsManager,
     private val getAppVersionUseCase: GetAppVersionUseCase,
-    private val getStateInfoUseCase: GetStateInfoUseCase
+    private val getStateInfoUseCase: GetStateInfoUseCase,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -156,7 +159,7 @@ class PlayingPartnerViewModel @Inject constructor(
     val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
 
     init {
-        // Load include round preference and token cost on initialization
+        // Load include round preference and token cost on initialization // initapi - loads preferences and monitors data
         viewModelScope.launch {
             _includeRound.value = includeRoundPreferences.getIncludeRound()
             val test = includeRoundPreferences.getRoundCost()
@@ -325,6 +328,11 @@ class PlayingPartnerViewModel @Inject constructor(
                     }
                     is NetworkResult.Error -> {
                         Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
+                        
+                        if (gameResult.error is NetworkError.HttpError && gameResult.error.code == 401 && gameResult.error.isRefreshFailure) {
+                            handleAuthenticationFailure()
+                        }
+                        
                         _uiState.value = _uiState.value.copy(
                             errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
                         )
@@ -341,6 +349,11 @@ class PlayingPartnerViewModel @Inject constructor(
                     }
                     is NetworkResult.Error -> {
                         Log.w("PlayingPartnerVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
+                        
+                        if (competitionResult.error is NetworkError.HttpError && competitionResult.error.code == 401 && competitionResult.error.isRefreshFailure) {
+                            handleAuthenticationFailure()
+                        }
+                        
                         allSuccessful = false
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
@@ -932,6 +945,17 @@ class PlayingPartnerViewModel @Inject constructor(
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
+
+    private fun handleAuthenticationFailure() {
+        viewModelScope.launch {
+            try {
+                authRepository.logout()
+                android.util.Log.d("PlayingPartnerViewModel", "🔓 User logged out due to authentication failure")
+            } catch (e: Exception) {
+                android.util.Log.e("PlayingPartnerViewModel", "❌ Failed to logout after auth failure", e)
+            }
+        }
     }
 }
 

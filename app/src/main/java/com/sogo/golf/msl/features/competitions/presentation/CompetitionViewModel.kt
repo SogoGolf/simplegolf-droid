@@ -3,6 +3,7 @@ package com.sogo.golf.msl.features.competitions.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.data.network.NetworkChecker
+import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
@@ -16,6 +17,7 @@ import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.revenuecat.purchases.models.StoreTransaction
 import android.util.Log
 import com.sogo.golf.msl.analytics.AnalyticsManager
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -44,7 +46,8 @@ class CompetitionViewModel @Inject constructor(
     private val updateTokenBalanceUseCase: UpdateTokenBalanceUseCase,
     private val createTransactionUseCase: CreateTransactionUseCase,
     private val includeRoundPreferences: IncludeRoundPreferences,
-    private val analyticsManager: AnalyticsManager
+    private val analyticsManager: AnalyticsManager,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CompetitionUiState())
@@ -135,7 +138,7 @@ class CompetitionViewModel @Inject constructor(
     val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
 
     init {
-        // ✅ DEBUG: Log fee data when it loads
+        // ✅ DEBUG: Log fee data when it loads // initapi - monitors fees data which triggers API calls
         viewModelScope.launch {
             mslFees.collect { fees ->
                 Log.d("CompetitionViewModel", "=== MSL FEES LOADED ===")
@@ -229,6 +232,11 @@ class CompetitionViewModel @Inject constructor(
             is NetworkResult.Error -> {
                 val error = gameResult.error.toUserMessage()
                 android.util.Log.e("CompetitionViewModel", "❌ Failed to fetch MSL game data: $error")
+                
+                if (gameResult.error is NetworkError.HttpError && gameResult.error.code == 401) {
+                    handleAuthenticationFailure()
+                }
+                
                 throw Exception(error)
             }
             is NetworkResult.Loading -> { /* No-op */ }
@@ -246,6 +254,11 @@ class CompetitionViewModel @Inject constructor(
             is NetworkResult.Error -> {
                 val error = competitionResult.error.toUserMessage()
                 android.util.Log.e("CompetitionViewModel", "❌ Failed to fetch MSL competition data: $error")
+                
+                if (competitionResult.error is NetworkError.HttpError && competitionResult.error.code == 401 && competitionResult.error.isRefreshFailure) {
+                    handleAuthenticationFailure()
+                }
+                
                 throw Exception(error)
             }
             is NetworkResult.Loading -> { /* No-op */ }
@@ -327,7 +340,12 @@ class CompetitionViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(successMessage = "MSL data refreshed successfully")
 
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(errorMessage = "Refresh failed: ${e.message}")
+                val errorMessage = if (e.message?.contains("Authentication failed") == true) {
+                    "Authentication failed. Please log in again."
+                } else {
+                    "Refresh failed: ${e.message}"
+                }
+                _uiState.value = _uiState.value.copy(errorMessage = errorMessage)
             } finally {
                 // This will always be executed, ensuring the spinner is hidden.
                 _uiState.value = _uiState.value.copy(isLoading = false, isDataFetching = false)
@@ -524,5 +542,16 @@ class CompetitionViewModel @Inject constructor(
         eventProperties["include_round"] = includeRound
         
         analyticsManager.trackEvent(AnalyticsManager.EVENT_INCLUDE_ROUND_TOGGLED, eventProperties)
+    }
+
+    private fun handleAuthenticationFailure() {
+        viewModelScope.launch {
+            try {
+                authRepository.logout()
+                android.util.Log.d("CompetitionViewModel", "🔓 User logged out due to authentication failure")
+            } catch (e: Exception) {
+                android.util.Log.e("CompetitionViewModel", "❌ Failed to logout after auth failure", e)
+            }
+        }
     }
 }

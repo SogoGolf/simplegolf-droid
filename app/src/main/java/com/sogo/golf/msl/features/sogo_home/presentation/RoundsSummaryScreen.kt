@@ -45,7 +45,7 @@ fun RoundsSummaryScreen(
     }
     
     // Fetch rounds when golfer data is available
-    LaunchedEffect(currentGolfer, localGame) {
+    LaunchedEffect(currentGolfer, localGame) { // initapi - fetches rounds data when golfer data becomes available
         // Wait for either currentGolfer or localGame to have a golf link number
         val golfLinkNo = currentGolfer?.golfLinkNo?.takeIf { it.isNotBlank() }
             ?: localGame?.golflinkNumber

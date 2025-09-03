@@ -44,7 +44,7 @@ fun NationalLeaderboardsScreen(
     }
     
     LaunchedEffect(Unit) {
-        viewModel.fetchCompetitions()
+        viewModel.fetchCompetitions() // initapi - fetches competitions data on screen load
     }
     
     Scaffold(

@@ -118,12 +118,14 @@ class GolfApiAuthInterceptor @Inject constructor(
                 return mslTokenManager.getAuthorizationHeader()
             } else {
                 Log.e(TAG, "❌ Token refresh failed: ${response.code()} - ${response.message()}")
+                mslTokenManager.markRefreshFailed()
                 return null
             }
         } catch (e: Exception) {
             Log.e(TAG, "❌ Token refresh exception: ${e.message}")
+            mslTokenManager.markRefreshFailed()
             return null
-        } finally {
+        }finally {
             synchronized(refreshLock) {
                 isRefreshing = false
                 (refreshLock as java.lang.Object).notifyAll()

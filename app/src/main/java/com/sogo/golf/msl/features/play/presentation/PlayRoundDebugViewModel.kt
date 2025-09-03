@@ -6,6 +6,7 @@ import androidx.navigation.NavController
 import com.sogo.golf.msl.app.lifecycle.AppLifecycleManager
 import com.sogo.golf.msl.app.lifecycle.AppResumeAction
 import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
+import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
@@ -15,6 +16,7 @@ import com.sogo.golf.msl.domain.usecase.game.FetchAndSaveGameUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.domain.usecase.marker.RemoveMarkerUseCase
 import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.shared.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +39,7 @@ class PlayRoundDebugViewModel @Inject constructor(
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val appLifecycleManager: AppLifecycleManager,
     private val gameDataTimestampPreferences: GameDataTimestampPreferences,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _deleteMarkerEnabled = MutableStateFlow(false)
@@ -176,6 +179,10 @@ class PlayRoundDebugViewModel @Inject constructor(
                                 }
                                 is NetworkResult.Error -> {
                                     android.util.Log.w("PlayRoundDebugVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
+                                    
+                                    if (gameResult.error is NetworkError.HttpError && gameResult.error.code == 401 && gameResult.error.isRefreshFailure) {
+                                        handleAuthenticationFailure()
+                                    }
                                     // Don't fail the whole operation - marker was still removed successfully
                                 }
                                 is NetworkResult.Loading -> { /* Ignore */ }
@@ -189,6 +196,10 @@ class PlayRoundDebugViewModel @Inject constructor(
                                 }
                                 is NetworkResult.Error -> {
                                     android.util.Log.w("PlayRoundDebugVM", "⚠️ Failed to refresh competition data: ${competitionResult.error}")
+                                    
+                                    if (competitionResult.error is NetworkError.HttpError && competitionResult.error.code == 401 && competitionResult.error.isRefreshFailure) {
+                                        handleAuthenticationFailure()
+                                    }
                                     // Don't fail the whole operation
                                 }
                                 is NetworkResult.Loading -> { /* Ignore */ }
@@ -234,6 +245,10 @@ class PlayRoundDebugViewModel @Inject constructor(
                     }
                     is NetworkResult.Error -> {
                         android.util.Log.w("PlayRoundDebugVM", "⚠️ Failed to refresh game data: ${result.error}")
+                        
+                        if (result.error is NetworkError.HttpError && result.error.code == 401 && result.error.isRefreshFailure) {
+                            handleAuthenticationFailure()
+                        }
                         // Don't show error to user - marker removal was successful
                     }
                     is NetworkResult.Loading -> {
@@ -317,5 +332,16 @@ class PlayRoundDebugViewModel @Inject constructor(
 
     fun clearDebugMessage() {
         _debugMessage.value = ""
+    }
+
+    private fun handleAuthenticationFailure() {
+        viewModelScope.launch {
+            try {
+                authRepository.logout()
+                android.util.Log.d("PlayRoundDebugViewModel", "🔓 User logged out due to authentication failure")
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundDebugViewModel", "❌ Failed to logout after auth failure", e)
+            }
+        }
     }
 }

@@ -53,7 +53,7 @@ class LoginViewModel @Inject constructor(
     val navigateToWebAuth: SharedFlow<String> = _navigateToWebAuth
 
     init {
-        loadClubs()
+        loadClubs() // initapi - loads clubs during ViewModel initialization
 
         // CRITICAL: Load previously selected club from SharedPreferences
         loadSavedClubSelection()
@@ -112,7 +112,7 @@ class LoginViewModel @Inject constructor(
                 errorMessage = null
             )
 
-            when (val result = mslRepository.getClubs()) {
+            when (val result = mslRepository.getClubs()) { // initapi - API call to fetch clubs list
                 is NetworkResult.Success -> {
                     Log.d(TAG, "Loaded ${result.data.size} clubs")
 
