@@ -154,7 +154,7 @@ class HomeViewModel @Inject constructor(
                 // Wait a bit for currentGolfer to be available, then fetch
                 viewModelScope.launch {
                     kotlinx.coroutines.delay(100) // Small delay to ensure currentGolfer is set
-                    fetchSogoDataOnly()
+                    fetchSogoDataOnly() // initapi - triggers API calls for fees and golfer data
                 }
             } else {
                 Log.d(TAG, "=== HOME SCREEN INIT - SKIPPING DATA FETCH (came from successful round submission) ===")
@@ -188,7 +188,7 @@ class HomeViewModel @Inject constructor(
                     // ✅ Fetch Sogo Fees Data first (needed for competitions)
                     Log.d(TAG, "💰 Fetching SOGO fees data...")
                     _uiState.value = _uiState.value.copy(progressMessage = "Downloading data…", progressPercent = 50)
-                    when (val feesResult = fetchAndSaveFeesUseCase()) {
+                    when (val feesResult = fetchAndSaveFeesUseCase()) { // initapi - API call to fetch SOGO fees
                         is NetworkResult.Success -> {
                             Log.d(TAG, "✅ SOGO Fees data fetched successfully: ${feesResult.data.size} fees")
                         }
@@ -217,7 +217,7 @@ class HomeViewModel @Inject constructor(
                         return@launch
                     }
 
-                    when (val sogoGolferResult = fetchAndSaveSogoGolferUseCase(golfLinkNo)) {
+                    when (val sogoGolferResult = fetchAndSaveSogoGolferUseCase(golfLinkNo)) { // initapi - API call to fetch SOGO golfer data
                         is NetworkResult.Success -> {
                             Log.d(TAG, "✅ SOGO API call succeeded: ${sogoGolferResult.data?.email ?: "No golfer found (new user)"}")
                             sogoFetchCompleted = true

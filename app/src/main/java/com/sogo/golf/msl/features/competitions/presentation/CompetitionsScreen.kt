@@ -103,7 +103,7 @@ fun CompetitionsScreen(
     }
 
     LaunchedEffect(Unit) {
-        competitionViewModel.triggerRefresh()
+        competitionViewModel.triggerRefresh() // initapi - triggers sequential API calls: getGame(), getCompetition(), refreshGolfer()
     }
     
     // Track competitions viewed only when game data is loaded

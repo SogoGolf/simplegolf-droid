@@ -159,7 +159,7 @@ class PlayingPartnerViewModel @Inject constructor(
     val tokenCost: StateFlow<Double> = _tokenCost.asStateFlow()
 
     init {
-        // Load include round preference and token cost on initialization
+        // Load include round preference and token cost on initialization // initapi - loads preferences and monitors data
         viewModelScope.launch {
             _includeRound.value = includeRoundPreferences.getIncludeRound()
             val test = includeRoundPreferences.getRoundCost()
