@@ -128,7 +128,7 @@ class CompetitionViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    private val _includeRound = MutableStateFlow(true)
+    private val _includeRound = MutableStateFlow(false)
     val includeRound: StateFlow<Boolean> = _includeRound.asStateFlow()
 
     private val _tokenCost = MutableStateFlow(0.0)

@@ -42,7 +42,7 @@ class IncludeRoundPreferencesImpl @Inject constructor(
     }
 
     override suspend fun getIncludeRound(): Boolean {
-        return prefs.getBoolean(KEY_INCLUDE_ROUND, true)
+        return prefs.getBoolean(KEY_INCLUDE_ROUND, false)
     }
 
     override suspend fun clearIncludeRound() {
