@@ -150,7 +150,7 @@ class HomeViewModel @Inject constructor(
                 Log.d(TAG, "=== HOME SCREEN INIT - FETCHING SOGO DATA ONLY ===")
                 // Wait a bit for currentGolfer to be available, then fetch
                 viewModelScope.launch {
-                    kotlinx.coroutines.delay(100) // Small delay to ensure currentGolfer is set
+                    kotlinx.coroutines.delay(200) // Small delay to ensure currentGolfer is set
                     fetchSogoDataOnly()
                 }
             } else {

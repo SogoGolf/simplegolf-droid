@@ -8,15 +8,13 @@ import javax.inject.Inject
 
 class FetchAndSaveGameUseCase @Inject constructor(
     private val gameRepository: MslGameLocalDbRepository,
-    private val saveGameDataDateUseCase: SaveGameDataDateUseCase // ✅ ADD THIS
+    private val saveGameDataDateUseCase: SaveGameDataDateUseCase
 ) {
     suspend operator fun invoke(gameId: String): NetworkResult<MslGame> {
         val result = gameRepository.fetchAndSaveGame(gameId)
 
-        // ✅ If successful, save today's date
         if (result is NetworkResult.Success) {
             saveGameDataDateUseCase()
-            android.util.Log.d("FetchAndSaveGameUseCase", "✅ Game data fetched and date saved")
         }
 
         return result

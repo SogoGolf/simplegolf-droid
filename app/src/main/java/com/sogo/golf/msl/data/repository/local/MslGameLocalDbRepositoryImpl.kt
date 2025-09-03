@@ -67,7 +67,7 @@ class MslGameLocalDbRepositoryImpl @Inject constructor(
                 }
                 is NetworkResult.Error -> {
                     Log.e(TAG, "API call failed: ${result.error}")
-                    throw Exception("Failed to fetch game: ${result.error.toUserMessage()}")
+                    throw Exception(result.error.toUserMessage())
                 }
                 is NetworkResult.Loading -> {
                     throw Exception("Unexpected loading state")

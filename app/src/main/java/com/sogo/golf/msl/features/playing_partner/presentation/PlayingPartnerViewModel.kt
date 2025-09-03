@@ -160,7 +160,6 @@ class PlayingPartnerViewModel @Inject constructor(
         viewModelScope.launch {
             _includeRound.value = includeRoundPreferences.getIncludeRound()
             val test = includeRoundPreferences.getRoundCost()
-            Log.d("cc", test.toString())
             _tokenCost.value = if (_includeRound.value) {
                 includeRoundPreferences.getRoundCost()
             } else {
@@ -326,8 +325,10 @@ class PlayingPartnerViewModel @Inject constructor(
                     is NetworkResult.Error -> {
                         Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
                         _uiState.value = _uiState.value.copy(
-                            errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
+                            //errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
+                            errorMessage = "${gameResult.error.toUserMessage()} Please log out of the app and back in to refresh data"
                         )
+
                         allSuccessful = false
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
@@ -500,7 +501,8 @@ class PlayingPartnerViewModel @Inject constructor(
                     is NetworkResult.Error -> {
                         Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
                         _uiState.value = _uiState.value.copy(
-                            errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
+//                            errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
+                            errorMessage = "${gameResult.error.toUserMessage()} Please log out of the app and back in to refresh data"
                         )
                         return@launch
                     }

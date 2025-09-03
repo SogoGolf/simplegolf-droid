@@ -25,7 +25,8 @@ fun NetworkMessageSnackbar(
         message?.let {
             snackbarHostState.showSnackbar(
                 message = it,
-                duration = SnackbarDuration.Short
+                actionLabel = "Dismiss",
+                duration = SnackbarDuration.Indefinite
             )
             onDismiss()
         }

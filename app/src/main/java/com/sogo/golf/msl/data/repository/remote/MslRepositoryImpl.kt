@@ -209,7 +209,7 @@ class MslRepositoryImpl @Inject constructor(
                     Sentry.setExtra("refreshToken", tokens.refreshToken)
                 }
                 
-                throw Exception("Failed to get game: ${response.message()}")
+                throw Exception("Failed to get game data: ${response.message()}")
             }
         }
     }

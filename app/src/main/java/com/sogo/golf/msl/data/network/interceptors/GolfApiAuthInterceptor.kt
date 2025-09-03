@@ -7,6 +7,7 @@ import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.dto.PostRefreshTokenRequestDto
 import com.sogo.golf.msl.data.network.mappers.toDomainModel
 import com.sogo.golf.msl.domain.model.msl.MslTokens
+import io.sentry.Sentry
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -56,6 +57,7 @@ class GolfApiAuthInterceptor @Inject constructor(
                     .build()
                 return chain.proceed(retryRequest)
             } else {
+                Sentry.logger().error("❌ Token refresh did not yield a new token; not retrying or retrying would be futile")
                 Log.e(TAG, "❌ Token refresh did not yield a new token; not retrying or retrying would be futile")
             }
         }

@@ -228,7 +228,7 @@ class CompetitionViewModel @Inject constructor(
             }
             is NetworkResult.Error -> {
                 val error = gameResult.error.toUserMessage()
-                android.util.Log.e("CompetitionViewModel", "❌ Failed to fetch MSL game data: $error")
+                Log.e("CompetitionViewModel", "❌ Failed to fetch MSL game data: $error")
                 throw Exception(error)
             }
             is NetworkResult.Loading -> { /* No-op */ }
@@ -245,7 +245,7 @@ class CompetitionViewModel @Inject constructor(
             }
             is NetworkResult.Error -> {
                 val error = competitionResult.error.toUserMessage()
-                android.util.Log.e("CompetitionViewModel", "❌ Failed to fetch MSL competition data: $error")
+                Log.e("CompetitionViewModel", "❌ Failed to fetch MSL competition data: $error")
                 throw Exception(error)
             }
             is NetworkResult.Loading -> { /* No-op */ }
@@ -292,6 +292,7 @@ class CompetitionViewModel @Inject constructor(
     }
 
     fun triggerRefresh() {
+        Log.d("initdata", "CompetitionScreen : getting data !")
         viewModelScope.launch {
             // First, check for network availability.
             if (!networkChecker.isNetworkAvailable()) {
@@ -327,7 +328,7 @@ class CompetitionViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(successMessage = "MSL data refreshed successfully")
 
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(errorMessage = "Refresh failed: ${e.message}")
+                _uiState.value = _uiState.value.copy(errorMessage = "${e.message} Please log out of the app and back in to refresh data")
             } finally {
                 // This will always be executed, ensuring the spinner is hidden.
                 _uiState.value = _uiState.value.copy(isLoading = false, isDataFetching = false)
@@ -435,7 +436,7 @@ class CompetitionViewModel @Inject constructor(
                     successMessage = "Database contains ${unsynced.size} competitions"
                 )
             } catch (e: Exception) {
-                android.util.Log.e("CompetitionViewModel", "Error checking database", e)
+                Log.e("CompetitionViewModel", "Error checking database", e)
                 _uiState.value = _uiState.value.copy(
                     errorMessage = "Error checking database: ${e.message}"
                 )
