@@ -138,10 +138,10 @@ class CompetitionViewModel @Inject constructor(
         // ✅ DEBUG: Log fee data when it loads
         viewModelScope.launch {
             mslFees.collect { fees ->
-                android.util.Log.d("CompetitionViewModel", "=== MSL FEES LOADED ===")
-                android.util.Log.d("CompetitionViewModel", "Fees count: ${fees.size}")
+                Log.d("CompetitionViewModel", "=== MSL FEES LOADED ===")
+                Log.d("CompetitionViewModel", "Fees count: ${fees.size}")
                 fees.forEach { fee ->
-                    android.util.Log.d("CompetitionViewModel",
+                    Log.d("CompetitionViewModel",
                         "Fee: ${fee.description} - ${fee.numberHoles} holes - $${fee.cost} - Waived: ${fee.isWaived}")
                 }
             }
@@ -151,14 +151,14 @@ class CompetitionViewModel @Inject constructor(
         viewModelScope.launch {
             currentGolfer.collect { golfer ->
                 if (golfer != null) {
-                    android.util.Log.d("CompetitionViewModel", "=== MSL GOLFER LOADED ===")
-                    android.util.Log.d("CompetitionViewModel", "Golfer: ${golfer.firstName} ${golfer.surname} (${golfer.golfLinkNo})")
+                    Log.d("CompetitionViewModel", "=== MSL GOLFER LOADED ===")
+                    Log.d("CompetitionViewModel", "Golfer: ${golfer.firstName} ${golfer.surname} (${golfer.golfLinkNo})")
 
                     // Now observe the SogoGolfer for this golfLinkNo
                     getSogoGolferUseCase(golfer.golfLinkNo).collect { sogoGolfer ->
-                        android.util.Log.d("CompetitionViewModel", "=== SOGO GOLFER LOADED ===")
-                        android.util.Log.d("CompetitionViewModel", "SogoGolfer: ${sogoGolfer?.firstName} ${sogoGolfer?.lastName}")
-                        android.util.Log.d("CompetitionViewModel", "Token Balance: ${sogoGolfer?.tokenBalance}")
+                        Log.d("CompetitionViewModel", "=== SOGO GOLFER LOADED ===")
+                        Log.d("CompetitionViewModel", "SogoGolfer: ${sogoGolfer?.firstName} ${sogoGolfer?.lastName}")
+                        Log.d("CompetitionViewModel", "Token Balance: ${sogoGolfer?.tokenBalance}")
                     }
                 }
             }
@@ -180,12 +180,12 @@ class CompetitionViewModel @Inject constructor(
                 // ✅ SAVE the calculated fee to preferences so other ViewModels can access it
                 includeRoundPreferences.setRoundCost(calculatedFee.value)
                 
-                android.util.Log.d("CompetitionViewModel", "=== TOKEN COST UPDATED ===")
-                android.util.Log.d("CompetitionViewModel", "Include round: ${_includeRound.value}")
-                android.util.Log.d("CompetitionViewModel", "Game holes: ${localGame.value?.numberOfHoles}")
-                android.util.Log.d("CompetitionViewModel", "Calculated fee: ${calculatedFee.value}")
-                android.util.Log.d("CompetitionViewModel", "Saved to preferences: ${calculatedFee.value}")
-                android.util.Log.d("CompetitionViewModel", "New token cost: $newCost")
+                Log.d("CompetitionViewModel", "=== TOKEN COST UPDATED ===")
+                Log.d("CompetitionViewModel", "Include round: ${_includeRound.value}")
+                Log.d("CompetitionViewModel", "Game holes: ${localGame.value?.numberOfHoles}")
+                Log.d("CompetitionViewModel", "Calculated fee: ${calculatedFee.value}")
+                Log.d("CompetitionViewModel", "Saved to preferences: ${calculatedFee.value}")
+                Log.d("CompetitionViewModel", "New token cost: $newCost")
             }
         }
     }
@@ -220,10 +220,10 @@ class CompetitionViewModel @Inject constructor(
     }
 
     private suspend fun fetchMslGameData(clubIdStr: String) {
-        android.util.Log.d("CompetitionViewModel", "🎮 Fetching MSL game data...")
+        Log.d("CompetitionViewModel", "🎮 Fetching MSL game data...")
         when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
             is NetworkResult.Success -> {
-                android.util.Log.d("CompetitionViewModel", "✅ MSL game data fetched successfully.")
+                Log.d("CompetitionViewModel", "✅ MSL game data fetched successfully.")
                 // Success, do nothing
             }
             is NetworkResult.Error -> {
@@ -237,10 +237,10 @@ class CompetitionViewModel @Inject constructor(
 
     // ✅ NEW: Fetch MSL competition data using the use case
     private suspend fun fetchMslCompetitionData(clubIdStr: String) {
-        android.util.Log.d("CompetitionViewModel", "🏆 Fetching MSL competition data...")
+        Log.d("CompetitionViewModel", "🏆 Fetching MSL competition data...")
         when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
             is NetworkResult.Success -> {
-                android.util.Log.d("CompetitionViewModel", "✅ MSL competition data fetched successfully.")
+                Log.d("CompetitionViewModel", "✅ MSL competition data fetched successfully.")
                 // Success, do nothing
             }
             is NetworkResult.Error -> {
@@ -258,14 +258,14 @@ class CompetitionViewModel @Inject constructor(
             ?: currentGolfer.value?.golfLinkNo?.takeIf { it.isNotBlank() }
             ?: localGame.value?.golflinkNumber
         
-        android.util.Log.d("CompetitionViewModel", "=== REFRESH SOGO GOLFER DEBUG ===")
-        android.util.Log.d("CompetitionViewModel", "sogoGolfer.value?.golfLinkNo: ${sogoGolfer.value?.golfLinkNo}")
-        android.util.Log.d("CompetitionViewModel", "currentGolfer.value?.golfLinkNo: ${currentGolfer.value?.golfLinkNo}")
-        android.util.Log.d("CompetitionViewModel", "localGame.value?.golflinkNumber: ${localGame.value?.golflinkNumber}")
-        android.util.Log.d("CompetitionViewModel", "Final golfLinkNo for refresh: $golfLinkNo")
+        Log.d("CompetitionViewModel", "=== REFRESH SOGO GOLFER DEBUG ===")
+        Log.d("CompetitionViewModel", "sogoGolfer.value?.golfLinkNo: ${sogoGolfer.value?.golfLinkNo}")
+        Log.d("CompetitionViewModel", "currentGolfer.value?.golfLinkNo: ${currentGolfer.value?.golfLinkNo}")
+        Log.d("CompetitionViewModel", "localGame.value?.golflinkNumber: ${localGame.value?.golflinkNumber}")
+        Log.d("CompetitionViewModel", "Final golfLinkNo for refresh: $golfLinkNo")
         
         // Log current local token balance before refresh
-        android.util.Log.d("CompetitionViewModel", "💰 LOCAL TOKEN BALANCE (before refresh): ${sogoGolfer.value?.tokenBalance}")
+        Log.d("CompetitionViewModel", "💰 LOCAL TOKEN BALANCE (before refresh): ${sogoGolfer.value?.tokenBalance}")
         
         if (golfLinkNo.isNullOrBlank()) {
             android.util.Log.w("CompetitionViewModel", "⚠️ No valid golf link number available - cannot refresh Sogo Golfer data")
@@ -273,14 +273,14 @@ class CompetitionViewModel @Inject constructor(
             return
         }
 
-        android.util.Log.d("CompetitionViewModel", "🏌️ Refreshing Sogo Golfer data for: $golfLinkNo")
+        Log.d("CompetitionViewModel", "🏌️ Refreshing Sogo Golfer data for: $golfLinkNo")
         when (val result = fetchAndSaveSogoGolferUseCase(golfLinkNo)) {
             is NetworkResult.Success -> {
-                android.util.Log.d("CompetitionViewModel", "✅ Sogo Golfer data refreshed.")
-                android.util.Log.d("CompetitionViewModel", "💰 REMOTE TOKEN BALANCE (from API): ${result.data.tokenBalance}")
+                Log.d("CompetitionViewModel", "✅ Sogo Golfer data refreshed.")
+                Log.d("CompetitionViewModel", "💰 REMOTE TOKEN BALANCE (from API): ${result.data.tokenBalance}")
                 // Give a moment for the local flow to update, then log the updated local balance
                 kotlinx.coroutines.delay(100)
-                android.util.Log.d("CompetitionViewModel", "💰 LOCAL TOKEN BALANCE (after refresh): ${sogoGolfer.value?.tokenBalance}")
+                Log.d("CompetitionViewModel", "💰 LOCAL TOKEN BALANCE (after refresh): ${sogoGolfer.value?.tokenBalance}")
             }
             is NetworkResult.Error -> {
                 val error = result.error.toUserMessage()
@@ -335,22 +335,6 @@ class CompetitionViewModel @Inject constructor(
         }
     }
 
-    // Example method: Refresh current competition
-    fun refreshCompetition() {
-        val competitionId = "weekend-tournament-2024"
-        fetchCompetitionData(competitionId)
-    }
-
-    // Example method: Clear all competitions (useful for testing/logout)
-    fun clearAllCompetitions() {
-        viewModelScope.launch {
-            competitionRepository.clearAllCompetitions()
-            _uiState.value = _uiState.value.copy(
-                successMessage = "All competitions cleared"
-            )
-        }
-    }
-
     // ✅ NEW: Can proceed calculation as StateFlow
     val canProceed = combine(
         localGame,
@@ -389,10 +373,10 @@ class CompetitionViewModel @Inject constructor(
     // ✅ UPDATED: Log calculated fee instead of setting static cost
     fun logCalculatedFee() {
         viewModelScope.launch {
-            android.util.Log.d("CompetitionViewModel", "=== CALCULATED FEE INFO ===")
-            android.util.Log.d("CompetitionViewModel", "Game holes: ${localGame.value?.numberOfHoles}")
-            android.util.Log.d("CompetitionViewModel", "Calculated fee: ${calculatedFee.value}")
-            android.util.Log.d("CompetitionViewModel", "Current token cost: ${_tokenCost.value}")
+            Log.d("CompetitionViewModel", "=== CALCULATED FEE INFO ===")
+            Log.d("CompetitionViewModel", "Game holes: ${localGame.value?.numberOfHoles}")
+            Log.d("CompetitionViewModel", "Calculated fee: ${calculatedFee.value}")
+            Log.d("CompetitionViewModel", "Current token cost: ${_tokenCost.value}")
         }
     }
 
@@ -442,9 +426,9 @@ class CompetitionViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val unsynced = competitionRepository.getUnsyncedCompetitions()
-                android.util.Log.d("CompetitionViewModel", "Unsynced competitions: ${unsynced.size}")
+                Log.d("CompetitionViewModel", "Unsynced competitions: ${unsynced.size}")
                 unsynced.forEachIndexed { index, comp ->
-                    android.util.Log.d("CompetitionViewModel", "Competition $index: ${comp.players.size} players")
+                    Log.d("CompetitionViewModel", "Competition $index: ${comp.players.size} players")
                 }
 
                 _uiState.value = _uiState.value.copy(
