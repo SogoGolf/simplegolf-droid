@@ -28,7 +28,7 @@ class MslRepositoryImpl @Inject constructor(
     private val networkChecker: NetworkChecker,
     private val mslTokenManager: MslTokenManager,
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
-    ) : BaseRepository(networkChecker), MslRepository {
+    ) : BaseRepository(networkChecker, mslTokenManager), MslRepository {
 
     companion object {
         private const val TAG = "MslRepository"

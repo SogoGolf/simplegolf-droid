@@ -21,6 +21,7 @@ class MslTokenManager @Inject constructor(
         private const val TOKENS_PREFS = "msl_tokens"
         private const val KEY_MSL_TOKENS = "msl_tokens_json"
         private const val KEY_AUTH_TOKEN = "auth_token"
+        private const val KEY_REFRESH_FAILED = "refresh_failed"
     }
 
     private val masterKey = MasterKey.Builder(context)
@@ -124,5 +125,30 @@ class MslTokenManager @Inject constructor(
             .apply()
 
         _authToken.value = token
+    }
+
+    /**
+     * Mark that token refresh failed
+     */
+    fun markRefreshFailed() {
+        encryptedPrefs.edit()
+            .putBoolean(KEY_REFRESH_FAILED, true)
+            .apply()
+    }
+
+    /**
+     * Check if token refresh failed
+     */
+    fun hasRefreshFailed(): Boolean {
+        return encryptedPrefs.getBoolean(KEY_REFRESH_FAILED, false)
+    }
+
+    /**
+     * Clear refresh failed flag
+     */
+    fun clearRefreshFailedFlag() {
+        encryptedPrefs.edit()
+            .remove(KEY_REFRESH_FAILED)
+            .apply()
     }
 }

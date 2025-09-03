@@ -8,6 +8,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.competition.FetchAndSaveCompetitionUseCase
@@ -26,6 +27,7 @@ import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateGolferUseCase
 import com.sogo.golf.msl.features.sogo_home.presentation.state.CountryDataState
 import com.sogo.golf.msl.features.sogo_home.presentation.state.SogoGolferDataState
 import com.sogo.golf.msl.analytics.AnalyticsManager
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import io.sentry.Sentry
 import io.sentry.protocol.User
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -53,6 +55,7 @@ class HomeViewModel @Inject constructor(
         private val createGolferUseCase: CreateGolferUseCase,
         private val updateGolferUseCase: UpdateGolferUseCase,
         private val analyticsManager: AnalyticsManager,
+        private val authRepository: AuthRepository
     ) : ViewModel() {
 
         companion object {
@@ -191,6 +194,10 @@ class HomeViewModel @Inject constructor(
                         }
                         is NetworkResult.Error -> {
                             Log.e(TAG, "❌ Failed to fetch SOGO fees data: ${feesResult.error.toUserMessage()}")
+                            
+                            if (feesResult.error is NetworkError.HttpError && feesResult.error.code == 401 && feesResult.error.isRefreshFailure) {
+                                handleAuthenticationFailure()
+                            }
                             // Don't fail the whole process for fees
                         }
                         is NetworkResult.Loading -> { /* Already handled */ }
@@ -613,6 +620,17 @@ class HomeViewModel @Inject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "❌ Exception processing golfer confirmation data", e)
             false
+        }
+    }
+
+    private fun handleAuthenticationFailure() {
+        viewModelScope.launch {
+            try {
+                authRepository.logout()
+                android.util.Log.d("HomeViewModel", "🔓 User logged out due to authentication failure")
+            } catch (e: Exception) {
+                android.util.Log.e("HomeViewModel", "❌ Failed to logout after auth failure", e)
+            }
         }
     }
 }

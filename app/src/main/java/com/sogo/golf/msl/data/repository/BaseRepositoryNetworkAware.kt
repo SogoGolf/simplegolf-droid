@@ -3,6 +3,7 @@ package com.sogo.golf.msl.data.repository
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.NetworkResult
+import com.sogo.golf.msl.MslTokenManager
 import io.sentry.Sentry
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
@@ -11,7 +12,8 @@ import java.io.IOException
 import kotlinx.coroutines.CancellationException
 
 abstract class BaseRepository(
-    private val networkChecker: NetworkChecker
+    private val networkChecker: NetworkChecker,
+    private val mslTokenManager: MslTokenManager? = null
 ) {
 
     protected suspend fun <T> safeNetworkCall(
@@ -43,7 +45,11 @@ abstract class BaseRepository(
             NetworkResult.Error(NetworkError.NoConnection)
         } catch (e: HttpException) {
             Sentry.captureException(e)
-            NetworkResult.Error(NetworkError.ServerError)
+            val isRefreshFailure = e.code() == 401 && mslTokenManager?.hasRefreshFailed() == true
+            if (isRefreshFailure) {
+                mslTokenManager?.clearRefreshFailedFlag()
+            }
+            NetworkResult.Error(NetworkError.HttpError(e.code(), e.message(), isRefreshFailure))
         } catch (e: Exception) {
             Sentry.captureException(e)
             NetworkResult.Error(NetworkError.Unknown(e.message ?: "Unknown error"))
