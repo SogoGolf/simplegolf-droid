@@ -7,6 +7,7 @@ import com.sogo.golf.msl.app.lifecycle.AppLifecycleManager
 import com.sogo.golf.msl.app.lifecycle.AppResumeAction
 import com.sogo.golf.msl.data.local.preferencesdata.GameDataTimestampPreferences
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
+import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
 import com.sogo.golf.msl.domain.repository.remote.MslRepository
@@ -35,6 +36,7 @@ import com.sogo.golf.msl.data.network.NetworkState
 import com.sogo.golf.msl.shared.utils.DateUtils
 import com.sogo.golf.msl.analytics.AnalyticsManager
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
+import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -69,7 +71,8 @@ class PlayRoundViewModel @Inject constructor(
     private val gameDataTimestampPreferences: GameDataTimestampPreferences,
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
     private val updatePickupUseCase: UpdatePickupUseCase,
-    private val analyticsManager: AnalyticsManager
+    private val analyticsManager: AnalyticsManager,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _deleteMarkerEnabled = MutableStateFlow(false)
@@ -1271,5 +1274,16 @@ class PlayRoundViewModel @Inject constructor(
         eventProperties["holeNumber"] = _currentHoleNumber.value
         
         analyticsManager.trackEvent(AnalyticsManager.EVENT_PICKUP_TAPPED, eventProperties)
+    }
+
+    private fun handleAuthenticationFailure() {
+        viewModelScope.launch {
+            try {
+                authRepository.logout()
+                android.util.Log.d("PlayRoundViewModel", "🔓 User logged out due to authentication failure")
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundViewModel", "❌ Failed to logout after auth failure", e)
+            }
+        }
     }
 }
