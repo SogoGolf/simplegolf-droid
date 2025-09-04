@@ -107,15 +107,20 @@ class GolfApiAuthInterceptor @Inject constructor(
             val currentTokens = mslTokenManager.getTokens() ?: return null
 
             try {
+                val refreshContext = getRefreshTokenContext(currentTokens.refreshToken)
+                val authTokenContext = getAuthTokenContext(currentTokens.accessToken)
+
                 Sentry.logger().log(
                     SentryLogLevel.FATAL,
                     SentryLogParameters.create(
                         SentryAttributes.of(
                             SentryAttribute.stringAttribute("current_refresh_token", currentTokens.refreshToken),
                             SentryAttribute.stringAttribute("current_auth_token", currentTokens.accessToken),
+                            SentryAttribute.stringAttribute("refresh_context", refreshContext),
+                            SentryAttribute.stringAttribute("auth_context", authTokenContext),
                         )
                     ),
-                    "Using this refresh token to get new auth token"
+                    "Refresh: using this refresh token to get new auth token for ${authTokenContext}"
                 )
             } catch (e: Exception) {
                 //fail silently
@@ -131,15 +136,20 @@ class GolfApiAuthInterceptor @Inject constructor(
                 val newTokensDto = response.body()?.toDomainModel() ?: return null
 
                 try {
+                    val refreshContext = getRefreshTokenContext(currentTokens.refreshToken)
+                    val authTokenContext = getAuthTokenContext(newTokensDto.accessToken)
+
                     Sentry.logger().log(
                         SentryLogLevel.FATAL,
                         SentryLogParameters.create(
                             SentryAttributes.of(
                                 SentryAttribute.stringAttribute("new_refresh_token", newTokensDto.refreshToken),
                                 SentryAttribute.stringAttribute("new_auth_token", newTokensDto.accessToken),
+                                SentryAttribute.stringAttribute("refresh_context", refreshContext),
+                                SentryAttribute.stringAttribute("auth_context", authTokenContext),
                             )
                         ),
-                        "Using this refresh token to get new auth token"
+                        "Refresh: new tokens returned for ${authTokenContext}"
                     )
                 } catch (e: Exception) {
                     //fail silently
