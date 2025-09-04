@@ -20,7 +20,10 @@ class MpsAuthInterceptor @Inject constructor(
                 // This will be overridden by the header parameter in the repository
                 originalRequest.header("Authorization") ?: BuildConfig.SOGO_AUTHORIZATION
             }
-            url.contains("/refresh") -> "Basic cQpOkQ6bpFaeZzI5biibIaok0oWEoY9AtSFltMUzcR7jkTFm2ePMlO/TTR8flSdWk/i5PTQJ6NeGHZY3s2AxgWZZEwCcuynkpivjZsuVlBGEiiu8OwnDtEblNkuoYGkKAqDy6q2DfcL4tJhoSKKZ6bxpc5tVFExmB9SPPwS5nC4="
+            url.contains("/refresh") -> {
+                val prelimToken = mslTokenManager.getPreliminaryToken()
+                if (prelimToken != null) "Basic $prelimToken" else BuildConfig.SOGO_AUTHORIZATION
+            }
             else -> BuildConfig.SOGO_AUTHORIZATION
         }
 

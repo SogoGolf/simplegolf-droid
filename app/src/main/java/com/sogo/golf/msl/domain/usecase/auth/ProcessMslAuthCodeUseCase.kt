@@ -1,6 +1,7 @@
 package com.sogo.golf.msl.domain.usecase.auth
 
 import android.util.Log
+import com.sogo.golf.msl.MslTokenManager
 import com.sogo.golf.msl.analytics.AnalyticsManager
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.repository.MslGolferLocalDbRepository
@@ -14,7 +15,8 @@ class ProcessMslAuthCodeUseCase @Inject constructor(
     private val authRepository: AuthRepository,
     private val mslGolferLocalDbRepository: MslGolferLocalDbRepository,
     private val analyticsManager: AnalyticsManager,
-    private val jwtTokenDecoder: JwtTokenDecoder
+    private val jwtTokenDecoder: JwtTokenDecoder,
+    private val mslTokenManager: MslTokenManager
 ) {
     companion object {
         private const val TAG = "ProcessMslAuthCode"
@@ -61,6 +63,9 @@ class ProcessMslAuthCodeUseCase @Inject constructor(
             }
 
             Log.d(TAG, "Got preliminary token: ${prelimToken.take(10)}...")
+            
+            // Save preliminary token for later refresh use
+            mslTokenManager.savePreliminaryToken(prelimToken)
 
             // Step 2: Exchange auth code for access tokens
             Log.d(TAG, "Exchanging auth code for tokens")

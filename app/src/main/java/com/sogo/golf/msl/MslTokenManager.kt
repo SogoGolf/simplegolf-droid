@@ -21,6 +21,7 @@ class MslTokenManager @Inject constructor(
         private const val TOKENS_PREFS = "msl_tokens"
         private const val KEY_MSL_TOKENS = "msl_tokens_json"
         private const val KEY_AUTH_TOKEN = "auth_token"
+        private const val KEY_PRELIMINARY_TOKEN = "preliminary_token"
     }
 
     private val masterKey = MasterKey.Builder(context)
@@ -103,6 +104,7 @@ class MslTokenManager @Inject constructor(
         encryptedPrefs.edit()
             .remove(KEY_MSL_TOKENS)
             .remove(KEY_AUTH_TOKEN)
+            .remove(KEY_PRELIMINARY_TOKEN)
             .apply()
 
         _authToken.value = ""
@@ -124,5 +126,21 @@ class MslTokenManager @Inject constructor(
             .apply()
 
         _authToken.value = token
+    }
+
+    /**
+     * Save preliminary token securely
+     */
+    fun savePreliminaryToken(token: String) {
+        encryptedPrefs.edit()
+            .putString(KEY_PRELIMINARY_TOKEN, token)
+            .apply()
+    }
+
+    /**
+     * Get stored preliminary token
+     */
+    fun getPreliminaryToken(): String? {
+        return encryptedPrefs.getString(KEY_PRELIMINARY_TOKEN, null)
     }
 }
