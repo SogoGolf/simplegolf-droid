@@ -3,10 +3,12 @@ package com.sogo.golf.msl.data.network.interceptors
 import android.util.Log
 import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.MslTokenManager
+import com.sogo.golf.msl.data.local.preferences.ClubPreferences
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.dto.PostRefreshTokenRequestDto
 import com.sogo.golf.msl.data.network.mappers.toDomainModel
 import com.sogo.golf.msl.domain.model.msl.MslTokens
+import com.sogo.golf.msl.utils.JwtTokenDecoder
 import io.sentry.Sentry
 import io.sentry.SentryAttribute
 import io.sentry.SentryAttributes
@@ -19,7 +21,9 @@ import javax.inject.Inject
 
 class GolfApiAuthInterceptor @Inject constructor(
     private val mslTokenManager: MslTokenManager,
-    private val mpsAuthApiService: MpsAuthApiService
+    private val mpsAuthApiService: MpsAuthApiService,
+    private val jwtTokenDecoder: JwtTokenDecoder,
+    private val clubPreferences: ClubPreferences
 ) : Interceptor {
 
     companion object {
@@ -168,6 +172,64 @@ class GolfApiAuthInterceptor @Inject constructor(
                 isRefreshing = false
                 (refreshLock as java.lang.Object).notifyAll()
             }
+        }
+    }
+
+    /**
+     * Extracts nameid and clubid from refresh token for Sentry logging context
+     */
+    private fun getRefreshTokenContext(): Map<String, String> {
+        return try {
+            val tokens = mslTokenManager.getTokens()
+            val refreshToken = tokens?.refreshToken
+            
+            if (refreshToken != null) {
+                val claims = jwtTokenDecoder.decodeMslToken(refreshToken)
+                mapOf(
+                    "refresh_token_nameid" to (claims?.golferId ?: "unknown"),
+                    "refresh_token_clubid" to (claims?.clubId ?: "unknown")
+                )
+            } else {
+                mapOf(
+                    "refresh_token_nameid" to "no_token",
+                    "refresh_token_clubid" to "no_token"
+                )
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to extract refresh token context", e)
+            mapOf(
+                "refresh_token_nameid" to "error",
+                "refresh_token_clubid" to "error"
+            )
+        }
+    }
+
+    /**
+     * Extracts nameid and clubid from auth token for Sentry logging context
+     */
+    private fun getAuthTokenContext(): Map<String, String> {
+        return try {
+            val tokens = mslTokenManager.getTokens()
+            val accessToken = tokens?.accessToken
+            
+            if (accessToken != null) {
+                val claims = jwtTokenDecoder.decodeMslToken(accessToken)
+                mapOf(
+                    "auth_token_nameid" to (claims?.golferId ?: "unknown"),
+                    "auth_token_clubid" to (claims?.clubId ?: "unknown")
+                )
+            } else {
+                mapOf(
+                    "auth_token_nameid" to "no_token",
+                    "auth_token_clubid" to "no_token"
+                )
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to extract auth token context", e)
+            mapOf(
+                "auth_token_nameid" to "error",
+                "auth_token_clubid" to "error"
+            )
         }
     }
 }
