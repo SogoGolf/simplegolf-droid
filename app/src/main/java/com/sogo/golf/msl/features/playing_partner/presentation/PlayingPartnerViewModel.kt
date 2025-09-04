@@ -326,7 +326,7 @@ class PlayingPartnerViewModel @Inject constructor(
                         Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
                         _uiState.value = _uiState.value.copy(
                             //errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
-                            errorMessage = "${gameResult.error.toUserMessage()} Please log out of the app and back in to refresh data"
+                            errorMessage = gameResult.error.toUserMessage()
                         )
 
                         allSuccessful = false
@@ -502,7 +502,7 @@ class PlayingPartnerViewModel @Inject constructor(
                         Log.w("PlayingPartnerVM", "⚠️ Failed to refresh game data: ${gameResult.error}")
                         _uiState.value = _uiState.value.copy(
 //                            errorMessage = "Failed to refresh game data: ${gameResult.error.toUserMessage()}"
-                            errorMessage = "${gameResult.error.toUserMessage()} Please log out of the app and back in to refresh data"
+                            errorMessage = gameResult.error.toUserMessage()
                         )
                         return@launch
                     }

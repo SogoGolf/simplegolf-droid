@@ -328,7 +328,7 @@ class CompetitionViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(successMessage = "MSL data refreshed successfully")
 
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(errorMessage = "${e.message} Please log out of the app and back in to refresh data")
+                _uiState.value = _uiState.value.copy(errorMessage = "${e.message}")
             } finally {
                 // This will always be executed, ensuring the spinner is hidden.
                 _uiState.value = _uiState.value.copy(isLoading = false, isDataFetching = false)

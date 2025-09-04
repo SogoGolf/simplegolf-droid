@@ -15,7 +15,7 @@ abstract class BaseRepository(
 ) {
 
     protected suspend fun <T> safeNetworkCall(
-        timeoutMs: Long = 10000L,
+        timeoutMs: Long = 30000L,
         apiCall: suspend () -> T
     ): NetworkResult<T> {
         return try {
