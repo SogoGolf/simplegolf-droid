@@ -176,38 +176,30 @@ class GolfApiAuthInterceptor @Inject constructor(
     /**
      * Extracts nameid and clubid from refresh token for Sentry logging context
      */
-    private fun getRefreshTokenContext(refreshToken: String): Map<String, String> {
+    private fun getRefreshTokenContext(refreshToken: String): String {
         return try {
             val claims = jwtTokenDecoder.decodeMslToken(refreshToken)
-            mapOf(
-                "refresh_token_nameid" to (claims?.golferId ?: "unknown"),
-                "refresh_token_clubid" to (claims?.clubId ?: "unknown")
-            )
+            val nameid = claims?.golferId ?: "unknown"
+            val clubid = claims?.clubId ?: "unknown"
+            "nameid: $nameid  clubid: $clubid"
         } catch (e: Exception) {
             Log.w(TAG, "Failed to extract refresh token context", e)
-            mapOf(
-                "refresh_token_nameid" to "error",
-                "refresh_token_clubid" to "error"
-            )
+            "nameid: error  clubid: error"
         }
     }
 
     /**
      * Extracts nameid and clubid from auth token for Sentry logging context
      */
-    private fun getAuthTokenContext(authToken: String): Map<String, String> {
+    private fun getAuthTokenContext(authToken: String): String {
         return try {
             val claims = jwtTokenDecoder.decodeMslToken(authToken)
-            mapOf(
-                "auth_token_nameid" to (claims?.golferId ?: "unknown"),
-                "auth_token_clubid" to (claims?.clubId ?: "unknown")
-            )
+            val nameid = claims?.golferId ?: "unknown"
+            val clubid = claims?.clubId ?: "unknown"
+            "nameid: $nameid  clubid: $clubid"
         } catch (e: Exception) {
             Log.w(TAG, "Failed to extract auth token context", e)
-            mapOf(
-                "auth_token_nameid" to "error",
-                "auth_token_clubid" to "error"
-            )
+            "nameid: error  clubid: error"
         }
     }
 }
