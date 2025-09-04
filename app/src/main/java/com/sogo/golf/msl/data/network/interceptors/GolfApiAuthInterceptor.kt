@@ -8,6 +8,9 @@ import com.sogo.golf.msl.data.network.dto.PostRefreshTokenRequestDto
 import com.sogo.golf.msl.data.network.mappers.toDomainModel
 import com.sogo.golf.msl.domain.model.msl.MslTokens
 import com.sogo.golf.msl.utils.JwtTokenDecoder
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import io.sentry.Sentry
 import io.sentry.SentryAttribute
 import io.sentry.SentryAttributes
@@ -210,6 +213,51 @@ class GolfApiAuthInterceptor @Inject constructor(
         } catch (e: Exception) {
             Log.w(TAG, "Failed to extract auth token context", e)
             "nameid: error  clubid: error"
+        }
+    }
+
+    /**
+     * Returns the authorization header used for refresh token calls for Sentry logging context
+     */
+    private fun getRefreshTokenAuthHeader(): String {
+        return "Basic cQpOkQ6bpFaeZzI5biibIaok0oWEoY9AtSFltMUzcR7jkTFm2ePMlO/TTR8flSdWk/i5PTQJ6NeGHZY3s2AxgWZZEwCcuynkpivjZsuVlBGEiiu8OwnDtEblNkuoYGkKAqDy6q2DfcL4tJhoSKKZ6bxpc5tVFExmB9SPPwS5nC4="
+    }
+
+    /**
+     * Extracts expiry date from refresh token for Sentry logging context
+     */
+    private fun getRefreshTokenExpiry(refreshToken: String): String {
+        return try {
+            val jwtInstance = com.auth0.android.jwt.JWT(refreshToken)
+            val expiryDate = jwtInstance.expiresAt
+            if (expiryDate != null) {
+                val formatter = SimpleDateFormat("d MMM yyyy h:mma", Locale.getDefault())
+                formatter.format(expiryDate)
+            } else {
+                "no_expiry"
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to extract refresh token expiry", e)
+            "error"
+        }
+    }
+
+    /**
+     * Extracts expiry date from auth token for Sentry logging context
+     */
+    private fun getAuthTokenExpiry(authToken: String): String {
+        return try {
+            val jwtInstance = com.auth0.android.jwt.JWT(authToken)
+            val expiryDate = jwtInstance.expiresAt
+            if (expiryDate != null) {
+                val formatter = SimpleDateFormat("d MMM yyyy h:mma", Locale.getDefault())
+                formatter.format(expiryDate)
+            } else {
+                "no_expiry"
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to extract auth token expiry", e)
+            "error"
         }
     }
 }
