@@ -8,6 +8,10 @@ import com.sogo.golf.msl.data.network.dto.PostRefreshTokenRequestDto
 import com.sogo.golf.msl.data.network.mappers.toDomainModel
 import com.sogo.golf.msl.domain.model.msl.MslTokens
 import io.sentry.Sentry
+import io.sentry.SentryAttribute
+import io.sentry.SentryAttributes
+import io.sentry.SentryLogLevel
+import io.sentry.logger.SentryLogParameters
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -49,6 +53,7 @@ class GolfApiAuthInterceptor @Inject constructor(
             response.close()
 
             val refreshedToken = refreshTokenIfNeeded(force = true)
+
             if (refreshedToken != null && refreshedToken != memberToken) {
                 Log.d(TAG, "✅ Token actually refreshed, retrying request with new token")
                 val retryRequest = originalRequest.newBuilder()
@@ -99,6 +104,21 @@ class GolfApiAuthInterceptor @Inject constructor(
             Log.d(TAG, "Starting token refresh...")
             val currentTokens = mslTokenManager.getTokens() ?: return null
 
+            try {
+                Sentry.logger().log(
+                    SentryLogLevel.FATAL,
+                    SentryLogParameters.create(
+                        SentryAttributes.of(
+                            SentryAttribute.stringAttribute("current_refresh_token", currentTokens.refreshToken),
+                            SentryAttribute.stringAttribute("current_auth_token", currentTokens.accessToken),
+                        )
+                    ),
+                    "Using this refresh token to get new auth token"
+                )
+            } catch (e: Exception) {
+                //fail silently
+            }
+
             val response = runBlocking {
                 mpsAuthApiService.refreshToken(
                     PostRefreshTokenRequestDto(currentTokens.refreshToken)
@@ -108,6 +128,21 @@ class GolfApiAuthInterceptor @Inject constructor(
             if (response.isSuccessful) {
                 val newTokensDto = response.body()?.toDomainModel() ?: return null
 
+                try {
+                    Sentry.logger().log(
+                        SentryLogLevel.FATAL,
+                        SentryLogParameters.create(
+                            SentryAttributes.of(
+                                SentryAttribute.stringAttribute("new_refresh_token", newTokensDto.refreshToken),
+                                SentryAttribute.stringAttribute("new_auth_token", newTokensDto.accessToken),
+                            )
+                        ),
+                        "Using this refresh token to get new auth token"
+                    )
+                } catch (e: Exception) {
+                    //fail silently
+                }
+
                 val mslTokens = MslTokens(
                     accessToken = newTokensDto.accessToken,
                     refreshToken = newTokensDto.refreshToken,
@@ -115,9 +150,12 @@ class GolfApiAuthInterceptor @Inject constructor(
                     expiresIn = newTokensDto.expiresIn,
                     issuedAt = newTokensDto.issuedAt
                 )
+
                 mslTokenManager.saveTokens(mslTokens)
                 Log.d(TAG, "✅ Token refresh successful")
+
                 return mslTokenManager.getAuthorizationHeader()
+
             } else {
                 Log.e(TAG, "❌ Token refresh failed: ${response.code()} - ${response.message()}")
                 return null
