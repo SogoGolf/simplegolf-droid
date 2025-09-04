@@ -5,6 +5,7 @@ import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.MslTokenManager
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.dto.PostRefreshTokenRequestDto
+import com.sogo.golf.msl.data.network.interceptors.HeaderCapturingInterceptor
 import com.sogo.golf.msl.data.network.mappers.toDomainModel
 import com.sogo.golf.msl.domain.model.msl.MslTokens
 import com.sogo.golf.msl.utils.JwtTokenDecoder
@@ -21,7 +22,8 @@ import javax.inject.Inject
 class GolfApiAuthInterceptor @Inject constructor(
     private val mslTokenManager: MslTokenManager,
     private val mpsAuthApiService: MpsAuthApiService,
-    private val jwtTokenDecoder: JwtTokenDecoder
+    private val jwtTokenDecoder: JwtTokenDecoder,
+    private val headerCapturingInterceptor: HeaderCapturingInterceptor
 ) : Interceptor {
 
     companion object {
@@ -128,6 +130,8 @@ class GolfApiAuthInterceptor @Inject constructor(
                 //fail silently
             }
 
+            headerCapturingInterceptor.clearCapturedHeader()
+            
             val response = runBlocking {
                 mpsAuthApiService.refreshToken(
                     PostRefreshTokenRequestDto(currentTokens.refreshToken)
@@ -218,10 +222,10 @@ class GolfApiAuthInterceptor @Inject constructor(
     }
 
     /**
-     * Gets the actual Authorization header that would be used for refresh token requests.
-     * This replicates the logic from MpsAuthInterceptor for /refresh endpoints.
+     * Gets the actual Authorization header that was used for refresh token requests.
+     * This captures the real header value from the HTTP request after interceptor processing.
      */
     private fun getActualAuthHeaderForRefresh(): String {
-        return "Basic cQpOkQ6bpFaeZzI5biibIaok0oWEoY9AtSFltMUzcR7jkTFm2ePMlO/TTR8flSdWk/i5PTQJ6NeGHZY3s2AxgWZZEwCcuynkpivjZsuVlBGEiiu8OwnDtEblNkuoYGkKAqDy6q2DfcL4tJhoSKKZ6bxpc5tVFExmB9SPPwS5nC4="
+        return headerCapturingInterceptor.getLastCapturedAuthHeader() ?: "Header not captured"
     }
 }
