@@ -69,6 +69,8 @@ import com.revenuecat.purchases.ui.revenuecatui.PaywallDialogOptions
 import com.revenuecat.purchases.ui.revenuecatui.PaywallListener
 import androidx.lifecycle.viewModelScope
 import android.util.Log
+import com.onesignal.OneSignal
+import com.sogo.golf.msl.BuildConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,10 +80,11 @@ fun CompetitionsScreen(
     nextRoute: String,
     competitionViewModel: CompetitionViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+
     val view = LocalView.current
     val includeRound by competitionViewModel.includeRound.collectAsState()
     val refreshState = rememberPullToRefreshState()
-
 
     // Get the data from the view model
     val currentGolfer by competitionViewModel.currentGolfer.collectAsState()
@@ -104,8 +107,18 @@ fun CompetitionsScreen(
 
     LaunchedEffect(Unit) {
         competitionViewModel.triggerRefresh()
+
+        if (BuildConfig.DEBUG) {
+            OneSignal.Debug.logLevel = com.onesignal.debug.LogLevel.VERBOSE
+        } else {
+            OneSignal.Debug.logLevel = com.onesignal.debug.LogLevel.ERROR
+        }
+
+        // Initialize with your OneSignal App ID (only once)
+        OneSignal.initWithContext(context, "f65531f8-5975-47ff-8562-2b9a5bea9f1c")
+        Log.d("onesignal", "OneSignal initialized - onesignalId ${OneSignal.User.onesignalId}")
     }
-    
+
     // Track competitions viewed only when game data is loaded
     LaunchedEffect(localGame) {
         localGame?.let {

@@ -59,6 +59,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.onesignal.OneSignal
 import com.sogo.golf.msl.R
 import com.sogo.golf.msl.features.sogo_home.presentation.components.GolferDataConfirmationSheet
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
@@ -120,16 +121,19 @@ fun HomeScreen(
                 updateState.isCheckingForUpdate -> {
                     // Still checking, wait...
                 }
+
                 updateState.updateAvailable -> {
                     // Update required - AppUpdateManager handles this
                     // Reset flag since we're not navigating
                     shouldStartCompetition = false
                 }
+
                 !updateState.isCheckingForUpdate && !updateState.updateAvailable -> {
                     // No update needed - navigate
                     shouldStartCompetition = false
                     onNavigateToCompetition()
                 }
+
                 updateState.updateError != null -> {
                     // Error occurred - reset flag and let user see error
                     shouldStartCompetition = false
@@ -140,7 +144,8 @@ fun HomeScreen(
 
     // Set status bar color to match blue background
     SideEffect {
-        val window = (view.context as? androidx.activity.ComponentActivity)?.window ?: return@SideEffect
+        val window =
+            (view.context as? androidx.activity.ComponentActivity)?.window ?: return@SideEffect
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
@@ -212,25 +217,38 @@ fun HomeScreen(
                 // Start Competition Round button
                 Button(
                     onClick = {
-        // ✅ NEW: Check terms acceptance before version update
-        Log.d("HomeScreen", "=== BUTTON CLICK DEBUG ===")
-        Log.d("HomeScreen", "currentGolfer: ${currentGolfer}")
-        Log.d("HomeScreen", "currentGolfer.golfLinkNo: ${currentGolfer?.golfLinkNo}")
-        Log.d("HomeScreen", "localGame: ${localGame}")
-        Log.d("HomeScreen", "localGame.golflinkNumber: ${localGame?.golflinkNumber}")
-        Log.d("HomeScreen", "sogoGolfer: ${sogoGolfer}")
-        Log.d("HomeScreen", "sogoGolfer.appSettings: ${sogoGolfer?.appSettings}")
-        Log.d("HomeScreen", "sogoGolfer.appSettings.isAcceptedSogoTermsAndConditions: ${sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions}")
-        
-        val termsAccepted = sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions ?: false
-        Log.d("HomeScreen", "termsAccepted final value: $termsAccepted")
-        
-        if (!termsAccepted) {
-            Log.d("HomeScreen", "Terms not accepted - showing confirmation sheet")
-            showGolferDataConfirmationSheet = true
-        } else {
-            Log.d("HomeScreen", "Terms accepted - proceeding with competition start")
-            shouldStartCompetition = true
+                        // ✅ NEW: Check terms acceptance before version update
+                        Log.d("HomeScreen", "=== BUTTON CLICK DEBUG ===")
+                        Log.d("HomeScreen", "currentGolfer: ${currentGolfer}")
+                        Log.d(
+                            "HomeScreen",
+                            "currentGolfer.golfLinkNo: ${currentGolfer?.golfLinkNo}"
+                        )
+                        Log.d("HomeScreen", "localGame: ${localGame}")
+                        Log.d(
+                            "HomeScreen",
+                            "localGame.golflinkNumber: ${localGame?.golflinkNumber}"
+                        )
+                        Log.d("HomeScreen", "sogoGolfer: ${sogoGolfer}")
+                        Log.d("HomeScreen", "sogoGolfer.appSettings: ${sogoGolfer?.appSettings}")
+                        Log.d(
+                            "HomeScreen",
+                            "sogoGolfer.appSettings.isAcceptedSogoTermsAndConditions: ${sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions}"
+                        )
+
+                        val termsAccepted =
+                            sogoGolfer?.appSettings?.isAcceptedSogoTermsAndConditions ?: false
+                        Log.d("HomeScreen", "termsAccepted final value: $termsAccepted")
+
+                        if (!termsAccepted) {
+                            Log.d("HomeScreen", "Terms not accepted - showing confirmation sheet")
+                            showGolferDataConfirmationSheet = true
+                        } else {
+                            Log.d(
+                                "HomeScreen",
+                                "Terms accepted - proceeding with competition start"
+                            )
+                            shouldStartCompetition = true
                             // Call the modified method with both callbacks
                             homeViewModel.checkForUpdatesAndStartCompetition(
                                 activity = activity,
@@ -246,7 +264,10 @@ fun HomeScreen(
                         }
                     },
                     enabled = (!updateState.isCheckingForUpdate && !homeUiState.isLoading && homeViewModel.hasRequiredData()).also { enabled ->
-                        Log.d("HomeScreen", "🔴 BUTTON STATE: enabled=$enabled, currentGolfer.golfLinkNo='${currentGolfer?.golfLinkNo}', localGame.golflinkNumber='${localGame?.golflinkNumber}'")
+                        Log.d(
+                            "HomeScreen",
+                            "🔴 BUTTON STATE: enabled=$enabled, currentGolfer.golfLinkNo='${currentGolfer?.golfLinkNo}', localGame.golflinkNumber='${localGame?.golflinkNumber}'"
+                        )
                     }, // Disable while checking or loading initial data
                     modifier = Modifier
                         .padding(horizontal = screenWidth * 0.15f)
@@ -299,8 +320,9 @@ fun HomeScreen(
                 }
 
                 // Show message when button is disabled due to missing golflink number  
-                if (!homeUiState.isLoading && !updateState.isCheckingForUpdate && 
-                    currentGolfer?.golfLinkNo.isNullOrBlank() == true) {
+                if (!homeUiState.isLoading && !updateState.isCheckingForUpdate &&
+                    currentGolfer?.golfLinkNo.isNullOrBlank() == true
+                ) {
                     Text(
                         text = "Your GolfLink number was not provided to the app. Please contact your club to ensure this is set up on your profile.",
                         color = Color.White,
@@ -372,6 +394,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.weight(1f))
             }
 
+
             // Global loading overlay with spinner and progress message
             if (homeUiState.isLoading) {
                 Box(
@@ -413,7 +436,9 @@ fun HomeScreen(
                         .build(),
                     contentDescription = null,
                     contentScale = ContentScale.FillWidth,
-                    modifier = Modifier.fillMaxWidth().height(screenWidth * 0.65f)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(screenWidth * 0.65f)
                 )
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -435,7 +460,7 @@ fun HomeScreen(
                     LaunchedEffect(showGolferDataConfirmationSheet) {
                         homeViewModel.trackConfirmGolferDataDisplayed(golfer, sogoGolfer)
                     }
-                    
+
                     val bottomSheetState = rememberModalBottomSheetState(
                         skipPartiallyExpanded = true
                     )
