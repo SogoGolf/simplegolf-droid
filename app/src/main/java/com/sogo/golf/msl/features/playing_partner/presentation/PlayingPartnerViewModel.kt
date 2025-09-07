@@ -648,7 +648,7 @@ class PlayingPartnerViewModel @Inject constructor(
                 Log.d("PlayingPartnerVM", "🔄 Step 8: Navigating to PlayRound screen...")
 
                 // Track round started event
-                trackRoundStarted(selectedPartner)
+                trackRoundStarted(selectedPartner, selectedClub)
                 
                 onNavigateToPlayRound()
 
@@ -917,10 +917,25 @@ class PlayingPartnerViewModel @Inject constructor(
         analyticsManager.trackEvent(AnalyticsManager.EVENT_PLAYING_PARTNER_DESELECTED, eventProperties)
     }
 
-    private fun trackRoundStarted(selectedPartner: MslPlayingPartner) {
+    private fun trackRoundStarted(selectedPartner: MslPlayingPartner, selectedClub: SelectedClub?) {
         val eventProperties = mutableMapOf<String, Any>()
         eventProperties["selected_partner_name"] = "${selectedPartner.firstName ?: ""} ${selectedPartner.lastName ?: ""}".trim()
         selectedPartner.golfLinkNumber?.let { eventProperties["selected_partner_golf_link_number"] = it }
+        
+        // Add competition type from current golfer's competition data
+        val competitionData = localCompetition.value
+        val currentGolferData = currentGolfer.value
+        if (competitionData != null && currentGolferData != null) {
+            val golfer = competitionData.players.find { it.golfLinkNumber == currentGolferData.golfLinkNo }
+            golfer?.scoreType?.let { scoreType ->
+                eventProperties["comp_type"] = scoreType.lowercase(Locale.ROOT)
+            }
+        }
+        
+        // Add club name
+        selectedClub?.clubName?.let { clubName ->
+            eventProperties["club_name"] = clubName
+        }
         
         analyticsManager.trackEvent(AnalyticsManager.EVENT_ROUND_STARTED, eventProperties)
     }
