@@ -313,8 +313,8 @@ class PlayRoundViewModel @Inject constructor(
         android.util.Log.d("PlayRoundVM", "Partner golf link number: $partnerGolfLinkNumber")
 
         if (partnerGolfLinkNumber == null) {
-            android.util.Log.d("PlayRoundVM", "No marker to remove, navigating to competition screen")
-            navController.navigate("competitionscreen") {
+            android.util.Log.d("PlayRoundVM", "No marker to remove, navigating to playing partner screen")
+            navController.navigate("playingpartnerscreen") {
                 popUpTo(0) { inclusive = true }
             }
             return
@@ -352,7 +352,7 @@ class PlayRoundViewModel @Inject constructor(
                                 // Track the round reset marker event after successful removal
                                 trackRoundResetMarker()
 
-                                navController.navigate("competitionscreen") {
+                                navController.navigate("playingpartnerscreen") {
                                     popUpTo(0) { inclusive = true }
                                 }
                             }
@@ -369,7 +369,7 @@ class PlayRoundViewModel @Inject constructor(
                         android.util.Log.w("PlayRoundVM", "⚠️ No active round found for deletion")
                         refreshDataAfterMarkerRemoval()
                         _isRemovingMarker.value = false
-                        navController.navigate("competitionscreen") {
+                        navController.navigate("playingpartnerscreen") {
                             popUpTo(0) { inclusive = true }
                         }
                     }
