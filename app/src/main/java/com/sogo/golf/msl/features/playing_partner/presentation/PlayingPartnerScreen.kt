@@ -1,5 +1,6 @@
 package com.sogo.golf.msl.features.playing_partner.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -76,6 +77,13 @@ fun PlayingPartnerScreen(
     LaunchedEffect(localGame) {
         localGame?.let {
             playingPartnerViewModel.trackPlayingPartnerScreenViewed()
+        }
+    }
+
+    // Handle back button navigation to CompetitionScreen
+    BackHandler {
+        navController.navigate("competitionscreen") {
+            popUpTo(0) { inclusive = true }
         }
     }
 
