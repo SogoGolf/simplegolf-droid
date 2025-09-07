@@ -92,6 +92,17 @@ class MainActivity : ComponentActivity() {
                 var showSplash by rememberSaveable { mutableStateOf(true) }
                 var isInitializationComplete by remember { mutableStateOf(false) }
 
+                // Determine start destination and mark initialization complete
+                val startDestination = when {
+                    !authState.isLoggedIn -> "login"
+                    authState.hasActiveRound -> "playroundscreen"
+                    else -> "homescreen"
+                }
+
+                // Mark initialization as complete once we have determined the start destination
+                LaunchedEffect(startDestination) {
+                    isInitializationComplete = true
+                }
 
                 if (showSplash) {
                     // Show splash screen first
@@ -103,17 +114,6 @@ class MainActivity : ComponentActivity() {
                         isInitializationComplete = isInitializationComplete
                     )
                 } else {
-
-                    val startDestination = when {
-                        !authState.isLoggedIn -> "login"
-                        authState.hasActiveRound -> "playroundscreen"
-                        else -> "homescreen"
-                    }
-
-                    // Mark initialization as complete once we have determined the start destination
-                    LaunchedEffect(startDestination) {
-                        isInitializationComplete = true
-                    }
 
                     NavHost(navController = navController, startDestination = startDestination) {
                         composable("login") {
