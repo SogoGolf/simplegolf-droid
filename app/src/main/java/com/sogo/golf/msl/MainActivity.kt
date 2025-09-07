@@ -102,28 +102,10 @@ class MainActivity : ComponentActivity() {
                     )
                 } else {
 
-                    // Only build back stack on cold start (savedInstanceState == null)
-                    val shouldBuildBackStack = remember { savedInstanceState == null }
-
                     val startDestination = when {
                         !authState.isLoggedIn -> "login"
                         authState.hasActiveRound -> "playroundscreen"
                         else -> "homescreen"
-                    }
-
-                    var hasBuiltBackStack by remember { mutableStateOf(false) }
-
-                    // Build the "virtual" back stack if starting at play round screen
-                    LaunchedEffect(startDestination, shouldBuildBackStack) {
-                        if (shouldBuildBackStack && startDestination == "playroundscreen" && !hasBuiltBackStack) {
-                            navController.navigate("homescreen") {
-                                popUpTo(0) { inclusive = true }
-                            }
-                            navController.navigate("competitionscreen")
-                            navController.navigate("playingpartnerscreen")
-                            navController.navigate("playroundscreen")
-                            hasBuiltBackStack = true
-                        }
                     }
 
                     NavHost(navController = navController, startDestination = startDestination) {
