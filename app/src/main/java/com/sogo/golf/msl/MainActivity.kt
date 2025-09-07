@@ -88,8 +88,9 @@ class MainActivity : ComponentActivity() {
                 val viewModel: NavViewModel = hiltViewModel()
                 val authState by viewModel.authState.collectAsState()
 
-                // State to control splash visibility
+                // State to control splash visibility and track initialization
                 var showSplash by rememberSaveable { mutableStateOf(true) }
+                var isInitializationComplete by remember { mutableStateOf(false) }
 
 
                 if (showSplash) {
@@ -98,7 +99,8 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         onSplashComplete = {
                             showSplash = false // Hide splash, show main app
-                        }
+                        },
+                        isInitializationComplete = isInitializationComplete
                     )
                 } else {
 
@@ -108,23 +110,9 @@ class MainActivity : ComponentActivity() {
                         else -> "homescreen"
                     }
 
-                    // Build minimal back stack only when starting directly on PlayRoundScreen
-                    // This ensures proper back navigation after force quit/restart scenarios
-                    val shouldBuildBackStack = remember { savedInstanceState == null }
-                    var hasBuiltBackStack by remember { mutableStateOf(false) }
-
-                    LaunchedEffect(startDestination, shouldBuildBackStack) {
-                        if (shouldBuildBackStack && startDestination == "playroundscreen" && !hasBuiltBackStack) {
-                            android.util.Log.d("MainActivity", "🔄 Building minimal back stack for PlayRoundScreen startup")
-                            navController.navigate("homescreen") {
-                                popUpTo(0) { inclusive = true }
-                            }
-                            navController.navigate("competitionscreen")
-                            navController.navigate("playingpartnerscreen")
-                            navController.navigate("playroundscreen")
-                            hasBuiltBackStack = true
-                            android.util.Log.d("MainActivity", "✅ Back stack built: home → competition → partner → playround")
-                        }
+                    // Mark initialization as complete once we have determined the start destination
+                    LaunchedEffect(startDestination) {
+                        isInitializationComplete = true
                     }
 
                     NavHost(navController = navController, startDestination = startDestination) {
