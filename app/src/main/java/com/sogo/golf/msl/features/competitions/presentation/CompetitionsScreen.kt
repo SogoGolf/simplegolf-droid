@@ -1,6 +1,7 @@
 package com.sogo.golf.msl.features.competitions.presentation
 
 import android.net.Network
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -110,6 +111,13 @@ fun CompetitionsScreen(
     LaunchedEffect(localGame) {
         localGame?.let {
             competitionViewModel.trackCompetitionsViewed()
+        }
+    }
+
+    // Handle back button navigation to HomeScreen
+    BackHandler {
+        navController.navigate("homescreen") {
+            popUpTo(0) { inclusive = true }
         }
     }
 
