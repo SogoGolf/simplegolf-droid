@@ -13,7 +13,6 @@ import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
-import com.sogo.golf.msl.domain.exception.TokenRefreshException
 import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.revenuecat.purchases.models.StoreTransaction
 import android.util.Log
@@ -221,44 +220,30 @@ class CompetitionViewModel @Inject constructor(
         }
     }
 
-    private suspend fun fetchMslGameData(clubIdStr: String) {
+    private suspend fun fetchMslGameData(clubIdStr: String): NetworkResult.Error<*>? {
         Log.d("CompetitionViewModel", "🎮 Fetching MSL game data...")
-        when (val gameResult = fetchAndSaveGameUseCase(clubIdStr)) {
-            is NetworkResult.Success -> {
-                Log.d("CompetitionViewModel", "✅ MSL game data fetched successfully.")
-                // Success, do nothing
-            }
-            is NetworkResult.Error -> {
-                val error = gameResult.error.toUserMessage()
-                Log.e("CompetitionViewModel", "❌ Failed to fetch MSL game data: $error")
-                if (gameResult.error is NetworkError.TokenRefreshFailed) {
-                    throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
-                } else {
-                    throw Exception(error)
-                }
-            }
-            is NetworkResult.Loading -> { /* No-op */ }
+        val gameResult = fetchAndSaveGameUseCase(clubIdStr)
+        return if (gameResult is NetworkResult.Error) {
+            gameResult
+        } else if (gameResult is NetworkResult.Success) {
+            Log.d("CompetitionViewModel", "✅ MSL game data fetched successfully.")
+            null
+        } else {
+            null
         }
     }
 
     // ✅ NEW: Fetch MSL competition data using the use case
-    private suspend fun fetchMslCompetitionData(clubIdStr: String) {
+    private suspend fun fetchMslCompetitionData(clubIdStr: String): NetworkResult.Error<*>? {
         Log.d("CompetitionViewModel", "🏆 Fetching MSL competition data...")
-        when (val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)) {
-            is NetworkResult.Success -> {
-                Log.d("CompetitionViewModel", "✅ MSL competition data fetched successfully.")
-                // Success, do nothing
-            }
-            is NetworkResult.Error -> {
-                val error = competitionResult.error.toUserMessage()
-                Log.e("CompetitionViewModel", "❌ Failed to fetch MSL competition data: $error")
-                if (competitionResult.error is NetworkError.TokenRefreshFailed) {
-                    throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
-                } else {
-                    throw Exception(error)
-                }
-            }
-            is NetworkResult.Loading -> { /* No-op */ }
+        val competitionResult = fetchAndSaveCompetitionUseCase(clubIdStr)
+        return if (competitionResult is NetworkResult.Error) {
+            competitionResult
+        } else if (competitionResult is NetworkResult.Success) {
+            Log.d("CompetitionViewModel", "✅ MSL competition data fetched successfully.")
+            null
+        } else {
+            null
         }
     }
 
@@ -330,18 +315,40 @@ class CompetitionViewModel @Inject constructor(
 
                 val clubIdStr = selectedClub.clubId.toString()
 
-                // These will now throw on failure, which will be caught below
-                fetchMslGameData(clubIdStr)
-                fetchMslCompetitionData(clubIdStr)
+                // Check for errors from fetch operations
+                val gameError = fetchMslGameData(clubIdStr)
+                if (gameError != null) {
+                    val errorMessage = if (gameError.error is NetworkError.TokenRefreshFailed) {
+                        "Your session has expired. Please log in again."
+                    } else {
+                        val error = gameError.error.toUserMessage()
+                        Log.e("CompetitionViewModel", "❌ Failed to fetch MSL game data: $error")
+                        error
+                    }
+                    _uiState.value = _uiState.value.copy(errorMessage = errorMessage)
+                    return@launch
+                }
+
+                val competitionError = fetchMslCompetitionData(clubIdStr)
+                if (competitionError != null) {
+                    val errorMessage = if (competitionError.error is NetworkError.TokenRefreshFailed) {
+                        "Your session has expired. Please log in again."
+                    } else {
+                        val error = competitionError.error.toUserMessage()
+                        Log.e("CompetitionViewModel", "❌ Failed to fetch MSL competition data: $error")
+                        error
+                    }
+                    _uiState.value = _uiState.value.copy(errorMessage = errorMessage)
+                    return@launch
+                }
+
                 refreshSogoGolferData()
 
                 _uiState.value = _uiState.value.copy(successMessage = "MSL data refreshed successfully")
 
-            } catch (e: TokenRefreshException) {
-                _uiState.value = _uiState.value.copy(errorMessage = "Your session has expired. Please log in again.")
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(errorMessage = "${e.message}")
-            }finally {
+            } finally {
                 // This will always be executed, ensuring the spinner is hidden.
                 _uiState.value = _uiState.value.copy(isLoading = false, isDataFetching = false)
             }

@@ -129,6 +129,11 @@ class MslRepositoryImpl @Inject constructor(
                 clubId = clubId,
             )
 
+            // Check for token refresh failure indicator
+            if (response.code() == 401 && response.headers()["X-Token-Refresh-Failed"] == "true") {
+                throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
+            }
+
             if (response.isSuccessful) {
                 val rawGolferDto = response.body()
 
@@ -283,6 +288,11 @@ class MslRepositoryImpl @Inject constructor(
                 request = request
             )
 
+            // Check for token refresh failure indicator
+            if (response.code() == 401 && response.headers()["X-Token-Refresh-Failed"] == "true") {
+                throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
+            }
+
             if (response.isSuccessful) {
                 val markerResponse = response.body()
 
@@ -319,6 +329,11 @@ class MslRepositoryImpl @Inject constructor(
                 request = request
             )
 
+            // Check for token refresh failure indicator
+            if (response.code() == 401 && response.headers()["X-Token-Refresh-Failed"] == "true") {
+                throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
+            }
+
             if (response.isSuccessful) {
                 val markerResponse = response.body()
 
@@ -351,6 +366,11 @@ class MslRepositoryImpl @Inject constructor(
                 clubId = clubId,
                 scores = scores
             )
+
+            // Check for token refresh failure indicator
+            if (response.code() == 401 && response.headers()["X-Token-Refresh-Failed"] == "true") {
+                throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
+            }
 
             if (response.isSuccessful) {
                 val scoresResponse = response.body()
