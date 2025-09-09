@@ -3,6 +3,7 @@ package com.sogo.golf.msl.data.repository
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.NetworkResult
+import com.sogo.golf.msl.domain.exception.TokenRefreshException
 import io.sentry.Sentry
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
@@ -35,6 +36,9 @@ abstract class BaseRepository(
             // Don't treat coroutine cancellation as an error - just re-throw
             // This allows normal cancellation to propagate up the coroutine hierarchy
             throw e
+        } catch (e: TokenRefreshException) {
+            Sentry.captureException(e)
+            NetworkResult.Error(NetworkError.TokenRefreshFailed)
         } catch (e: TimeoutCancellationException) {
             Sentry.captureException(e)
             NetworkResult.Error(NetworkError.Timeout)

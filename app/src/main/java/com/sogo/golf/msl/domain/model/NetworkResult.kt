@@ -10,12 +10,16 @@ sealed class NetworkError {
     object NoConnection : NetworkError()
     object Timeout : NetworkError()
     object ServerError : NetworkError()
+    object TokenRefreshFailed : NetworkError()
+    object AuthenticationFailed : NetworkError()
     data class Unknown(val message: String) : NetworkError()
 
     fun toUserMessage(): String = when (this) {
         NoConnection -> "No internet connection. Please check your network and try again."
         Timeout -> "Request timed out. Please try again."
         ServerError -> "Server error. Please try again later."
+        TokenRefreshFailed -> "Session expired. Please log in again."
+        AuthenticationFailed -> "Authentication failed. Please log in again."
         is Unknown -> message.ifEmpty { "Something went wrong. Please try again." }
     }
 }

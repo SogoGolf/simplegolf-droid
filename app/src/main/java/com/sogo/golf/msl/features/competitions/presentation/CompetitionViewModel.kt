@@ -328,7 +328,12 @@ class CompetitionViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(successMessage = "MSL data refreshed successfully")
 
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(errorMessage = "${e.message}")
+                val errorMessage = when {
+                    e.message?.contains("Token refresh failed") == true -> 
+                        "Your session has expired. Please log in again."
+                    else -> "${e.message}"
+                }
+                _uiState.value = _uiState.value.copy(errorMessage = errorMessage)
             } finally {
                 // This will always be executed, ensuring the spinner is hidden.
                 _uiState.value = _uiState.value.copy(isLoading = false, isDataFetching = false)

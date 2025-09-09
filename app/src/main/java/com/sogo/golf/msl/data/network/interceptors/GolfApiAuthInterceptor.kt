@@ -7,6 +7,7 @@ import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.dto.PostRefreshTokenRequestDto
 import com.sogo.golf.msl.data.network.mappers.toDomainModel
 import com.sogo.golf.msl.domain.model.msl.MslTokens
+import com.sogo.golf.msl.domain.exception.TokenRefreshException
 import com.sogo.golf.msl.utils.JwtTokenDecoder
 import io.sentry.Sentry
 import io.sentry.SentryAttribute
@@ -66,6 +67,7 @@ class GolfApiAuthInterceptor @Inject constructor(
             } else {
                 Sentry.logger().error("❌ Token refresh did not yield a new token; not retrying or retrying would be futile")
                 Log.e(TAG, "❌ Token refresh did not yield a new token; not retrying or retrying would be futile")
+                throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
             }
         }
 
