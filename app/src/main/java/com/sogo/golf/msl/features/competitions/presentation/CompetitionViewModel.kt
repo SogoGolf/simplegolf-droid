@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.domain.model.NetworkResult
+import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslGameLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.fees.GetFeesUseCase
@@ -12,6 +13,7 @@ import com.sogo.golf.msl.domain.usecase.sogo_golfer.GetSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.FetchAndSaveSogoGolferUseCase
 import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
+import com.sogo.golf.msl.domain.exception.TokenRefreshException
 import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.revenuecat.purchases.models.StoreTransaction
 import android.util.Log
@@ -229,7 +231,11 @@ class CompetitionViewModel @Inject constructor(
             is NetworkResult.Error -> {
                 val error = gameResult.error.toUserMessage()
                 Log.e("CompetitionViewModel", "❌ Failed to fetch MSL game data: $error")
-                throw Exception(error)
+                if (gameResult.error is NetworkError.TokenRefreshFailed) {
+                    throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
+                } else {
+                    throw Exception(error)
+                }
             }
             is NetworkResult.Loading -> { /* No-op */ }
         }
@@ -246,7 +252,11 @@ class CompetitionViewModel @Inject constructor(
             is NetworkResult.Error -> {
                 val error = competitionResult.error.toUserMessage()
                 Log.e("CompetitionViewModel", "❌ Failed to fetch MSL competition data: $error")
-                throw Exception(error)
+                if (competitionResult.error is NetworkError.TokenRefreshFailed) {
+                    throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
+                } else {
+                    throw Exception(error)
+                }
             }
             is NetworkResult.Loading -> { /* No-op */ }
         }
@@ -327,14 +337,11 @@ class CompetitionViewModel @Inject constructor(
 
                 _uiState.value = _uiState.value.copy(successMessage = "MSL data refreshed successfully")
 
+            } catch (e: TokenRefreshException) {
+                _uiState.value = _uiState.value.copy(errorMessage = "Your session has expired. Please log in again.")
             } catch (e: Exception) {
-                val errorMessage = when {
-                    e.message?.contains("Token refresh failed") == true -> 
-                        "Your session has expired. Please log in again."
-                    else -> "${e.message}"
-                }
-                _uiState.value = _uiState.value.copy(errorMessage = errorMessage)
-            } finally {
+                _uiState.value = _uiState.value.copy(errorMessage = "${e.message}")
+            }finally {
                 // This will always be executed, ensuring the spinner is hidden.
                 _uiState.value = _uiState.value.copy(isLoading = false, isDataFetching = false)
             }
