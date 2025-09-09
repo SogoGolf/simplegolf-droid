@@ -67,7 +67,16 @@ class GolfApiAuthInterceptor @Inject constructor(
             } else {
                 Sentry.logger().error("❌ Token refresh did not yield a new token; not retrying or retrying would be futile")
                 Log.e(TAG, "❌ Token refresh did not yield a new token; not retrying or retrying would be futile")
-                throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
+                
+                // Return a custom 401 response with a specific header to indicate token refresh failure
+                return Response.Builder()
+                    .request(originalRequest)
+                    .protocol(okhttp3.Protocol.HTTP_1_1)
+                    .code(401)
+                    .message("Token Refresh Failed")
+                    .addHeader("X-Token-Refresh-Failed", "true")
+                    .body(okhttp3.ResponseBody.create(null, "Token refresh failed"))
+                    .build()
             }
         }
 

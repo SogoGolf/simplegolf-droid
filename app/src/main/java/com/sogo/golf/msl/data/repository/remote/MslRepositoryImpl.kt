@@ -14,6 +14,7 @@ import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.api.SogoApiService
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import com.sogo.golf.msl.domain.exception.TokenRefreshException
 import io.sentry.Sentry
 import io.sentry.Sentry.logger
 import io.sentry.SentryLogLevel
@@ -193,6 +194,11 @@ class MslRepositoryImpl @Inject constructor(
             // Headers automatically added by GolfApiAuthInterceptor
             val response = golfApiService.getGame(clubId = clubId)
 
+            // Check for token refresh failure indicator
+            if (response.code() == 401 && response.headers()["X-Token-Refresh-Failed"] == "true") {
+                throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
+            }
+
             if (response.isSuccessful) {
                 val game = response.body()?.toDomainModel()
                     ?: throw Exception("Empty game response")
@@ -220,6 +226,11 @@ class MslRepositoryImpl @Inject constructor(
 
             // Headers automatically added by GolfApiAuthInterceptor
             val response = golfApiService.getCompetition(clubId = clubId)
+
+            // Check for token refresh failure indicator
+            if (response.code() == 401 && response.headers()["X-Token-Refresh-Failed"] == "true") {
+                throw TokenRefreshException("Token refresh failed - unable to obtain new access token")
+            }
 
             if (response.isSuccessful) {
                 val rawCompetitionDto = response.body()
