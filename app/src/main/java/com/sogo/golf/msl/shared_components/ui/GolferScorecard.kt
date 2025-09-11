@@ -473,13 +473,13 @@ fun GolferScorecard(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         if (rowData == "Index" && (data.index1 != null || data.index2 != null || data.index3 != null)) {
-                                            // Responsive sizes for index values - increased for better readability
+                                            // Responsive sizes for index values - all three numbers same size
                                             val centerSize = when {
-                                                cellTextSize.value >= 26f -> 24.sp
-                                                cellTextSize.value >= 24f -> 22.sp
-                                                cellTextSize.value >= 22f -> 20.sp
-                                                cellTextSize.value >= 20f -> 18.sp
-                                                else -> 16.sp
+                                                cellTextSize.value >= 26f -> 22.sp
+                                                cellTextSize.value >= 24f -> 20.sp
+                                                cellTextSize.value >= 22f -> 18.sp
+                                                cellTextSize.value >= 20f -> 16.sp
+                                                else -> 14.sp
                                             }
                                             val cornerSize = when {
                                                 cellTextSize.value >= 26f -> 22.sp
