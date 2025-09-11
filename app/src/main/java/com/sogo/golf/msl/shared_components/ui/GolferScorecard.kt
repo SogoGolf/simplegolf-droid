@@ -563,28 +563,28 @@ fun TabHeader(
             .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
             .background(backgroundColor)
             .clickable { onClick() }
-            .padding(12.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontSize = MaterialTheme.typography.titleMedium.fontSize,
+            style = MaterialTheme.typography.titleLarge,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = textColor,
             textAlign = TextAlign.Center
         )
         Text(
             text = subtitle,
-            style = MaterialTheme.typography.bodySmall,
-            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+            style = MaterialTheme.typography.bodyMedium,
+            fontSize = 16.sp,
             color = textColor.copy(alpha = 0.9f),
             textAlign = TextAlign.Center
         )
         Text(
             text = "$teeName Tee",
-            style = MaterialTheme.typography.bodyMedium,
-            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+            style = MaterialTheme.typography.bodyLarge,
+            fontSize = 18.sp,
             color = textColor,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center
@@ -607,22 +607,22 @@ fun GolferHeader(
             .clip(RoundedCornerShape(8.dp))
             .background(mslGrey)
             .clickable { onGolferClicked() }
-            .padding(12.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "$golferFirstName $golferLastName",
-                style = MaterialTheme.typography.titleMedium,
-                fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
             Text(
                 text = "Daily HC: $dailyHandicap | GL HC: $golfLinkHandicap",
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 16.sp,
                 color = Color.White.copy(alpha = 0.9f)
             )
         }
@@ -630,15 +630,15 @@ fun GolferHeader(
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = teeName,
-                style = MaterialTheme.typography.bodyMedium,
-                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 18.sp,
                 color = Color.White,
                 fontWeight = FontWeight.Medium
             )
             Text(
                 text = "Tee",
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 16.sp,
                 color = Color.White.copy(alpha = 0.8f)
             )
         }
