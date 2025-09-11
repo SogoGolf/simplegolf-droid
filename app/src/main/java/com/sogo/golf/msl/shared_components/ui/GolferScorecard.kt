@@ -325,7 +325,9 @@ fun GolferScorecard(
                 val inColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "in" }
                 val totalColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "total" }
 
-            TableWithFixedFirstColumnSCORECARD(
+                // Only render the table after tabsHeight has been measured to avoid height mismatch
+                if (tabsHeight > 0.dp) {
+                    TableWithFixedFirstColumnSCORECARD(
                 columnCount = columnCount,
                 cellWidth = { (screenWidth * 0.10).dp },
                 firstColumnWidth = { 100.dp },
@@ -431,6 +433,7 @@ fun GolferScorecard(
                     }
                 }
             )
+                }
             }
         }
     }
