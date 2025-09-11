@@ -473,20 +473,20 @@ fun GolferScorecard(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         if (rowData == "Index" && (data.index1 != null || data.index2 != null || data.index3 != null)) {
-                                            // Responsive sizes for index values
+                                            // Responsive sizes for index values - increased for better readability
                                             val centerSize = when {
-                                                cellTextSize.value >= 26f -> 20.sp
-                                                cellTextSize.value >= 24f -> 18.sp
-                                                cellTextSize.value >= 22f -> 16.sp
-                                                cellTextSize.value >= 20f -> 14.sp
-                                                else -> 12.sp
+                                                cellTextSize.value >= 26f -> 24.sp
+                                                cellTextSize.value >= 24f -> 22.sp
+                                                cellTextSize.value >= 22f -> 20.sp
+                                                cellTextSize.value >= 20f -> 18.sp
+                                                else -> 16.sp
                                             }
                                             val cornerSize = when {
-                                                cellTextSize.value >= 26f -> 18.sp
-                                                cellTextSize.value >= 24f -> 16.sp
-                                                cellTextSize.value >= 22f -> 14.sp
-                                                cellTextSize.value >= 20f -> 12.sp
-                                                else -> 11.sp
+                                                cellTextSize.value >= 26f -> 22.sp
+                                                cellTextSize.value >= 24f -> 20.sp
+                                                cellTextSize.value >= 22f -> 18.sp
+                                                cellTextSize.value >= 20f -> 16.sp
+                                                else -> 14.sp
                                             }
 
                                             // Top-left: index1
