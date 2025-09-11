@@ -12,13 +12,28 @@ class PostcodeValidationTest {
         return postcodeRegex.matches(normalized)
     }
 
+    private fun normalizeStateToAbbreviation(state: String): String {
+        return when (state.trim().uppercase()) {
+            "NEW SOUTH WALES", "NSW" -> "NSW"
+            "VICTORIA", "VIC" -> "VIC"
+            "QUEENSLAND", "QLD" -> "QLD"
+            "WESTERN AUSTRALIA", "WA" -> "WA"
+            "SOUTH AUSTRALIA", "SA" -> "SA"
+            "TASMANIA", "TAS" -> "TAS"
+            "AUSTRALIAN CAPITAL TERRITORY", "ACT" -> "ACT"
+            "NORTHERN TERRITORY", "NT" -> "NT"
+            else -> state.trim().uppercase()
+        }
+    }
+
     private fun isPostcodeValidForState(postcode: String, state: String): Boolean {
         val normalized = postcode.trim()
         if (!isValidAustralianPostcode(normalized)) return false
         
         val postcodeInt = normalized.toIntOrNull() ?: return false
+        val stateAbbrev = normalizeStateToAbbreviation(state)
         
-        return when (state.uppercase()) {
+        return when (stateAbbrev) {
             "NSW" -> postcodeInt in 1000..2599 || postcodeInt in 2619..2899 || postcodeInt in 2921..2999
             "ACT" -> postcodeInt in 2600..2618 || postcodeInt in 2900..2920
             "VIC" -> postcodeInt in 3000..3999 || postcodeInt in 8000..8999
@@ -112,5 +127,19 @@ class PostcodeValidationTest {
         assertTrue(isPostcodeValidForState("2448", "Nsw"))
         assertTrue(isPostcodeValidForState("3000", "vic"))
         assertTrue(isPostcodeValidForState("3000", "VIC"))
+    }
+
+    @Test
+    fun `isPostcodeValidForState should handle full state names`() {
+        assertTrue(isPostcodeValidForState("2448", "NEW SOUTH WALES"))
+        assertTrue(isPostcodeValidForState("2448", "New South Wales"))
+        assertTrue(isPostcodeValidForState("3000", "VICTORIA"))
+        assertTrue(isPostcodeValidForState("3000", "Victoria"))
+        assertTrue(isPostcodeValidForState("4000", "QUEENSLAND"))
+        assertTrue(isPostcodeValidForState("6000", "WESTERN AUSTRALIA"))
+        assertTrue(isPostcodeValidForState("5000", "SOUTH AUSTRALIA"))
+        assertTrue(isPostcodeValidForState("7000", "TASMANIA"))
+        assertTrue(isPostcodeValidForState("2600", "AUSTRALIAN CAPITAL TERRITORY"))
+        assertTrue(isPostcodeValidForState("0800", "NORTHERN TERRITORY"))
     }
 }

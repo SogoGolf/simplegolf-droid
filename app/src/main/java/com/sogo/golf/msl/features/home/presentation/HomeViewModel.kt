@@ -403,9 +403,28 @@ class HomeViewModel @Inject constructor(
         }
 
         /**
+         * Normalizes state name to abbreviation for validation
+         * @param state Full state name or abbreviation
+         * @return State abbreviation (NSW, VIC, etc.)
+         */
+        private fun normalizeStateToAbbreviation(state: String): String {
+            return when (state.trim().uppercase()) {
+                "NEW SOUTH WALES", "NSW" -> "NSW"
+                "VICTORIA", "VIC" -> "VIC"
+                "QUEENSLAND", "QLD" -> "QLD"
+                "WESTERN AUSTRALIA", "WA" -> "WA"
+                "SOUTH AUSTRALIA", "SA" -> "SA"
+                "TASMANIA", "TAS" -> "TAS"
+                "AUSTRALIAN CAPITAL TERRITORY", "ACT" -> "ACT"
+                "NORTHERN TERRITORY", "NT" -> "NT"
+                else -> state.trim().uppercase()
+            }
+        }
+
+        /**
          * Validates if the given postcode matches the selected Australian state
          * @param postcode 4-digit Australian postcode
-         * @param state Australian state abbreviation (NSW, VIC, QLD, WA, SA, TAS, ACT, NT)
+         * @param state Australian state name or abbreviation (NSW, VIC, QLD, WA, SA, TAS, ACT, NT)
          * @return true if postcode matches the state, false otherwise
          */
         fun isPostcodeValidForState(postcode: String, state: String): Boolean {
@@ -413,8 +432,9 @@ class HomeViewModel @Inject constructor(
             if (!isValidAustralianPostcode(normalized)) return false
             
             val postcodeInt = normalized.toIntOrNull() ?: return false
+            val stateAbbrev = normalizeStateToAbbreviation(state)
             
-            return when (state.uppercase()) {
+            return when (stateAbbrev) {
                 "NSW" -> postcodeInt in 1000..2599 || postcodeInt in 2619..2899 || postcodeInt in 2921..2999
                 "ACT" -> postcodeInt in 2600..2618 || postcodeInt in 2900..2920
                 "VIC" -> postcodeInt in 3000..3999 || postcodeInt in 8000..8999
