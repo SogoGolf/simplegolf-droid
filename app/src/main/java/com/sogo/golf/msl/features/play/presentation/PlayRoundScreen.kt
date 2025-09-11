@@ -218,8 +218,8 @@ private fun Screen4Portrait(
 
                     Row(
                         modifier = Modifier
-                            .weight(1f)
-                        //.background(Color.Red),
+                            .weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
 
                         IconButton(
@@ -230,7 +230,7 @@ private fun Screen4Portrait(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Close",
                                 tint = MSLColors.mslGunMetal,
-                                modifier = Modifier.size(42.dp)
+                                modifier = Modifier.size(38.dp)
                             )
                         }
 
