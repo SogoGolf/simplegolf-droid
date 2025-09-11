@@ -309,13 +309,19 @@ fun GolferScorecard(
                 val availableForTable = (this@BoxWithConstraints.maxHeight - tabsHeight - 16.dp).coerceAtLeast(0.dp)
                 val responsiveCellHeight = (availableForTable / totalRows).coerceAtLeast(32.dp)
 
-                // Determine text sizes based on cell height
+                // Determine text sizes based on cell height - maximized for better readability
                 val cellTextSize = when {
-                    responsiveCellHeight >= 56.dp -> 16.sp
-                    responsiveCellHeight >= 48.dp -> 14.sp
+                    responsiveCellHeight >= 72.dp -> 22.sp
+                    responsiveCellHeight >= 64.dp -> 20.sp
+                    responsiveCellHeight >= 56.dp -> 18.sp
+                    responsiveCellHeight >= 48.dp -> 16.sp
+                    responsiveCellHeight >= 40.dp -> 14.sp
                     else -> 12.sp
                 }
                 val headerTextSize = when {
+                    cellTextSize.value >= 22f -> 24.sp
+                    cellTextSize.value >= 20f -> 22.sp
+                    cellTextSize.value >= 18f -> 20.sp
                     cellTextSize.value >= 16f -> 18.sp
                     cellTextSize.value >= 14f -> 16.sp
                     else -> 14.sp
