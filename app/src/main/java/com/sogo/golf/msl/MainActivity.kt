@@ -88,9 +88,21 @@ class MainActivity : ComponentActivity() {
                 val viewModel: NavViewModel = hiltViewModel()
                 val authState by viewModel.authState.collectAsState()
 
-                // State to control splash visibility
+                // State to control splash visibility and track initialization
                 var showSplash by rememberSaveable { mutableStateOf(true) }
+                var isInitializationComplete by remember { mutableStateOf(false) }
 
+                // Determine start destination and mark initialization complete
+                val startDestination = when {
+                    !authState.isLoggedIn -> "login"
+                    authState.hasActiveRound -> "playroundscreen"
+                    else -> "homescreen"
+                }
+
+                // Mark initialization as complete once we have determined the start destination
+                LaunchedEffect(startDestination) {
+                    isInitializationComplete = true
+                }
 
                 if (showSplash) {
                     // Show splash screen first
@@ -98,33 +110,10 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         onSplashComplete = {
                             showSplash = false // Hide splash, show main app
-                        }
+                        },
+                        isInitializationComplete = isInitializationComplete
                     )
                 } else {
-
-                    // Only build back stack on cold start (savedInstanceState == null)
-                    val shouldBuildBackStack = remember { savedInstanceState == null }
-
-                    val startDestination = when {
-                        !authState.isLoggedIn -> "login"
-                        authState.hasActiveRound -> "playroundscreen"
-                        else -> "homescreen"
-                    }
-
-                    var hasBuiltBackStack by remember { mutableStateOf(false) }
-
-                    // Build the "virtual" back stack if starting at play round screen
-                    LaunchedEffect(startDestination, shouldBuildBackStack) {
-                        if (shouldBuildBackStack && startDestination == "playroundscreen" && !hasBuiltBackStack) {
-                            navController.navigate("homescreen") {
-                                popUpTo(0) { inclusive = true }
-                            }
-                            navController.navigate("competitionscreen")
-                            navController.navigate("playingpartnerscreen")
-                            navController.navigate("playroundscreen")
-                            hasBuiltBackStack = true
-                        }
-                    }
 
                     NavHost(navController = navController, startDestination = startDestination) {
                         composable("login") {

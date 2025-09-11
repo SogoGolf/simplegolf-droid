@@ -24,12 +24,13 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(
     navController: NavController,
-    onSplashComplete: () -> Unit
+    onSplashComplete: () -> Unit,
+    isInitializationComplete: Boolean = false
 ) {
     val view = LocalView.current
 
     // Set status bar and navigation bar to match blue background
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isInitializationComplete) {
         val window = (view.context as androidx.activity.ComponentActivity).window
         val windowInsetsController = WindowCompat.getInsetsController(window, view)
 
@@ -41,7 +42,14 @@ fun SplashScreen(
         windowInsetsController.isAppearanceLightStatusBars = false
         windowInsetsController.isAppearanceLightNavigationBars = false
 
-        delay(2000) // 2 second splash
+        // Wait for both minimum splash duration AND initialization completion
+        delay(2000) // Minimum 2 second splash
+        
+        // Wait for initialization to complete before proceeding
+        while (!isInitializationComplete) {
+            delay(50) // Check every 50ms
+        }
+        
         onSplashComplete() // Signal that splash is done
 
         // Reset status bar and navigation bar colors after splash
