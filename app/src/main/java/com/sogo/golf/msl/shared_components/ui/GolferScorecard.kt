@@ -326,6 +326,15 @@ fun GolferScorecard(
                     cellTextSize.value >= 14f -> 16.sp
                     else -> 14.sp
                 }
+                // Larger font size for first column/row labels
+                val firstColumnTextSize = when {
+                    cellTextSize.value >= 22f -> 24.sp
+                    cellTextSize.value >= 20f -> 22.sp
+                    cellTextSize.value >= 18f -> 20.sp
+                    cellTextSize.value >= 16f -> 18.sp
+                    cellTextSize.value >= 14f -> 16.sp
+                    else -> 14.sp
+                }
 
                 val columnCount = columnData.size + 1
                 val outColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "out" }
@@ -378,6 +387,7 @@ fun GolferScorecard(
                                             text = data.holeNumber,
                                             style = MaterialTheme.typography.bodyMedium,
                                             fontSize = headerTextSize,
+                                            fontWeight = FontWeight.Bold,
                                             color = textColor,
                                             textAlign = TextAlign.Center
                                         )
@@ -396,7 +406,8 @@ fun GolferScorecard(
                                     Text(
                                         text = rowData,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        fontSize = cellTextSize,
+                                        fontSize = firstColumnTextSize,
+                                        fontWeight = FontWeight.Bold,
                                         textAlign = TextAlign.Center
                                     )
                                 }
