@@ -311,12 +311,12 @@ fun GolferScorecard(
 
                 // Determine text sizes based on cell height - maximized for better readability
                 val cellTextSize = when {
-                    responsiveCellHeight >= 72.dp -> 22.sp
-                    responsiveCellHeight >= 64.dp -> 20.sp
-                    responsiveCellHeight >= 56.dp -> 18.sp
-                    responsiveCellHeight >= 48.dp -> 16.sp
-                    responsiveCellHeight >= 40.dp -> 14.sp
-                    else -> 12.sp
+                    responsiveCellHeight >= 72.dp -> 26.sp
+                    responsiveCellHeight >= 64.dp -> 24.sp
+                    responsiveCellHeight >= 56.dp -> 22.sp
+                    responsiveCellHeight >= 48.dp -> 20.sp
+                    responsiveCellHeight >= 40.dp -> 18.sp
+                    else -> 16.sp
                 }
                 val headerTextSize = when {
                     cellTextSize.value >= 22f -> 24.sp
