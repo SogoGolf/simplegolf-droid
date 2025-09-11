@@ -384,8 +384,9 @@ class HomeViewModel @Inject constructor(
             // Australian postcodes are 4 digits long
             // They generally start with a number from 0-8 for states and territories
             // 9 is reserved for special purposes
+            val normalized = postcode.trim()
             val postcodeRegex = "^[0-8]\\d{3}$".toRegex()
-            return postcodeRegex.matches(postcode)
+            return postcodeRegex.matches(normalized)
         }
 
         fun isValidMobileNumber(mobile: String): Boolean {
@@ -408,9 +409,10 @@ class HomeViewModel @Inject constructor(
          * @return true if postcode matches the state, false otherwise
          */
         fun isPostcodeValidForState(postcode: String, state: String): Boolean {
-            if (!isValidAustralianPostcode(postcode)) return false
+            val normalized = postcode.trim()
+            if (!isValidAustralianPostcode(normalized)) return false
             
-            val postcodeInt = postcode.toIntOrNull() ?: return false
+            val postcodeInt = normalized.toIntOrNull() ?: return false
             
             return when (state.uppercase()) {
                 "NSW" -> postcodeInt in 1000..2599 || postcodeInt in 2619..2899 || postcodeInt in 2921..2999

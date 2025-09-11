@@ -224,8 +224,8 @@ fun GolferDataConfirmationSheet(
         isEmailError.value = !email.isNullOrBlank() && !viewModel.isValidEmail(email!!)
         emailErrorMessage.value = if (!email.isNullOrBlank() && !viewModel.isValidEmail(email!!)) "Invalid email" else ""
 
-        isPostcodeError.value = !postcode.isNullOrBlank() && !viewModel.isValidAustralianPostcode(postcode!!)
-        postcodeErrorMessage.value = if (!postcode.isNullOrBlank() && !viewModel.isValidAustralianPostcode(postcode!!)) "Invalid postcode" else ""
+        isPostcodeError.value = !postcode.isNullOrBlank() && !viewModel.isValidAustralianPostcode(postcode!!.trim())
+        postcodeErrorMessage.value = if (!postcode.isNullOrBlank() && !viewModel.isValidAustralianPostcode(postcode!!.trim())) "Invalid postcode" else ""
 
         isMobileError.value = !mobile.isNullOrBlank() && !viewModel.isValidMobileNumber(mobile!!)
         mobileErrorMessage.value = if (!mobile.isNullOrBlank() && !viewModel.isValidMobileNumber(mobile!!)) {
@@ -413,8 +413,9 @@ fun GolferDataConfirmationSheet(
             value = postcode ?: "",
             onValueChange = { newValue ->
                 postcode = newValue
-                isPostcodeError.value = !viewModel.isValidAustralianPostcode(newValue)
-                postcodeErrorMessage.value = if (!viewModel.isValidAustralianPostcode(newValue)) "Invalid postcode" else ""
+                val trimmed = newValue.trim()
+                isPostcodeError.value = !viewModel.isValidAustralianPostcode(trimmed)
+                postcodeErrorMessage.value = if (!viewModel.isValidAustralianPostcode(trimmed)) "Invalid postcode" else ""
             },
             label = { Text("Postcode") },
             maxLines = 1,
@@ -604,7 +605,7 @@ fun GolferDataConfirmationSheet(
             enabled = isFormValid && !loading,
             onClick = {
                 // Validate postcode-state combination before saving
-                val currentPostcode = postcode
+                val currentPostcode = postcode?.trim()
                 val currentState = state
                 if (!currentPostcode.isNullOrBlank() && !currentState.isNullOrBlank()) {
                     if (!viewModel.isPostcodeValidForState(currentPostcode, currentState)) {
