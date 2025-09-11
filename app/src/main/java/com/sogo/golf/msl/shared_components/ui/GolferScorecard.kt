@@ -299,14 +299,14 @@ fun GolferScorecard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 // Prepare data rows once so we can derive totalRows too
                 val rowLabels = listOf("Meters", "Index", "Par", "Strokes", "Score")
                 val totalRows = 1 + rowLabels.size // header + data rows
 
                 // Available height for the grid is the BoxWithConstraints maxHeight minus measured header+spacer
-                val availableForTable = (this@BoxWithConstraints.maxHeight - tabsHeight - 16.dp).coerceAtLeast(0.dp)
+                val availableForTable = (this@BoxWithConstraints.maxHeight - tabsHeight - 3.dp).coerceAtLeast(0.dp)
                 val responsiveCellHeight = (availableForTable / totalRows).coerceAtLeast(32.dp)
 
                 // Determine text sizes based on cell height - maximized for better readability
@@ -438,10 +438,24 @@ fun GolferScorecard(
                                             .padding(4.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
+                                        // Use smaller font size for Index row to prevent wrapping
+                                        val actualFontSize = if (rowData == "Index") {
+                                            when {
+                                                cellTextSize.value >= 26f -> 18.sp
+                                                cellTextSize.value >= 24f -> 16.sp
+                                                cellTextSize.value >= 22f -> 14.sp
+                                                cellTextSize.value >= 20f -> 12.sp
+                                                cellTextSize.value >= 18f -> 10.sp
+                                                else -> 8.sp
+                                            }
+                                        } else {
+                                            cellTextSize
+                                        }
+                                        
                                         Text(
                                             text = cellValue,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            fontSize = cellTextSize,
+                                            fontSize = actualFontSize,
                                             color = textColor,
                                             textAlign = TextAlign.Center
                                         )
