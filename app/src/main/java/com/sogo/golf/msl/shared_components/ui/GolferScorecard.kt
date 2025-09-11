@@ -344,7 +344,7 @@ fun GolferScorecard(
                 key(responsiveCellHeight) {
                     TableWithFixedFirstColumnSCORECARD(
                         columnCount = columnCount,
-                        cellWidth = { (screenWidth * 0.10).dp },
+                        cellWidth = { (screenWidth * 0.09).dp },
                         firstColumnWidth = { 100.dp },
                         data = rowLabels,
                         cellHeight = responsiveCellHeight,
