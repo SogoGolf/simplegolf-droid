@@ -3,7 +3,6 @@ package com.sogo.golf.msl.features.play.presentation
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -21,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -31,26 +28,24 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.navigation.NavViewModel
@@ -139,27 +134,6 @@ private fun Screen4Portrait(
 
     Scaffold(
         topBar = {
-//            HoleHeader(
-//                holeNumber = 1, // TODO: Get from viewmodel
-//                onBack = {
-//                    // Show confirmation dialog before navigating back
-//                    showBackConfirmDialog = true
-//                },
-//                onClose = {
-//                    // TODO: Implement close functionality
-//                    // viewModel.logout(navController)
-//                },
-//                onNext = {
-//                    // TODO: Implement hole navigation
-//                    // playRoundViewModel.incrementHoleNumber()
-//                },
-//                onTapHoleNumber = {
-//                    // TODO: Implement hole selection dialog
-//                    // playRoundViewModel.showGoToHoleDialog()
-//                },
-//                showBackButton = showBackButton
-//            )
-
             Column(modifier = Modifier.padding(top = 6.dp)) {
 
                 Row(
@@ -207,28 +181,6 @@ private fun Screen4Portrait(
                                     modifier = Modifier.size(46.dp)
                                 )
                             }
-
-//                            IconButton(
-//                                onClick = {
-//                                    // Check if we're on the starting hole
-//                                    val startingHoleNumber = localGame?.startingHoleNumber ?: 1
-//                                    if (currentHoleNumber == startingHoleNumber) {
-//                                        // On starting hole - show confirmation dialog
-//                                        showBackConfirmDialog = true
-//                                    } else {
-//                                        // Not on starting hole - navigate normally
-//                                        playRoundViewModel.navigateToPreviousHole()
-//                                    }
-//                                },
-//                                modifier = Modifier.size(48.dp)
-//                            ) {
-//                                Icon(
-//                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-//                                    contentDescription = "Previous Hole",
-//                                    tint = MSLColors.mslGunMetal,
-//                                    modifier = Modifier.size(46.dp)
-//                                )
-//                            }
                         }
                     }
 
@@ -299,23 +251,8 @@ private fun Screen4Portrait(
                                 modifier = Modifier.size(48.dp)
                             )
                         }
-
-//                        IconButton(
-//                            onClick = { playRoundViewModel.navigateToNextHole(navController) },
-//                            modifier = Modifier.size(48.dp)
-//                        ) {
-//                            Icon(
-//                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-//                                contentDescription = "Next Hole",
-//                                tint = MSLColors.mslGunMetal,
-//                                modifier = Modifier.size(46.dp)
-//                            )
-//                        }
                     }
-
                 }
-
-//                Text("123")
             }
         }
         // No bottomBar parameter = no bottom bar
@@ -331,19 +268,6 @@ private fun Screen4Portrait(
             // Add spacing between nav bar and first card
             Spacer(modifier = Modifier.height(10.dp))
             
-            // Top card - Main Golfer
-//            Column() {
-//                Text("123", modifier = Modifier.statusBarsPadding())
-//                Text("123", modifier = Modifier.statusBarsPadding())
-//                Text("123", modifier = Modifier.statusBarsPadding())
-//            }
-
-            // Responsive spacer based on screen density
-//            with(LocalDensity.current) {
-//                val spacingDp = (2 * density).dp
-//                Spacer(modifier = Modifier.height(spacingDp))
-//            }
-
             // Extract golfer data from Room database
             val currentGolferValue = currentGolfer
             val localGameValue = localGame
@@ -515,94 +439,6 @@ private fun Screen4Portrait(
 
             Spacer(Modifier.height(5.dp))
         }
-
-
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(paddingValues) // <-- APPLY THE PADDING HERE
-//                .navigationBarsPadding()
-//              .padding(vertical = 6.dp)
-//        ) {
-        // Top card (green background)
-//            HoleCard(
-//                backgroundColor = Color.Green,
-//                golferName = "Main Golfer",
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .weight(1f)
-//                    .padding(horizontal = 10.dp)
-//            )
-
-        // Gap between cards
-//            Spacer(modifier = Modifier.height(10.dp))
-
-        // Bottom card (blue background)
-//            HoleCard(
-//                backgroundColor = Color.Blue,
-//                golferName = "Playing Partner",
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .weight(1f)
-//                    .padding(horizontal = 10.dp)
-//            )
-//        }
-//    }
-
-//    Column(
-//        modifier = Modifier.fillMaxSize().navigationBarsPadding()
-//    ) {
-        // HoleHeader as top bar
-//        HoleHeader(
-//            holeNumber = 1, // TODO: Get from viewmodel
-//            onBack = {
-//                // Show confirmation dialog before navigating back
-//                showBackConfirmDialog = true
-//            },
-//            onClose = {
-//                // TODO: Implement close functionality
-//                // viewModel.logout(navController)
-//            },
-//            onNext = {
-//                // TODO: Implement hole navigation
-//                // playRoundViewModel.incrementHoleNumber()
-//            },
-//            onTapHoleNumber = {
-//                // TODO: Implement hole selection dialog
-//                // playRoundViewModel.showGoToHoleDialog()
-//            },
-//            showBackButton = showBackButton
-//        )
-
-        // Two HoleCard components taking up remaining vertical space
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .navigationBarsPadding()
-////                .padding(horizontal = 16.dp)
-//        ) {
-//            // Top card (green background)
-//            HoleCard(
-//                backgroundColor = Color.Green,
-//                golferName = "Main Golfer",
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .weight(1f)
-//            )
-//
-//            // Gap between cards
-//            Spacer(modifier = Modifier.height(10.dp))
-//
-//            // Bottom card (blue background)
-//            HoleCard(
-//                backgroundColor = Color.Blue,
-//                golferName = "Playing Partner",
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .weight(1f)
-//            )
-//        }
-        // }
 
         // Back confirmation dialog
         if (showBackConfirmDialog) {
