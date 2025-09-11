@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -166,7 +167,7 @@ private fun Screen4Portrait(
                 ) {
                     Box(
                         modifier = Modifier
-                            .weight(1f)
+                            .weight(2f)
                     ) {
                         if (showBackButton) {
                             IconButton(
@@ -218,8 +219,8 @@ private fun Screen4Portrait(
 
                     Row(
                         modifier = Modifier
-                            .weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            .weight(2f),
+                        horizontalArrangement = Arrangement.End
                     ) {
 
                         IconButton(
@@ -230,9 +231,11 @@ private fun Screen4Portrait(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Close",
                                 tint = MSLColors.mslGunMetal,
-                                modifier = Modifier.size(38.dp)
+                                modifier = Modifier.size(40.dp)
                             )
                         }
+
+                        Spacer(modifier = Modifier.width(12.dp))
 
                         IconButton(
                             onClick = { playRoundViewModel.navigateToNextHole(navController) },
