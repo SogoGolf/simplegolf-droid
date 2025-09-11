@@ -122,10 +122,15 @@ fun GolferDataConfirmationSheet(
     val isEmailError = remember { mutableStateOf(false) }
     val emailErrorMessage = remember { mutableStateOf("") }
 
+    // Australian states list - moved up for use in state initialization
+    val australianStates = listOf("ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA")
+
     // Use SOGO golfer state.shortName if available, otherwise MSL golfer data
+    // Only populate if it's a valid abbreviation, otherwise blank to force user selection
     var state by remember { 
         mutableStateOf(
-            sogoGolfer?.state?.shortName?.takeIf { it.isNotBlank() } ?: mslGolfer.state
+            (sogoGolfer?.state?.shortName?.takeIf { it.isNotBlank() } ?: mslGolfer.state)
+                ?.takeIf { it.trim().uppercase() in australianStates }
         ) 
     }
 
@@ -209,9 +214,6 @@ fun GolferDataConfirmationSheet(
     var isCreateOrUpdateSogoGolfAccount by remember { mutableStateOf(true) }
 
     val uriHandler = LocalUriHandler.current
-
-    // Australian states list
-    val australianStates = listOf("ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA")
 
     // Initial validation using LaunchedEffect
     LaunchedEffect(firstName, lastName, email, postcode, mobile, gender) {
