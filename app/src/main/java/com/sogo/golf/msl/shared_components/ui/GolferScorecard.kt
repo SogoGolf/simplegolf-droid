@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,18 +21,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -76,14 +82,6 @@ fun GolferScorecard(
 
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
-    val screenHeight = configuration.screenHeightDp
-    
-    // Calculate responsive cell height based on available screen space
-    // Account for tab headers (~80dp), padding (~32dp), and system UI (~48dp)
-    val reservedHeight = 160.dp // Tab headers + padding + system UI
-    val availableHeight = screenHeight.dp - reservedHeight
-    val totalRows = 6 // 1 header row + 5 data rows
-    val responsiveCellHeight = (availableHeight / totalRows).coerceAtLeast(32.dp)
 
     if (round == null) {
         Box(
@@ -251,59 +249,87 @@ fun GolferScorecard(
             .background(Color.White)
             .padding(16.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Top
-        ) {
-            val golferTeeName = getTeeName(mslCompetition, round.golferGLNumber)
-            val partnerTeeName = getTeeName(mslCompetition, round.playingPartnerRound?.golferGLNumber)
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val density = LocalDensity.current
+            var tabsHeight by remember { mutableStateOf(0.dp) }
 
-            // Tab Headers
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Top
             ) {
-                // Playing Partner Tab (Left)
-                round.playingPartnerRound?.let { partner ->
+                val golferTeeName = getTeeName(mslCompetition, round.golferGLNumber)
+                val partnerTeeName = getTeeName(mslCompetition, round.playingPartnerRound?.golferGLNumber)
+
+                // Tab Headers (measure height)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { coords ->
+                            tabsHeight = with(density) { coords.size.height.toDp() }
+                        },
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Playing Partner Tab (Left)
+                    round.playingPartnerRound?.let { partner ->
+                        TabHeader(
+                            title = "${partner.golferFirstName ?: ""} ${partner.golferLastName ?: ""}",
+                            subtitle = "Daily HC: ${partner.dailyHandicap?.toString() ?: "0.0"} | GL HC: ${partner.golfLinkHandicap?.toString() ?: "0.0"}",
+                            teeName = partnerTeeName,
+                            isActive = selectedTab.value == "partner",
+                            onClick = { 
+                                selectedTab.value = "partner"
+                                onPlayingPartnerClicked()
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    
+                    // Golfer Tab (Right)
                     TabHeader(
-                        title = "${partner.golferFirstName ?: ""} ${partner.golferLastName ?: ""}",
-                        subtitle = "Daily HC: ${partner.dailyHandicap?.toString() ?: "0.0"} | GL HC: ${partner.golfLinkHandicap?.toString() ?: "0.0"}",
-                        teeName = partnerTeeName,
-                        isActive = selectedTab.value == "partner",
+                        title = "${round.golferFirstName ?: ""} ${round.golferLastName ?: ""}",
+                        subtitle = "Daily HC: ${round.dailyHandicap?.toString() ?: "0.0"} | GL HC: ${round.golfLinkHandicap?.toString() ?: "0.0"}",
+                        teeName = golferTeeName,
+                        isActive = selectedTab.value == "golfer",
                         onClick = { 
-                            selectedTab.value = "partner"
-                            onPlayingPartnerClicked()
+                            selectedTab.value = "golfer"
+                            onGolferClicked()
                         },
                         modifier = Modifier.weight(1f)
                     )
                 }
-                
-                // Golfer Tab (Right)
-                TabHeader(
-                    title = "${round.golferFirstName ?: ""} ${round.golferLastName ?: ""}",
-                    subtitle = "Daily HC: ${round.dailyHandicap?.toString() ?: "0.0"} | GL HC: ${round.golfLinkHandicap?.toString() ?: "0.0"}",
-                    teeName = golferTeeName,
-                    isActive = selectedTab.value == "golfer",
-                    onClick = { 
-                        selectedTab.value = "golfer"
-                        onGolferClicked()
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-            val columnCount = columnData.size + 1
-            val outColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "out" }
-            val inColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "in" }
-            val totalColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "total" }
+                // Prepare data rows once so we can derive totalRows too
+                val rowLabels = listOf("Meters", "Index", "Par", "Strokes", "Score")
+                val totalRows = 1 + rowLabels.size // header + data rows
+
+                // Available height for the grid is the BoxWithConstraints maxHeight minus measured header+spacer
+                val availableForTable = (this@BoxWithConstraints.maxHeight - tabsHeight - 16.dp).coerceAtLeast(0.dp)
+                val responsiveCellHeight = (availableForTable / totalRows).coerceAtLeast(32.dp)
+
+                // Determine text sizes based on cell height
+                val cellTextSize = when {
+                    responsiveCellHeight >= 56.dp -> 16.sp
+                    responsiveCellHeight >= 48.dp -> 14.sp
+                    else -> 12.sp
+                }
+                val headerTextSize = when {
+                    cellTextSize.value >= 16f -> 18.sp
+                    cellTextSize.value >= 14f -> 16.sp
+                    else -> 14.sp
+                }
+
+                val columnCount = columnData.size + 1
+                val outColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "out" }
+                val inColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "in" }
+                val totalColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "total" }
 
             TableWithFixedFirstColumnSCORECARD(
                 columnCount = columnCount,
                 cellWidth = { (screenWidth * 0.10).dp },
                 firstColumnWidth = { 100.dp },
-                data = listOf("Meters", "Index", "Par", "Strokes", "Score"),
+                data = rowLabels,
                 cellHeight = responsiveCellHeight,
                 headerCellContent = { columnIndex ->
                     if (columnIndex == 0) {
@@ -316,7 +342,7 @@ fun GolferScorecard(
                             Text(
                                 text = "HOLE",
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                                fontSize = headerTextSize,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
                             )
@@ -343,7 +369,7 @@ fun GolferScorecard(
                                 Text(
                                     text = data.holeNumber,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                                    fontSize = headerTextSize,
                                     color = textColor,
                                     textAlign = TextAlign.Center
                                 )
@@ -362,7 +388,7 @@ fun GolferScorecard(
                             Text(
                                 text = rowData,
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                                fontSize = cellTextSize,
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -395,8 +421,8 @@ fun GolferScorecard(
                             ) {
                                 Text(
                                     text = cellValue,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontSize = cellTextSize,
                                     color = textColor,
                                     textAlign = TextAlign.Center
                                 )
@@ -405,6 +431,7 @@ fun GolferScorecard(
                     }
                 }
             )
+            }
         }
     }
 }
