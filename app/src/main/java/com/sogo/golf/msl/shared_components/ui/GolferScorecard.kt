@@ -344,7 +344,14 @@ fun GolferScorecard(
                 key(responsiveCellHeight) {
                     TableWithFixedFirstColumnSCORECARD(
                         columnCount = columnCount,
-                        cellWidth = { (screenWidth * 0.088).dp },
+                        cellWidth = { columnIndex ->
+                            val dataIndex = columnIndex - 1
+                            if (dataIndex == totalColumnIndex) {
+                                (screenWidth * 0.10).dp  // TOTAL column keeps original width
+                            } else {
+                                (screenWidth * 0.088).dp  // Other columns use 12% reduced width
+                            }
+                        },
                         firstColumnWidth = { 100.dp },
                         data = rowLabels,
                         cellHeight = responsiveCellHeight,
