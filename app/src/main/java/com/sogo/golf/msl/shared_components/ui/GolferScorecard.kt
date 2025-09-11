@@ -496,7 +496,7 @@ fun GolferScorecard(
                                                     style = MaterialTheme.typography.bodyMedium,
                                                     fontSize = cornerSize,
                                                     color = textColor,
-                                                    modifier = Modifier.align(Alignment.TopStart).padding(start = 2.dp, top = 2.dp)
+                                                    modifier = Modifier.align(Alignment.TopStart).padding(start = 1.dp, top = 1.dp)
                                                 )
                                             }
                                             // Center: index2
@@ -516,7 +516,7 @@ fun GolferScorecard(
                                                     style = MaterialTheme.typography.bodyMedium,
                                                     fontSize = cornerSize,
                                                     color = textColor,
-                                                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = 2.dp, bottom = 2.dp)
+                                                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp, bottom = 1.dp)
                                                 )
                                             }
                                         } else {
