@@ -187,7 +187,7 @@ private fun Screen4Portrait(
                                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                                     contentDescription = "Previous Hole",
                                     tint = MSLColors.mslGunMetal,
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(42.dp)
                                 )
                             }
                         }
@@ -229,7 +229,8 @@ private fun Screen4Portrait(
                             Icon(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Close",
-                                tint = MSLColors.mslGunMetal
+                                tint = MSLColors.mslGunMetal,
+                                modifier = Modifier.size(42.dp)
                             )
                         }
 
@@ -241,7 +242,7 @@ private fun Screen4Portrait(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = "Next Hole",
                                 tint = MSLColors.mslGunMetal,
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(42.dp)
                             )
                         }
                     }
