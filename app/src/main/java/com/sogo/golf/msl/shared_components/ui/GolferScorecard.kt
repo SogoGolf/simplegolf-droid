@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -251,7 +252,7 @@ fun GolferScorecard(
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             val density = LocalDensity.current
-            var tabsHeight by remember { mutableStateOf(0.dp) }
+            var tabsHeight by remember { mutableStateOf(80.dp) }
 
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -325,114 +326,113 @@ fun GolferScorecard(
                 val inColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "in" }
                 val totalColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "total" }
 
-                // Only render the table after tabsHeight has been measured to avoid height mismatch
-                if (tabsHeight > 0.dp) {
+                key(responsiveCellHeight) {
                     TableWithFixedFirstColumnSCORECARD(
-                columnCount = columnCount,
-                cellWidth = { (screenWidth * 0.10).dp },
-                firstColumnWidth = { 100.dp },
-                data = rowLabels,
-                cellHeight = responsiveCellHeight,
-                headerCellContent = { columnIndex ->
-                    if (columnIndex == 0) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(4.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "HOLE",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontSize = headerTextSize,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    } else {
-                        val dataIndex = columnIndex - 1
-                        if (dataIndex < columnData.size) {
-                            val data = columnData[dataIndex]
-                            val backgroundColor = when {
-                                dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> mslBlue
-                                else -> Color.White
-                            }
-                            val textColor = when {
-                                dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> Color.White
-                                else -> Color.Black
-                            }
+                        columnCount = columnCount,
+                        cellWidth = { (screenWidth * 0.10).dp },
+                        firstColumnWidth = { 100.dp },
+                        data = rowLabels,
+                        cellHeight = responsiveCellHeight,
+                        headerCellContent = { columnIndex ->
+                            if (columnIndex == 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "HOLE",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontSize = headerTextSize,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            } else {
+                                val dataIndex = columnIndex - 1
+                                if (dataIndex < columnData.size) {
+                                    val data = columnData[dataIndex]
+                                    val backgroundColor = when {
+                                        dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> mslBlue
+                                        else -> Color.White
+                                    }
+                                    val textColor = when {
+                                        dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> Color.White
+                                        else -> Color.Black
+                                    }
 
-                            Box(
-                                modifier = Modifier
-                                    .background(backgroundColor)
-                                    .padding(4.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = data.holeNumber,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontSize = headerTextSize,
-                                    color = textColor,
-                                    textAlign = TextAlign.Center
-                                )
+                                    Box(
+                                        modifier = Modifier
+                                            .background(backgroundColor)
+                                            .padding(4.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = data.holeNumber,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontSize = headerTextSize,
+                                            color = textColor,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
                             }
-                        }
-                    }
-                },
-                cellContent = { columnIndex, rowData ->
-                    if (columnIndex == 0) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(4.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = rowData,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontSize = cellTextSize,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    } else {
-                        val dataIndex = columnIndex - 1
-                        if (dataIndex < columnData.size) {
-                            val data = columnData[dataIndex]
-                            val cellValue = when (rowData) {
-                                "Meters" -> data.meters
-                                "Index" -> data.index
-                                "Par" -> data.par
-                                "Strokes" -> data.strokes
-                                else -> data.score
-                            }
+                        },
+                        cellContent = { columnIndex, rowData ->
+                            if (columnIndex == 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = rowData,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontSize = cellTextSize,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            } else {
+                                val dataIndex = columnIndex - 1
+                                if (dataIndex < columnData.size) {
+                                    val data = columnData[dataIndex]
+                                    val cellValue = when (rowData) {
+                                        "Meters" -> data.meters
+                                        "Index" -> data.index
+                                        "Par" -> data.par
+                                        "Strokes" -> data.strokes
+                                        else -> data.score
+                                    }
 
-                            val backgroundColor = when {
-                                dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> mslBlue
-                                else -> Color.White
-                            }
-                            val textColor = when {
-                                dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> Color.White
-                                else -> Color.Black
-                            }
+                                    val backgroundColor = when {
+                                        dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> mslBlue
+                                        else -> Color.White
+                                    }
+                                    val textColor = when {
+                                        dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> Color.White
+                                        else -> Color.Black
+                                    }
 
-                            Box(
-                                modifier = Modifier
-                                    .background(backgroundColor)
-                                    .padding(4.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = cellValue,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontSize = cellTextSize,
-                                    color = textColor,
-                                    textAlign = TextAlign.Center
-                                )
+                                    Box(
+                                        modifier = Modifier
+                                            .background(backgroundColor)
+                                            .padding(4.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = cellValue,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontSize = cellTextSize,
+                                            color = textColor,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-            )
+                    )
                 }
             }
         }
