@@ -3,6 +3,7 @@ package com.sogo.golf.msl.features.play.presentation
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +16,12 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -28,6 +31,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -164,14 +169,26 @@ private fun Screen4Portrait(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    //LEFT ARROW SECTION
                     Box(
                         modifier = Modifier
-                            .weight(1f)
+                            .weight(2f)
+                            .fillMaxWidth(),
                     ) {
                         if (showBackButton) {
-                            IconButton(
-                                onClick = { 
-                                    // Check if we're on the starting hole
+
+                            Box(
+                                modifier = Modifier
+                                    //.background(Color.Red)
+                                    .height(48.dp)
+                                    .fillMaxWidth()
+                                    .clickable(
+                                        // Let Compose manage its own InteractionSource for perf
+                                        interactionSource = null,
+                                        // Use new Material3 ripple; or set indication = null if you want no ripple
+                                        indication = ripple(bounded = true)
+                                    ) {
+                                                                            // Check if we're on the starting hole
                                     val startingHoleNumber = localGame?.startingHoleNumber ?: 1
                                     if (currentHoleNumber == startingHoleNumber) {
                                         // On starting hole - show confirmation dialog
@@ -181,18 +198,41 @@ private fun Screen4Portrait(
                                         playRoundViewModel.navigateToPreviousHole()
                                     }
                                 },
-                                modifier = Modifier.size(48.dp)
+                                contentAlignment = Alignment.CenterStart // keep icon anchored right
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                                     contentDescription = "Previous Hole",
                                     tint = MSLColors.mslGunMetal,
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(46.dp)
                                 )
                             }
+
+//                            IconButton(
+//                                onClick = {
+//                                    // Check if we're on the starting hole
+//                                    val startingHoleNumber = localGame?.startingHoleNumber ?: 1
+//                                    if (currentHoleNumber == startingHoleNumber) {
+//                                        // On starting hole - show confirmation dialog
+//                                        showBackConfirmDialog = true
+//                                    } else {
+//                                        // Not on starting hole - navigate normally
+//                                        playRoundViewModel.navigateToPreviousHole()
+//                                    }
+//                                },
+//                                modifier = Modifier.size(48.dp)
+//                            ) {
+//                                Icon(
+//                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+//                                    contentDescription = "Previous Hole",
+//                                    tint = MSLColors.mslGunMetal,
+//                                    modifier = Modifier.size(46.dp)
+//                                )
+//                            }
                         }
                     }
 
+                    //HOLE SECTION
                     Row(
                         modifier = Modifier
                             //.background(Color.Yellow)
@@ -216,10 +256,12 @@ private fun Screen4Portrait(
                         )
                     }
 
+                    //RIGHT ARROW SECTION
                     Row(
                         modifier = Modifier
-                            .weight(1f)
-                        //.background(Color.Red),
+                            .weight(2f)
+                        .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
                     ) {
 
                         IconButton(
@@ -229,21 +271,46 @@ private fun Screen4Portrait(
                             Icon(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Close",
-                                tint = MSLColors.mslGunMetal
+                                tint = MSLColors.mslRed,
+                                modifier = Modifier.size(38.dp)
                             )
                         }
 
-                        IconButton(
-                            onClick = { playRoundViewModel.navigateToNextHole(navController) },
-                            modifier = Modifier.size(48.dp)
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        // Bigger hit area for the next button, extending left
+                        Box(
+                            modifier = Modifier
+                                //.background(Color.Red)
+                                .height(48.dp)
+                                .fillMaxWidth()
+                                .clickable(
+                                    // Let Compose manage its own InteractionSource for perf
+                                    interactionSource = null,
+                                    // Use new Material3 ripple; or set indication = null if you want no ripple
+                                    indication = ripple(bounded = true)
+                                ) { playRoundViewModel.navigateToNextHole(navController) },
+                            contentAlignment = Alignment.CenterEnd // keep icon anchored right
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = "Next Hole",
                                 tint = MSLColors.mslGunMetal,
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(48.dp)
                             )
                         }
+
+//                        IconButton(
+//                            onClick = { playRoundViewModel.navigateToNextHole(navController) },
+//                            modifier = Modifier.size(48.dp)
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+//                                contentDescription = "Next Hole",
+//                                tint = MSLColors.mslGunMetal,
+//                                modifier = Modifier.size(46.dp)
+//                            )
+//                        }
                     }
 
                 }
