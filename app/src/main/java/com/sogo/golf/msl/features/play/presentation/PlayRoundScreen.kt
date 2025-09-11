@@ -326,7 +326,7 @@ private fun Screen4Portrait(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)  // This properly respects the Scaffold's content padding
-                .navigationBarsPadding()
+            //.navigationBarsPadding()
         ) {
             // Add spacing between nav bar and first card
             Spacer(modifier = Modifier.height(10.dp))
