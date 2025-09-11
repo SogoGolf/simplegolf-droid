@@ -58,6 +58,7 @@ class MslGameLocalDbRepositoryImpl @Inject constructor(
                     Log.d(TAG, "API returned game with competition ID: ${game.mainCompetitionId}")
                     Log.d(TAG, "🔍 DEBUG: startingHoleNumber from API: ${game.startingHoleNumber}")
                     Log.d(TAG, "🔍 DEBUG: numberOfHoles from API: ${game.numberOfHoles}")
+                    Log.d(TAG, "🔍 DEBUG: gaHandicap from API: ${game.gaHandicap}")
 
                     // REPLACE the single game in database
                     replaceGameInDatabase(game, gameId)
