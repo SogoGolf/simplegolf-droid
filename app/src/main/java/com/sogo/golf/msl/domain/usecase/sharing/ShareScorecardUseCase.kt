@@ -22,13 +22,30 @@ class ShareScorecardUseCase @Inject constructor() {
         val shareText = buildShareText(round, playerName)
         val imageUri = saveBitmapToCache(context, scorecardBitmap)
         
-        return Intent().apply {
-            action = Intent.ACTION_SEND
+        val intent = Intent(Intent.ACTION_SEND).apply {
             type = "image/jpeg"
             putExtra(Intent.EXTRA_STREAM, imageUri)
             putExtra(Intent.EXTRA_TEXT, shareText)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            clipData = android.content.ClipData.newUri(
+                context.contentResolver,
+                "scorecard",
+                imageUri
+            )
         }
+        
+        // Grant read URI permission to all potential receivers
+        val pm = context.packageManager
+        val resInfoList = pm.queryIntentActivities(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+        resInfoList.forEach { resolveInfo ->
+            context.grantUriPermission(
+                resolveInfo.activityInfo.packageName,
+                imageUri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        }
+        
+        return intent
     }
     
     private fun buildShareText(round: Round, playerName: String): String {

@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
@@ -68,6 +69,7 @@ fun ScorecardScreen(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(12.dp)
+                        .zIndex(1f)
                         .background(
                             color = Color(0x80000000),
                             shape = CircleShape

@@ -75,8 +75,12 @@ class ScorecardSharingViewModel @Inject constructor(
                     playerName = playerName
                 )
                 
-                android.util.Log.d("ScorecardSharingViewModel", "Starting share activity")
-                context.startActivity(Intent.createChooser(shareIntent, "Share Scorecard"))
+                val chooser = Intent.createChooser(shareIntent, "Share Scorecard")
+                if (context !is android.app.Activity) {
+                    chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                android.util.Log.d("ScorecardSharingViewModel", "Starting share chooser")
+                context.startActivity(chooser)
                 
                 _state.value = _state.value.copy(isGeneratingImage = false)
                 android.util.Log.d("ScorecardSharingViewModel", "Share completed successfully")
