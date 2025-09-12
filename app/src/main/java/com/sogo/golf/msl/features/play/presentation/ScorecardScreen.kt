@@ -57,6 +57,7 @@ fun ScorecardScreen(
                 // Share button overlay (top-end)
                 IconButton(
                     onClick = {
+                        android.util.Log.d("ScorecardScreen", "Share button clicked")
                         sharingViewModel.shareScorecard(
                             context = context,
                             round = round,
@@ -85,6 +86,26 @@ fun ScorecardScreen(
                         modifier = Modifier
                             .align(Alignment.Center)
                     )
+                }
+                
+                // Show error message if sharing failed
+                sharingState.error?.let { error ->
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp)
+                            .background(
+                                color = Color.Red.copy(alpha = 0.9f),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                            )
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = error,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
         } else {

@@ -38,11 +38,14 @@ class ScorecardSharingViewModel @Inject constructor(
         mslCompetition: MslCompetition?,
         isNineHoles: Boolean
     ) {
+        android.util.Log.d("ScorecardSharingViewModel", "shareScorecard called")
         viewModelScope.launch {
             try {
+                android.util.Log.d("ScorecardSharingViewModel", "Starting image generation")
                 _state.value = _state.value.copy(isGeneratingImage = true, error = null)
                 
                 val currentState = _state.value
+                android.util.Log.d("ScorecardSharingViewModel", "Capturing composable as bitmap")
                 val bitmap = ScorecardSharingUtils.captureComposableAsBitmap(
                     context = context,
                     width = 1080,
@@ -56,6 +59,7 @@ class ScorecardSharingViewModel @Inject constructor(
                     )
                 }
                 
+                android.util.Log.d("ScorecardSharingViewModel", "Bitmap captured, optimizing")
                 val optimizedBitmap = ScorecardSharingUtils.optimizeBitmapForSharing(bitmap)
                 
                 val playerName = when (currentState.selectedPlayer) {
@@ -63,6 +67,7 @@ class ScorecardSharingViewModel @Inject constructor(
                     PlayerType.PLAYING_PARTNER -> "${round.playingPartnerRound?.golferFirstName} ${round.playingPartnerRound?.golferLastName}"
                 }
                 
+                android.util.Log.d("ScorecardSharingViewModel", "Creating share intent for player: $playerName")
                 val shareIntent = shareScorecardUseCase(
                     context = context,
                     scorecardBitmap = optimizedBitmap,
@@ -70,11 +75,14 @@ class ScorecardSharingViewModel @Inject constructor(
                     playerName = playerName
                 )
                 
+                android.util.Log.d("ScorecardSharingViewModel", "Starting share activity")
                 context.startActivity(Intent.createChooser(shareIntent, "Share Scorecard"))
                 
                 _state.value = _state.value.copy(isGeneratingImage = false)
+                android.util.Log.d("ScorecardSharingViewModel", "Share completed successfully")
                 
             } catch (e: Exception) {
+                android.util.Log.e("ScorecardSharingViewModel", "Share failed", e)
                 _state.value = _state.value.copy(
                     isGeneratingImage = false,
                     error = "Failed to share scorecard: ${e.message}"
