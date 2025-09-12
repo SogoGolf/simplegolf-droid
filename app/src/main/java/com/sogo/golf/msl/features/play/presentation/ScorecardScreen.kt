@@ -2,9 +2,6 @@ package com.sogo.golf.msl.features.play.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,7 +10,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
@@ -52,35 +48,18 @@ fun ScorecardScreen(
                     mslCompetition = mslCompetition,
                     onPlayingPartnerClicked = {},
                     onGolferClicked = {},
-                    isNineHoles = isNineHoles
-                )
-
-                // Share button overlay (top-end)
-                IconButton(
-                    onClick = {
+                    isNineHoles = isNineHoles,
+                    onShareClicked = {
                         android.util.Log.d("ScorecardScreen", "Share button clicked")
+                        sharingViewModel.selectPlayer(com.sogo.golf.msl.shared_components.ui.PlayerType.GOLFER)
                         sharingViewModel.shareScorecard(
                             context = context,
                             round = round,
                             mslCompetition = mslCompetition,
                             isNineHoles = isNineHoles
                         )
-                    },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(12.dp)
-                        .zIndex(1f)
-                        .background(
-                            color = Color(0x80000000),
-                            shape = CircleShape
-                        )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "Share scorecard",
-                        tint = Color.White
-                    )
-                }
+                    }
+                )
 
                 // Optional simple progress indicator while generating image
                 if (sharingState.isGeneratingImage) {

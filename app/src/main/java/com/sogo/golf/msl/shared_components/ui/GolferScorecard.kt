@@ -16,7 +16,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -69,7 +73,8 @@ fun GolferScorecard(
     onPlayingPartnerClicked: () -> Unit,
     onGolferClicked: () -> Unit,
     isNineHoles: Boolean,
-    onScorecardViewed: () -> Unit = {}
+    onScorecardViewed: () -> Unit = {},
+    onShareClicked: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
@@ -322,7 +327,18 @@ fun GolferScorecard(
                             selectedTab.value = "golfer"
                             onGolferClicked()
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        leadingIcon = {
+                            if (onShareClicked != null) {
+                                IconButton(onClick = onShareClicked) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Share,
+                                        contentDescription = "Share scorecard",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
                     )
                 }
 
@@ -553,42 +569,54 @@ fun TabHeader(
     teeName: String,
     isActive: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    leadingIcon: (@Composable () -> Unit)? = null
 ) {
     val backgroundColor = if (isActive) mslBlue else mslGrey.copy(alpha = 0.6f)
     val textColor = Color.White
     
-    Column(
+    Row(
         modifier = modifier
             .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
             .background(backgroundColor)
-            .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = textColor,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            fontSize = 16.sp,
-            color = textColor.copy(alpha = 0.9f),
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = "$teeName Tee",
-            style = MaterialTheme.typography.bodyLarge,
-            fontSize = 18.sp,
-            color = textColor,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center
-        )
+        leadingIcon?.let { icon ->
+            icon()
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onClick() },
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = textColor,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 16.sp,
+                color = textColor.copy(alpha = 0.9f),
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "$teeName Tee",
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 18.sp,
+                color = textColor,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
@@ -737,6 +765,7 @@ fun GolferScorecardPreview() {
         mslCompetition = null,
         onPlayingPartnerClicked = {},
         onGolferClicked = {},
-        isNineHoles = false
+        isNineHoles = false,
+        onShareClicked = {}
     )
 }
