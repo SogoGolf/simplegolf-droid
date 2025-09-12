@@ -45,19 +45,16 @@ class ScorecardSharingViewModel @Inject constructor(
                 _state.value = _state.value.copy(isGeneratingImage = true, error = null)
                 
                 val currentState = _state.value
-                android.util.Log.d("ScorecardSharingViewModel", "Capturing composable as bitmap")
-                val bitmap = ScorecardSharingUtils.captureComposableAsBitmap(
+                android.util.Log.d("ScorecardSharingViewModel", "Generating vertical scorecard bitmap")
+                val bitmap = ScorecardSharingUtils.generateVerticalScorecardBitmap(
                     context = context,
+                    round = round,
+                    mslCompetition = mslCompetition,
+                    selectedPlayer = currentState.selectedPlayer,
+                    isNineHoles = isNineHoles,
                     width = 1080,
                     height = if (isNineHoles) 1200 else 1600
-                ) {
-                    VerticalScorecardForSharing(
-                        round = round,
-                        mslCompetition = mslCompetition,
-                        selectedPlayer = currentState.selectedPlayer,
-                        isNineHoles = isNineHoles
-                    )
-                }
+                )
                 
                 android.util.Log.d("ScorecardSharingViewModel", "Bitmap captured, optimizing")
                 val optimizedBitmap = ScorecardSharingUtils.optimizeBitmapForSharing(bitmap)
