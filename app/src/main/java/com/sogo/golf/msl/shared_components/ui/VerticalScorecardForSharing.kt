@@ -40,9 +40,9 @@ enum class PlayerType {
 fun VerticalScorecardForSharing(
     round: Round,
     mslCompetition: MslCompetition?,
+    modifier: Modifier = Modifier,
     selectedPlayer: PlayerType = PlayerType.GOLFER,
-    isNineHoles: Boolean,
-    modifier: Modifier = Modifier
+    isNineHoles: Boolean
 ) {
     val playerHoleScores = when (selectedPlayer) {
         PlayerType.GOLFER -> round.holeScores

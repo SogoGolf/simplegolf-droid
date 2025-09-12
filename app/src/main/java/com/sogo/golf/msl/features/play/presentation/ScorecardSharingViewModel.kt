@@ -42,6 +42,7 @@ class ScorecardSharingViewModel @Inject constructor(
             try {
                 _state.value = _state.value.copy(isGeneratingImage = true, error = null)
                 
+                val currentState = _state.value
                 val bitmap = ScorecardSharingUtils.captureComposableAsBitmap(
                     context = context,
                     width = 1080,
@@ -50,14 +51,14 @@ class ScorecardSharingViewModel @Inject constructor(
                     VerticalScorecardForSharing(
                         round = round,
                         mslCompetition = mslCompetition,
-                        selectedPlayer = _state.value.selectedPlayer,
+                        selectedPlayer = currentState.selectedPlayer,
                         isNineHoles = isNineHoles
                     )
                 }
                 
                 val optimizedBitmap = ScorecardSharingUtils.optimizeBitmapForSharing(bitmap)
                 
-                val playerName = when (_state.value.selectedPlayer) {
+                val playerName = when (currentState.selectedPlayer) {
                     PlayerType.GOLFER -> "${round.golferFirstName} ${round.golferLastName}"
                     PlayerType.PLAYING_PARTNER -> "${round.playingPartnerRound?.golferFirstName} ${round.playingPartnerRound?.golferLastName}"
                 }
