@@ -340,10 +340,10 @@ fun GolferScorecard(
                                 
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.clickable { 
-                                        if (isGolferTabActive) {
-                                            onShareClicked()
-                                        }
+                                    modifier = if (isGolferTabActive) {
+                                        Modifier.clickable { onShareClicked() }
+                                    } else {
+                                        Modifier
                                     }
                                 ) {
                                     Icon(
