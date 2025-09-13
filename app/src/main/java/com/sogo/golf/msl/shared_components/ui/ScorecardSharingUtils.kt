@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.toArgb
 import com.sogo.golf.msl.domain.model.HoleScore
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
+import com.sogo.golf.msl.ui.theme.MSLColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -71,13 +72,13 @@ object ScorecardSharingUtils {
         })
         
         var yPos = 60f
-        val margin = 40f
+        val margin = 50f
         val cellHeight = 60f
         val headerHeight = 120f
         
         // Header
         paint.apply {
-            color = Color(0xFF1976D2).toArgb() // mslBlue
+            color = Color(MSLColors.mslGunMetal.value).toArgb() // mslGunMetal
             textSize = 48f
             typeface = Typeface.DEFAULT_BOLD
         }
@@ -165,7 +166,7 @@ object ScorecardSharingUtils {
         val originalTypeface = paint.typeface
         
         if (isHighlighted) {
-            val bgColor = if (isTotal) Color(0xFF1976D2).toArgb() else Color(0xFFE0E0E0).toArgb()
+            val bgColor = if (isTotal) Color(MSLColors.mslGunMetal.value).toArgb() else Color(0xFFE0E0E0).toArgb()
             val bgRect = Rect(margin.toInt(), yPos.toInt(), (margin + colWidth * 6).toInt(), (yPos + 60).toInt())
             val bgPaint = Paint().apply { color = bgColor }
             canvas.drawRect(bgRect, bgPaint)
