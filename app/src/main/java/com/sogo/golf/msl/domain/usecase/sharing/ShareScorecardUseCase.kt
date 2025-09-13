@@ -9,6 +9,7 @@ import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import java.io.File
 import java.io.FileOutputStream
+import org.threeten.bp.format.DateTimeFormatter
 import javax.inject.Inject
 
 class ShareScorecardUseCase @Inject constructor() {
@@ -17,9 +18,9 @@ class ShareScorecardUseCase @Inject constructor() {
         context: Context,
         scorecardBitmap: Bitmap,
         round: Round,
-        playerName: String
+        mslCompetition: MslCompetition? = null
     ): Intent {
-        val shareText = buildShareText(round, playerName)
+        val shareText = buildShareText(round, mslCompetition)
         val imageUri = saveBitmapToCache(context, scorecardBitmap)
         
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -48,18 +49,18 @@ class ShareScorecardUseCase @Inject constructor() {
         return intent
     }
     
-    private fun buildShareText(round: Round, playerName: String): String {
-        val courseName = round.clubName ?: "Golf Course"
-        val totalScore = round.holeScores.sumOf { it.score.toInt() }
-        val totalPar = round.holeScores.sumOf { it.par }
-        val scoreToPar = totalScore - totalPar
-        val scoreToParString = when {
-            scoreToPar > 0 -> "+$scoreToPar"
-            scoreToPar < 0 -> "$scoreToPar"
-            else -> "E"
-        }
+    private fun buildShareText(round: Round, mslCompetition: MslCompetition?): String {
+        val clubName = round.clubName ?: "Golf Course"
         
-        return "Check out $playerName's scorecard from $courseName! Score: $totalScore ($scoreToParString) #Golf #Scorecard"
+        val dateString = round.roundDate?.let { date ->
+            date.format(DateTimeFormatter.ofPattern("d MMM yyyy"))
+        } ?: "today"
+        
+        val compType = round.compType ?: mslCompetition?.players?.firstOrNull()?.competitionType ?: "Social"
+        
+        val numberOfHoles = round.holeScores.distinctBy { it.holeNumber }.size
+        
+        return "Here's my round at $clubName on $dateString. $compType, $numberOfHoles holes."
     }
     
     private suspend fun saveBitmapToCache(context: Context, bitmap: Bitmap): Uri {

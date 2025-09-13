@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sogo.golf.msl.analytics.AnalyticsManager
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import com.sogo.golf.msl.domain.usecase.sharing.ShareScorecardUseCase
@@ -26,7 +27,8 @@ data class ScorecardSharingState(
 
 @HiltViewModel
 class ScorecardSharingViewModel @Inject constructor(
-    private val shareScorecardUseCase: ShareScorecardUseCase
+    private val shareScorecardUseCase: ShareScorecardUseCase,
+    private val analyticsManager: AnalyticsManager
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(ScorecardSharingState())
@@ -39,6 +41,16 @@ class ScorecardSharingViewModel @Inject constructor(
         isNineHoles: Boolean
     ) {
         android.util.Log.d("ScorecardSharingViewModel", "shareScorecard called")
+        
+        val eventProperties = mapOf(
+            "golfer_name" to "${round.golferFirstName ?: ""} ${round.golferLastName ?: ""}".trim(),
+            "mongo_id" to round.id,
+            "club_name" to (round.clubName ?: "Unknown"),
+            "number_of_holes" to round.holeScores.distinctBy { it.holeNumber }.size,
+            "comp_type" to (round.compType ?: mslCompetition?.players?.firstOrNull()?.competitionType ?: "Social")
+        )
+        analyticsManager.trackEvent(AnalyticsManager.EVENT_SHARE_SCORECARD_TAPPED, eventProperties)
+        
         viewModelScope.launch {
             try {
                 android.util.Log.d("ScorecardSharingViewModel", "Starting image generation")
@@ -59,17 +71,12 @@ class ScorecardSharingViewModel @Inject constructor(
                 android.util.Log.d("ScorecardSharingViewModel", "Bitmap captured, optimizing")
                 val optimizedBitmap = ScorecardSharingUtils.optimizeBitmapForSharing(bitmap)
                 
-                val playerName = when (currentState.selectedPlayer) {
-                    PlayerType.GOLFER -> "${round.golferFirstName} ${round.golferLastName}"
-                    PlayerType.PLAYING_PARTNER -> "${round.playingPartnerRound?.golferFirstName} ${round.playingPartnerRound?.golferLastName}"
-                }
-                
-                android.util.Log.d("ScorecardSharingViewModel", "Creating share intent for player: $playerName")
+                android.util.Log.d("ScorecardSharingViewModel", "Creating share intent")
                 val shareIntent = shareScorecardUseCase(
                     context = context,
                     scorecardBitmap = optimizedBitmap,
                     round = round,
-                    playerName = playerName
+                    mslCompetition = mslCompetition
                 )
                 
                 val chooser = Intent.createChooser(shareIntent, "Share Scorecard")
@@ -78,6 +85,8 @@ class ScorecardSharingViewModel @Inject constructor(
                 }
                 android.util.Log.d("ScorecardSharingViewModel", "Starting share chooser")
                 context.startActivity(chooser)
+                
+                analyticsManager.trackEvent(AnalyticsManager.EVENT_SHARE_SCORECARD_SENT, eventProperties)
                 
                 _state.value = _state.value.copy(isGeneratingImage = false)
                 android.util.Log.d("ScorecardSharingViewModel", "Share completed successfully")
