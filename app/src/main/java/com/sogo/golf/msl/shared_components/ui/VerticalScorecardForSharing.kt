@@ -42,7 +42,8 @@ fun VerticalScorecardForSharing(
     mslCompetition: MslCompetition?,
     modifier: Modifier = Modifier,
     selectedPlayer: PlayerType = PlayerType.GOLFER,
-    isNineHoles: Boolean
+    isNineHoles: Boolean,
+    showTeeInfo: Boolean = true
 ) {
     val playerHoleScores = when (selectedPlayer) {
         PlayerType.GOLFER -> round.holeScores
@@ -79,7 +80,7 @@ fun VerticalScorecardForSharing(
         VerticalScorecardHeader(
             playerName = "$playerFirstName $playerLastName",
             dailyHandicap = dailyHandicap,
-            teeName = teeName,
+            teeName = if (showTeeInfo) teeName else null,
             courseName = round.clubName ?: "Golf Course"
         )
         
@@ -127,7 +128,7 @@ fun VerticalScorecardForSharing(
 private fun VerticalScorecardHeader(
     playerName: String,
     dailyHandicap: String,
-    teeName: String,
+    teeName: String?,
     courseName: String
 ) {
     Column(
@@ -157,7 +158,7 @@ private fun VerticalScorecardHeader(
         
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = if (teeName != null) Arrangement.SpaceEvenly else Arrangement.Center
         ) {
             Text(
                 text = "Daily HC: $dailyHandicap",
@@ -166,12 +167,14 @@ private fun VerticalScorecardHeader(
                 color = Color.White.copy(alpha = 0.9f)
             )
             
-            Text(
-                text = "$teeName Tee",
-                style = MaterialTheme.typography.bodyMedium,
-                fontSize = 16.sp,
-                color = Color.White.copy(alpha = 0.9f)
-            )
+            if (teeName != null) {
+                Text(
+                    text = "$teeName Tee",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontSize = 16.sp,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
         }
     }
 }

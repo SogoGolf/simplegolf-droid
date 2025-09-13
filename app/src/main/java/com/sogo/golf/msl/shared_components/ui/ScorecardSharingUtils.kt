@@ -33,7 +33,8 @@ object ScorecardSharingUtils {
         selectedPlayer: PlayerType = PlayerType.GOLFER,
         isNineHoles: Boolean,
         width: Int = 1080,
-        height: Int = if (isNineHoles) 1200 else 1600
+        height: Int = if (isNineHoles) 1200 else 1600,
+        showTeeInfo: Boolean = true
     ): Bitmap = withContext(Dispatchers.Main) {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -93,7 +94,11 @@ object ScorecardSharingUtils {
         canvas.drawText(round.clubName ?: "Golf Course", width / 2f, yPos + 80f, paint)
         
         paint.textSize = 28f
-        canvas.drawText("Daily HC: $dailyHandicap    Tee: $teeName", width / 2f, yPos + 110f, paint)
+        if (showTeeInfo) {
+            canvas.drawText("Daily HC: $dailyHandicap    Tee: $teeName", width / 2f, yPos + 110f, paint)
+        } else {
+            canvas.drawText("Daily HC: $dailyHandicap", width / 2f, yPos + 110f, paint)
+        }
         
         yPos += headerHeight + 20f
         

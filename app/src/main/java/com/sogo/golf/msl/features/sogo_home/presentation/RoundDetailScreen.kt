@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.ui.platform.LocalContext
 import com.sogo.golf.msl.features.play.presentation.ScorecardSharingViewModel
 import com.sogo.golf.msl.features.sogo_home.presentation.SogoGolfHomeViewModel
+import com.sogo.golf.msl.domain.model.msl.MslGame
 import org.threeten.bp.format.DateTimeFormatter
 
 data class RoundTotal(
@@ -45,6 +46,7 @@ fun RoundDetailScreen(
     val sharingViewModel: ScorecardSharingViewModel = hiltViewModel()
     val homeViewModel: SogoGolfHomeViewModel = hiltViewModel()
     val currentGolfer by homeViewModel.currentGolfer.collectAsState()
+    val localGame by homeViewModel.localGame.collectAsState()
     
     LaunchedEffect(roundId) {
         viewModel.fetchRoundDetail(roundId)
@@ -75,13 +77,14 @@ fun RoundDetailScreen(
                     IconButton(
                         onClick = {
                             detail?.let {
-                                val round = mapRoundDetailToRound(roundId, it, currentGolfer)
+                                val round = mapRoundDetailToRound(roundId, it, currentGolfer, localGame)
                                 val isNineHoles = it.holeScores.distinctBy { hs -> hs.holeNumber }.size == 9
                                 sharingViewModel.shareScorecard(
                                     context = context,
                                     round = round,
                                     mslCompetition = null,
-                                    isNineHoles = isNineHoles
+                                    isNineHoles = isNineHoles,
+                                    hideTeeInfo = true
                                 )
                             }
                         }
@@ -408,7 +411,8 @@ private fun calculateTotal(holes: List<RoundDetailHoleScore>, label: String): Ro
 private fun mapRoundDetailToRound(
     roundId: String,
     detail: RoundDetail,
-    golfer: com.sogo.golf.msl.domain.model.msl.MslGolfer?
+    golfer: com.sogo.golf.msl.domain.model.msl.MslGolfer?,
+    game: MslGame?
 ): com.sogo.golf.msl.domain.model.Round {
     val holeScores = detail.holeScores.sortedBy { it.holeNumber }.map { hs ->
         com.sogo.golf.msl.domain.model.HoleScore(
@@ -448,6 +452,6 @@ private fun mapRoundDetailToRound(
         golferLastName = golfer?.surname,
         golferGLNumber = golfer?.golfLinkNo,
         golfLinkHandicap = golfer?.primary?.toDouble(),
-        dailyHandicap = golfer?.primary?.toDouble()
+        dailyHandicap = game?.dailyHandicap?.toDouble()
     )
 }

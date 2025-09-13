@@ -38,7 +38,8 @@ class ScorecardSharingViewModel @Inject constructor(
         context: Context,
         round: Round,
         mslCompetition: MslCompetition?,
-        isNineHoles: Boolean
+        isNineHoles: Boolean,
+        hideTeeInfo: Boolean = false
     ) {
         android.util.Log.d("ScorecardSharingViewModel", "shareScorecard called")
         
@@ -65,7 +66,8 @@ class ScorecardSharingViewModel @Inject constructor(
                     selectedPlayer = currentState.selectedPlayer,
                     isNineHoles = isNineHoles,
                     width = 1080,
-                    height = if (isNineHoles) 1200 else 1600
+                    height = if (isNineHoles) 1200 else 1600,
+                    showTeeInfo = !hideTeeInfo
                 )
                 
                 android.util.Log.d("ScorecardSharingViewModel", "Bitmap captured, optimizing")
