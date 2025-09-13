@@ -20,6 +20,11 @@ import androidx.navigation.NavController
 import com.sogo.golf.msl.domain.model.mongodb.RoundDetail
 import com.sogo.golf.msl.domain.model.mongodb.RoundDetailHoleScore
 import com.sogo.golf.msl.ui.theme.MSLColors
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.ui.platform.LocalContext
+import com.sogo.golf.msl.features.play.presentation.ScorecardSharingViewModel
+import com.sogo.golf.msl.features.sogo_home.presentation.SogoGolfHomeViewModel
+import com.sogo.golf.msl.domain.model.msl.MslGame
 import org.threeten.bp.format.DateTimeFormatter
 
 data class RoundTotal(
@@ -37,6 +42,11 @@ fun RoundDetailScreen(
     viewModel: RoundDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val sharingViewModel: ScorecardSharingViewModel = hiltViewModel()
+    val homeViewModel: SogoGolfHomeViewModel = hiltViewModel()
+    val currentGolfer by homeViewModel.currentGolfer.collectAsState()
+    val localGame by homeViewModel.localGame.collectAsState()
     
     LaunchedEffect(roundId) {
         viewModel.fetchRoundDetail(roundId)
@@ -58,6 +68,30 @@ fun RoundDetailScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                },
+                actions = {
+                    val detail = uiState.roundDetail
+                    IconButton(
+                        onClick = {
+                            detail?.let {
+                                val round = mapRoundDetailToRound(roundId, it, currentGolfer, localGame)
+                                val isNineHoles = it.holeScores.distinctBy { hs -> hs.holeNumber }.size == 9
+                                sharingViewModel.shareScorecard(
+                                    context = context,
+                                    round = round,
+                                    mslCompetition = null,
+                                    isNineHoles = isNineHoles,
+                                    hideTeeInfo = true
+                                )
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Share,
+                            contentDescription = "Share scorecard",
                             tint = Color.White
                         )
                     }
@@ -371,5 +405,53 @@ private fun calculateTotal(holes: List<RoundDetailHoleScore>, label: String): Ro
         par = holes.sumOf { it.par },
         strokes = holes.sumOf { it.strokes },
         score = holes.sumOf { it.score }
+    )
+}
+
+private fun mapRoundDetailToRound(
+    roundId: String,
+    detail: RoundDetail,
+    golfer: com.sogo.golf.msl.domain.model.msl.MslGolfer?,
+    game: MslGame?
+): com.sogo.golf.msl.domain.model.Round {
+    val holeScores = detail.holeScores.sortedBy { it.holeNumber }.map { hs ->
+        com.sogo.golf.msl.domain.model.HoleScore(
+            par = hs.par,
+            playedPar = hs.playedPar,
+            parCourse = hs.parCourse,
+            holeNumber = hs.holeNumber,
+            strokes = hs.strokes,
+            score = hs.score.toFloat(),
+            whsStableford = hs.whsStableford?.toFloat(),
+            whsPar = hs.whsPar,
+            whsStroke = hs.whsStroke,
+            whsMaximumScore = hs.whsMaximumScore,
+            playedHcpIndex = hs.playedHcpIndex,
+            index1 = hs.index1,
+            index2 = hs.index2,
+            index3 = hs.index3,
+            meters = hs.meters,
+            isBallPickedUp = hs.isBallPickedUp,
+            isHoleNotPlayed = hs.isHoleNotPlayed,
+            startTime = hs.startTime,
+            startLocation = null,
+            finishTime = hs.finishTime,
+            finishLocation = null
+        )
+    }
+    return com.sogo.golf.msl.domain.model.Round(
+        id = roundId,
+        roundDate = detail.roundDate,
+        clubName = detail.clubName,
+        compType = detail.compType,
+        scratchRating = detail.scratchRating,
+        slopeRating = detail.slopeRating,
+        teeColor = detail.teeColor,
+        holeScores = holeScores,
+        golferFirstName = golfer?.firstName,
+        golferLastName = golfer?.surname,
+        golferGLNumber = golfer?.golfLinkNo,
+        golfLinkHandicap = golfer?.primary?.toDouble(),
+        dailyHandicap = game?.dailyHandicap?.toDouble()
     )
 }
