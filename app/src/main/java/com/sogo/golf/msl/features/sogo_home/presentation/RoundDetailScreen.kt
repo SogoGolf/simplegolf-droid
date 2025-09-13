@@ -447,6 +447,7 @@ private fun mapRoundDetailToRound(
         golferFirstName = golfer?.firstName,
         golferLastName = golfer?.surname,
         golferGLNumber = golfer?.golfLinkNo,
-        golfLinkHandicap = golfer?.primary?.toDouble()
+        golfLinkHandicap = golfer?.primary?.toDouble(),
+        dailyHandicap = golfer?.primary?.toDouble()
     )
 }
