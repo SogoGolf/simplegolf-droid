@@ -355,7 +355,7 @@ fun GolferScorecard(
                                     Text(
                                         text = "Share",
                                         style = MaterialTheme.typography.bodySmall,
-                                        fontSize = 10.sp,
+                                        fontSize = 12.sp,
                                         color = Color.White.copy(alpha = iconAlpha),
                                         textAlign = TextAlign.Center,
                                         maxLines = 1
