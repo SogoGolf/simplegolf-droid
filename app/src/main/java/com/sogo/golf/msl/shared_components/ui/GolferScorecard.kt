@@ -335,21 +335,28 @@ fun GolferScorecard(
                         modifier = Modifier.weight(1f),
                         leadingIcon = {
                             if (onShareClicked != null) {
+                                val isGolferTabActive = selectedTab.value == "golfer"
+                                val iconAlpha = if (isGolferTabActive) 1f else 0.5f
+                                
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally,
-                                    modifier = Modifier.clickable { onShareClicked() }
+                                    modifier = Modifier.clickable { 
+                                        if (isGolferTabActive) {
+                                            onShareClicked()
+                                        }
+                                    }
                                 ) {
                                     Icon(
                                         imageVector = Icons.Filled.Share,
                                         contentDescription = "Share scorecard",
-                                        tint = Color.White,
+                                        tint = Color.White.copy(alpha = iconAlpha),
                                         modifier = Modifier.size(24.dp)
                                     )
                                     Text(
                                         text = "Share",
                                         style = MaterialTheme.typography.bodySmall,
                                         fontSize = 10.sp,
-                                        color = Color.White,
+                                        color = Color.White.copy(alpha = iconAlpha),
                                         textAlign = TextAlign.Center,
                                         maxLines = 1
                                     )
