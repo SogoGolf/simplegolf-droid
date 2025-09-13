@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -334,11 +335,23 @@ fun GolferScorecard(
                         modifier = Modifier.weight(1f),
                         leadingIcon = {
                             if (onShareClicked != null) {
-                                IconButton(onClick = onShareClicked) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier.clickable { onShareClicked() }
+                                ) {
                                     Icon(
                                         imageVector = Icons.Filled.Share,
                                         contentDescription = "Share scorecard",
-                                        tint = Color.White
+                                        tint = Color.White,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Text(
+                                        text = "Share",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontSize = 10.sp,
+                                        color = Color.White,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1
                                     )
                                 }
                             }
