@@ -17,7 +17,10 @@ import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.exception.TokenRefreshException
 import io.sentry.Sentry
 import io.sentry.Sentry.logger
+import io.sentry.SentryAttribute
+import io.sentry.SentryAttributes
 import io.sentry.SentryLogLevel
+import io.sentry.logger.SentryLogParameters
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -309,6 +312,22 @@ class MslRepositoryImpl @Inject constructor(
             } else {
                 Log.e(TAG, "❌ Failed to select marker: ${response.code()} - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
+                val errorBody = response.errorBody()?.string()
+
+                logger().log(
+                    SentryLogLevel.ERROR,
+                    SentryLogParameters.create(
+                        SentryAttributes.of(
+                            SentryAttribute.stringAttribute("player_golflink_number", playerGolfLinkNumber),
+                            SentryAttribute.stringAttribute("club_id", clubIdStr),
+                            SentryAttribute.stringAttribute("http_message", response.message()),
+                            SentryAttribute.stringAttribute("response_body", errorBody ?: "null")
+                        )
+                    ),
+                    "Failed to select marker ${playerGolfLinkNumber}"
+                )
+
+
                 throw Exception("Failed to select marker: ${response.message()}")
             }
         }

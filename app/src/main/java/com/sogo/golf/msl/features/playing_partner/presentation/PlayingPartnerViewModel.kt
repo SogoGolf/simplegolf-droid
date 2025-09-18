@@ -452,6 +452,8 @@ class PlayingPartnerViewModel @Inject constructor(
 
                 // Step 2: Call PUT marker API
                 Log.d("PlayingPartnerVM", "🔄 Step 2: Calling PUT marker API...")
+
+
                 when (val markerResult = selectMarkerUseCase(selectedPartner.golfLinkNumber)) {
                     is NetworkResult.Success -> {
                         Log.d("PlayingPartnerVM", "✅ Marker selected successfully")
