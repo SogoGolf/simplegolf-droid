@@ -151,6 +151,26 @@ class CalcHoleNetParUseCaseTest {
     }
 
     @Test
+    fun testNetPar_UsesSecondStrokeIndex_WhenProvided() {
+        val hole = HoleScoreForCalcs(par = 3, index1 = 6, index2 = 33, index3 = 55)
+        val handicap = 29.0
+
+        val result = calcHoleNetParUseCase.invoke(hole, handicap)
+
+        assertEquals(4.0, result, 0.01)
+    }
+
+    @Test
+    fun testNetPar_MissingThirdIndex_DoesNotGrantExtraStroke() {
+        val hole = HoleScoreForCalcs(par = 4, index1 = 8, index2 = 30, index3 = 0)
+        val handicap = 40.0
+
+        val result = calcHoleNetParUseCase.invoke(hole, handicap)
+
+        assertEquals(6.0, result, 0.01)
+    }
+
+    @Test
     fun testNetPar_HandicapAbove36_BoundaryTests() {
         val hole = createPar4Hole(index = 10)
         

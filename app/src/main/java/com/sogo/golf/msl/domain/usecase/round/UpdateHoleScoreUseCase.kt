@@ -150,12 +150,7 @@ class UpdateHoleScoreUseCase @Inject constructor(
                 correctPartner?.dailyHandicap?.toDouble() ?: 0.0
             }
 
-            val holeScoreForCalcs = HoleScoreForCalcs(
-                par = holeScore.par,
-                index1 = holeScore.index1,
-                index2 = holeScore.index2,
-                index3 = holeScore.index3 ?: 0
-            )
+            val holeScoreForCalcs = mapToHoleScoreForCalcs(holeScore)
 
             when (scoreType.lowercase()) {
                 "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
@@ -173,3 +168,16 @@ class UpdateHoleScoreUseCase @Inject constructor(
     }
 
 }
+
+    private fun mapToHoleScoreForCalcs(holeScore: com.sogo.golf.msl.domain.model.HoleScore): HoleScoreForCalcs {
+        val index1 = holeScore.index1
+        val index2 = holeScore.index2.takeIf { it > 0 } ?: (index1 + 18)
+        val index3 = holeScore.index3?.takeIf { it > 0 } ?: (index2 + 18)
+
+        return HoleScoreForCalcs(
+            par = holeScore.par,
+            index1 = index1,
+            index2 = index2,
+            index3 = index3
+        )
+    }

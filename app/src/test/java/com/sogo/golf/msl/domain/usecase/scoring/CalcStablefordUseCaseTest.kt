@@ -144,6 +144,17 @@ class CalcStablefordUseCaseTest {
         assertNotEquals(2.0f, result, 0.01F)
     }
 
+    @Test
+    fun testStableford_UsesSecondStrokeIndex_WhenProvided() {
+        val hole = HoleScoreForCalcs(par = 3, index1 = 6, index2 = 33, index3 = 55)
+        val handicap = 29.0
+        val strokes = 3
+
+        val result = calcStablefordUseCase.invoke(hole, handicap, strokes)
+
+        assertEquals(3.0F, result, 0.01F)
+    }
+
 
     @Test
     fun testStableford_HoleInOne_Par5_ScratchGolfer_Returns6Points() {

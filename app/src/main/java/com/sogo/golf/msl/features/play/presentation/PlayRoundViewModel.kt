@@ -975,11 +975,13 @@ class PlayRoundViewModel @Inject constructor(
         scoreType: String
     ): Int {
         return try {
+            val sanitizedIndex2 = if (index2 > 0) index2 else index1 + 18
+            val sanitizedIndex3 = if (index3 > 0) index3 else sanitizedIndex2 + 18
             val holeScoreForCalcs = HoleScoreForCalcs(
                 par = par,
                 index1 = index1,
-                index2 = index2,
-                index3 = index3
+                index2 = sanitizedIndex2,
+                index3 = sanitizedIndex3
             )
 
             // Debug logging for scoring discrepancy investigation
