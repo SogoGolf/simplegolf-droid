@@ -972,7 +972,8 @@ class PlayRoundViewModel @Inject constructor(
         index2: Int,
         index3: Int,
         dailyHandicap: Double,
-        scoreType: String
+        scoreType: String,
+        extraStrokes: Int? = null
     ): Int {
         return try {
             val sanitizedIndex2 = if (index2 > 0) index2 else index1 + 18
@@ -994,16 +995,17 @@ class PlayRoundViewModel @Inject constructor(
             Log.d("PlayRoundVM", "  index3: $index3")
             Log.d("PlayRoundVM", "  dailyHandicap: $dailyHandicap")
             Log.d("PlayRoundVM", "  scoreType: $scoreType")
-            
+            Log.d("PlayRoundVM", "  extraStrokes: $extraStrokes")
+
             // Calculate net par to see intermediate result
-            val netPar = calcHoleNetParUseCase.invoke(holeScoreForCalcs, dailyHandicap)
+            val netPar = calcHoleNetParUseCase.invoke(holeScoreForCalcs, dailyHandicap, extraStrokes)
             Log.d("PlayRoundVM", "  calculated netPar: $netPar")
 
             val score = when (scoreType.lowercase()) {
-                "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
-                "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap) ?: 0f
-                "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap)
-                else -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
+                "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes, extraStrokes)
+                "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap, extraStrokes) ?: 0f
+                "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap, extraStrokes)
+                else -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes, extraStrokes)
             }
 
             Log.d("PlayRoundVM", "  calculated score (float): $score")

@@ -5,51 +5,18 @@ import javax.inject.Inject
 
 class CalcHoleNetParUseCase @Inject constructor() {
 
-    operator fun invoke(roundHole: HoleScoreForCalcs, dailyHandicap: Double): Double {
-        return calculateHoleNetPar(roundHole, dailyHandicap)
+    operator fun invoke(roundHole: HoleScoreForCalcs, dailyHandicap: Double, extraStrokes: Int? = null): Double {
+        return calculateHoleNetPar(roundHole, dailyHandicap, extraStrokes)
     }
 
-    private fun calculateHoleNetPar(roundHole: HoleScoreForCalcs, dailyHandicap: Double): Double {
-        val index1 = roundHole.index1
-        val index2 = if (roundHole.index2 > 0) {
-            roundHole.index2
-        } else {
-            index1 + 18
-        }
-        val index3 = if (roundHole.index3 > 0) {
-            roundHole.index3
-        } else {
-            index2 + 18
+    private fun calculateHoleNetPar(roundHole: HoleScoreForCalcs, dailyHandicap: Double, extraStrokes: Int? = null): Double {
+        // Always require extraStrokes from the API - never fallback to calculation
+        if (extraStrokes == null) {
+            throw IllegalStateException("extraStrokes is required but was null. Competition data may be incomplete.")
         }
 
-        return when {
-            dailyHandicap in 1.0..18.0 -> {
-                if (dailyHandicap >= index1.toDouble()) {
-                    roundHole.par + 1.0
-                } else {
-                    roundHole.par.toDouble()
-                }
-            }
-            dailyHandicap in 19.0..36.0 -> {
-                val baseStroke = 1.0
-                val extraStroke = if (dailyHandicap >= index2.toDouble()) 1.0 else 0.0
-                roundHole.par.toDouble() + baseStroke + extraStroke
-            }
-            dailyHandicap > 36.0 -> {
-                if (dailyHandicap >= index3.toDouble()) {
-                    roundHole.par + 3.0
-                } else {
-                    roundHole.par + 2.0
-                }
-            }
-            dailyHandicap <= 0.0 -> {
-                if (dailyHandicap + 19 <= roundHole.index1.toDouble()) {
-                    roundHole.par - 1.0
-                } else {
-                    roundHole.par.toDouble()
-                }
-            }
-            else -> roundHole.par.toDouble()
-        }
+        val netPar = roundHole.par.toDouble() + extraStrokes.toDouble()
+        android.util.Log.d("CalcHoleNetPar", "par=${roundHole.par}, extraStrokes=${extraStrokes}, netPar=${netPar}, dailyHandicap=${dailyHandicap}")
+        return netPar
     }
 }

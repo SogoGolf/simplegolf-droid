@@ -24,10 +24,16 @@ data class MslPlayer(
 
 data class MslHole(
     val par: Int,
-    val strokes: Int,
-    val strokeIndexes: List<Int>,
+    val strokeIndexes: List<StrokeIndex>,
     val distance: Int,
     val holeNumber: Int,
     val holeName: String?,
-    val holeAlias: String?
+    val holeAlias: String?,
+    val extraStrokes: Int
+)
+
+data class StrokeIndex(
+    val courseHandicapFrom: Int,
+    val courseHandicapTo: Int,
+    val stroke: Int
 )

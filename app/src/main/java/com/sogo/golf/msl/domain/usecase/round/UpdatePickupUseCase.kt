@@ -37,6 +37,12 @@ class UpdatePickupUseCase @Inject constructor(
         index3: Int?
     ) {
         try {
+            // Look up extraStrokes from competition data
+            val competition = getLocalCompetitionUseCase().first()
+            val extraStrokes = competition?.players?.firstOrNull()?.holes
+                ?.find { it.holeNumber == holeNumber }
+                ?.extraStrokes
+
             val sanitizedIndex2 = if (index2 > 0) index2 else index1 + 18
             val sanitizedIndex3 = index3?.takeIf { it > 0 } ?: (sanitizedIndex2 + 18)
             val holeScoreForCalcs = HoleScoreForCalcs(
@@ -45,7 +51,7 @@ class UpdatePickupUseCase @Inject constructor(
                 index2 = sanitizedIndex2,
                 index3 = sanitizedIndex3
             )
-            val netPar = calcHoleNetParUseCase(holeScoreForCalcs, dailyHandicap)
+            val netPar = calcHoleNetParUseCase(holeScoreForCalcs, dailyHandicap, extraStrokes)
             val newStrokes = netPar.toInt() + 2
             
             Log.d("UpdatePickup", "Setting pickup for hole $holeNumber, netPar: $netPar, strokes: $newStrokes")
@@ -139,8 +145,23 @@ class UpdatePickupUseCase @Inject constructor(
                 return 0f
             }
 
-            val scoreType = competition.players.firstOrNull()?.scoreType ?: "Stableford"
-            
+            // Find the correct player in competition data based on who we're calculating for
+            val currentGolfer = getMslGolferUseCase().first()
+            val (dailyHandicap, playerGolfLinkNumber) = if (isMainGolfer) {
+                Pair(game.dailyHandicap?.toDouble() ?: 0.0, currentGolfer?.golfLinkNo)
+            } else {
+                val correctPartner = game.playingPartners.find { partner ->
+                    partner.markedByGolfLinkNumber == currentGolfer?.golfLinkNo
+                }
+                Pair(correctPartner?.dailyHandicap?.toDouble() ?: 0.0, correctPartner?.golfLinkNumber)
+            }
+
+            // Look up scoreType and extraStrokes from the CORRECT player's competition data
+            val competitionPlayer = competition.players.find { player ->
+                player.golfLinkNumber == playerGolfLinkNumber
+            }
+            val scoreType = competitionPlayer?.scoreType ?: "Stableford"
+
             if (isBallPickedUp) {
                 // For Par rounds, pickup results in -1 point
                 // For other rounds (Stableford, Stroke), pickup results in 0 points
@@ -148,30 +169,26 @@ class UpdatePickupUseCase @Inject constructor(
                 Log.d("UpdatePickup", "Ball picked up - scoreType: $scoreType, setting score to $pickupScore")
                 return pickupScore
             }
-            
+
             if (strokes == 0) {
                 return 0f
             }
-            
-            val dailyHandicap = if (isMainGolfer) {
-                game.dailyHandicap?.toDouble() ?: 0.0
-            } else {
-                val currentGolfer = getMslGolferUseCase().first()
-                val correctPartner = game.playingPartners.find { partner ->
-                    partner.markedByGolfLinkNumber == currentGolfer?.golfLinkNo
-                }
-                correctPartner?.dailyHandicap?.toDouble() ?: 0.0
-            }
+            val extraStrokes = competitionPlayer?.holes
+                ?.find { it.holeNumber == holeScore.holeNumber }
+                ?.extraStrokes
+
+            val playerName = "${competitionPlayer?.firstName ?: "?"} ${competitionPlayer?.lastName ?: "?"}"
+            Log.d("UpdatePickup", "Player: $playerName, Hole ${holeScore.holeNumber}: extraStrokes=${extraStrokes}, dailyHandicap=${dailyHandicap}, golfLinkNo=${playerGolfLinkNumber}")
 
             val holeScoreForCalcs = mapToHoleScoreForCalcs(holeScore)
 
             val calculatedScore = when (scoreType.lowercase()) {
-                "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
-                "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap) ?: 0f
-                "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap)
+                "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes, extraStrokes)
+                "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap, extraStrokes) ?: 0f
+                "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap, extraStrokes)
                 else -> {
                     Log.w("UpdatePickup", "Unknown score type: $scoreType, defaulting to Stableford")
-                    calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
+                    calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes, extraStrokes)
                 }
             }
             

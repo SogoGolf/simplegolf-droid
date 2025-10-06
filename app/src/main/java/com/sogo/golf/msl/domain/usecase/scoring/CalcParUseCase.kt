@@ -6,8 +6,8 @@ import javax.inject.Inject
 class CalcParUseCase @Inject constructor(
     private val calcHoleNetParUseCase: CalcHoleNetParUseCase
 ) {
-    operator fun invoke(strokes: Int, roundHole: HoleScoreForCalcs, dailyHandicap: Double): Float? {
-        val netPar = calcHoleNetParUseCase.invoke(roundHole, dailyHandicap)
+    operator fun invoke(strokes: Int, roundHole: HoleScoreForCalcs, dailyHandicap: Double, extraStrokes: Int? = null): Float? {
+        val netPar = calcHoleNetParUseCase.invoke(roundHole, dailyHandicap, extraStrokes)
         val netParInt = netPar.toInt()
 
         return when {

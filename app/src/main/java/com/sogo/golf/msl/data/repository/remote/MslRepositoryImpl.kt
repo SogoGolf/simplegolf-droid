@@ -230,7 +230,7 @@ class MslRepositoryImpl @Inject constructor(
             Log.d(TAG, "Getting competition data for club: $clubId")
 
             // Headers automatically added by GolfApiAuthInterceptor
-            val response = golfApiService.getCompetition(clubId = clubId)
+            val response = golfApiService.getGolferInfo(clubId = clubId)
 
             // Check for token refresh failure indicator
             if (response.code() == 401 && response.headers()["X-Token-Refresh-Failed"] == "true") {
@@ -252,7 +252,10 @@ class MslRepositoryImpl @Inject constructor(
                 Log.d(TAG, "=== AFTER MAPPING TO DOMAIN MODEL ===")
                 Log.d(TAG, "Competition players count: ${competition.players.size}")
                 competition.players.forEach { player ->
-                    Log.d(TAG, "Player: ${player.firstName} ${player.lastName} - ${player.competitionName}")
+                    Log.d(TAG, "Player: ${player.firstName} ${player.lastName} - ${player.competitionName} - Handicap: ${player.dailyHandicap}")
+                    player.holes.take(3).forEach { hole ->
+                        Log.d(TAG, "  Hole ${hole.holeNumber}: par=${hole.par}, extraStrokes=${hole.extraStrokes}")
+                    }
                 }
 
                 Log.d(TAG, "Successfully retrieved competition with ${competition.players.size} players")

@@ -31,6 +31,12 @@ interface GolfApiService {
         @Path("clubId") clubId: String
     ): Response<MslCompetitionDto>
 
+    // Get competition data V3 ! The "golferinfo" endpoint is just badly named.
+    @GET("v3/{clubId}/golferinfo")
+    suspend fun getGolferInfo(
+        @Path("clubId") clubId: String
+    ): Response<MslCompetitionDto>
+
     // NEW: Marker endpoints
     @PUT("v2/{companyCode}/marker")
     suspend fun putMarker(

@@ -809,9 +809,9 @@ class PlayingPartnerViewModel @Inject constructor(
             HoleScore(
                 holeNumber = holeData.holeNumber,
                 par = holeData.par,
-                index1 = holeData.strokeIndexes.getOrNull(0) ?: 0,
-                index2 = holeData.strokeIndexes.getOrNull(1) ?: 0,
-                index3 = holeData.strokeIndexes.getOrNull(2) ?: 0,
+                index1 = holeData.strokeIndexes.getOrNull(0)?.stroke ?: 0,
+                index2 = holeData.strokeIndexes.getOrNull(1)?.stroke ?: 0,
+                index3 = holeData.strokeIndexes.getOrNull(2)?.stroke ?: 0,
                 meters = holeData.distance,
                 strokes = 0,
                 score = 0f,

@@ -297,10 +297,16 @@ private fun Screen4Portrait(
             // Extract tee colors from round data (each golfer has their own tee)
             val mainGolferTeeColor = currentRoundValue?.teeColor?.capitalize() ?: localGameValue?.teeColourName ?: "Black"
             val partnerTeeColor = currentRoundValue?.playingPartnerRound?.teeColor?.capitalize() ?: localGameValue?.teeColourName ?: "Black"
-            
-            // Extract competition data
-            val competitionType = localCompetitionValue?.players?.firstOrNull()?.scoreType ?: "Stableford"
-            
+
+            // Extract scoreType for EACH player from competition data
+            val mainGolferScoreType = localCompetitionValue?.players
+                ?.find { it.golfLinkNumber == currentGolferValue?.golfLinkNo }
+                ?.scoreType ?: "Stableford"
+
+            val partnerScoreType = localCompetitionValue?.players
+                ?.find { it.golfLinkNumber == playingPartner?.golfLinkNumber }
+                ?.scoreType ?: "Stableford"
+
             // Get hole data from the actual round data instead of competition
             // Main golfer's hole data
             val mainGolferHoleData = currentRoundValue?.holeScores?.find { 
@@ -344,6 +350,17 @@ private fun Screen4Portrait(
                 it.holeNumber == currentHoleNumber 
             }?.isBallPickedUp ?: false
 
+            // Look up extraStrokes from competition data for EACH player
+            val mainGolferExtraStrokes = localCompetitionValue?.players
+                ?.find { it.golfLinkNumber == currentGolferValue?.golfLinkNo }
+                ?.holes?.find { it.holeNumber == currentHoleNumber }
+                ?.extraStrokes
+
+            val partnerExtraStrokes = localCompetitionValue?.players
+                ?.find { it.golfLinkNumber == playingPartner?.golfLinkNumber }
+                ?.holes?.find { it.holeNumber == currentHoleNumber }
+                ?.extraStrokes
+
             // Calculate current points for display
             val mainGolferCurrentPoints = if (mainGolferStrokes > 0 && mainGolferHoleData != null) {
                 playRoundViewModel.calculateCurrentPoints(
@@ -353,7 +370,8 @@ private fun Screen4Portrait(
                     index2 = mainGolferHoleData.index2,
                     index3 = mainGolferHoleData.index3 ?: 0,
                     dailyHandicap = mainGolferDailyHandicap.toDouble(),
-                    scoreType = competitionType
+                    scoreType = mainGolferScoreType,
+                    extraStrokes = mainGolferExtraStrokes
                 )
             } else 0
 
@@ -365,7 +383,8 @@ private fun Screen4Portrait(
                     index2 = partnerHoleData.index2,
                     index3 = partnerHoleData.index3 ?: 0,
                     dailyHandicap = partnerDailyHandicap.toDouble(),
-                    scoreType = competitionType
+                    scoreType = partnerScoreType,
+                    extraStrokes = partnerExtraStrokes
                 )
             } else 0
 
@@ -374,7 +393,7 @@ private fun Screen4Portrait(
                 golferName = partnerDisplayName,
                 backgroundColor = mslBlue,
                 teeColor = partnerTeeColor,
-                competitionType = competitionType,
+                competitionType = partnerScoreType,
                 dailyHandicap = partnerDailyHandicap,
                 strokes = partnerStrokes,
                 currentPoints = partnerCurrentPoints,
@@ -411,7 +430,7 @@ private fun Screen4Portrait(
                 golferName = mainGolferName,
                 backgroundColor = mslGrey,
                 teeColor = mainGolferTeeColor,
-                competitionType = competitionType,
+                competitionType = mainGolferScoreType,
                 dailyHandicap = mainGolferDailyHandicap,
                 strokes = mainGolferStrokes,
                 currentPoints = mainGolferCurrentPoints,
