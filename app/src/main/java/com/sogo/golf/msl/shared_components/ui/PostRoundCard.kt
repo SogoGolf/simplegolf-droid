@@ -3,6 +3,9 @@ package com.sogo.golf.msl.shared_components.ui
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
+import kotlin.math.max
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -208,24 +211,43 @@ private fun SignaturePlaceholder(signerName: String) {
     }
 }
 
+private const val MAX_SIGNATURE_PIXELS = 1_000_000 // ≈4 MB in ARGB_8888
+
 private fun decodeBase64ToBitmap(base64String: String): Bitmap? {
     return try {
         val cleanBase64 = base64String.replace("data:image/png;base64,", "")
             .replace("data:image/jpeg;base64,", "")
         val decodedBytes = Base64.decode(cleanBase64, Base64.DEFAULT)
-        
-        val options = BitmapFactory.Options().apply {
+
+        val boundsOnly = BitmapFactory.Options().apply {
             inJustDecodeBounds = true
         }
-        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size, options)
-        
+        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size, boundsOnly)
+
         val maxDisplaySize = 400
-        options.inSampleSize = calculateInSampleSize(options, maxDisplaySize, maxDisplaySize)
-        options.inJustDecodeBounds = false
-        
-        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size, options)
+        val decodeOptions = BitmapFactory.Options().apply {
+            inJustDecodeBounds = false
+            inPreferredConfig = Bitmap.Config.RGB_565
+            inSampleSize = calculateInSampleSize(boundsOnly, maxDisplaySize, maxDisplaySize)
+        }
+
+        val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size, decodeOptions)
+        bitmap?.let { downscaleIfTooLarge(it, MAX_SIGNATURE_PIXELS) }
     } catch (e: Exception) {
         null
+    }
+}
+
+private fun downscaleIfTooLarge(bitmap: Bitmap, maxPixelCount: Int): Bitmap {
+    val currentPixels = bitmap.width * bitmap.height
+    if (currentPixels <= maxPixelCount) return bitmap
+
+    val scale = sqrt(maxPixelCount.toDouble() / currentPixels.toDouble())
+    val targetWidth = max(1, (bitmap.width * scale).roundToInt())
+    val targetHeight = max(1, (bitmap.height * scale).roundToInt())
+
+    return Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true).also {
+        if (it !== bitmap) bitmap.recycle()
     }
 }
 
