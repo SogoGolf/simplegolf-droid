@@ -16,7 +16,8 @@ import com.sogo.golf.msl.shared_components.ui.GolferScorecard
 @Composable
 fun ScorecardScreen(
     round: Round? = null,
-    mslCompetition: MslCompetition? = null
+    mslCompetition: MslCompetition? = null,
+    calculateScore: ((strokes: Int, par: Int, index1: Int, index2: Int, index3: Int, dailyHandicap: Double, scoreType: String) -> Int)? = null
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
@@ -42,7 +43,8 @@ fun ScorecardScreen(
                 mslCompetition = mslCompetition,
                 onPlayingPartnerClicked = {},
                 onGolferClicked = {},
-                isNineHoles = isNineHoles
+                isNineHoles = isNineHoles,
+                calculateScore = calculateScore
             )
         } else {
             Box(

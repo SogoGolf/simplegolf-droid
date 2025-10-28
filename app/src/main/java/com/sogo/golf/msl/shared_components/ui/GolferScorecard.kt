@@ -69,7 +69,8 @@ fun GolferScorecard(
     onPlayingPartnerClicked: () -> Unit,
     onGolferClicked: () -> Unit,
     isNineHoles: Boolean,
-    onScorecardViewed: () -> Unit = {}
+    onScorecardViewed: () -> Unit = {},
+    calculateScore: ((strokes: Int, par: Int, index1: Int, index2: Int, index3: Int, dailyHandicap: Double, scoreType: String) -> Int)? = null
 ) {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
@@ -218,6 +219,27 @@ fun GolferScorecard(
         for (holeNum in holesPlayed) {
             val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
             if (activeHole != null) {
+                // Calculate score live using the same method as portrait mode
+                val calculatedScore = if (activeHole.strokes > 0 && calculateScore != null) {
+                    val dailyHandicap = if (selectedTab.value == "golfer") {
+                        round.dailyHandicap?.toDouble() ?: 0.0
+                    } else {
+                        round.playingPartnerRound?.dailyHandicap?.toDouble() ?: 0.0
+                    }
+                    val scoreType = mslCompetition?.players?.firstOrNull()?.scoreType ?: "Stableford"
+                    calculateScore(
+                        activeHole.strokes,
+                        activeHole.par,
+                        activeHole.index1,
+                        activeHole.index2,
+                        activeHole.index3 ?: 0,
+                        dailyHandicap,
+                        scoreType
+                    )
+                } else {
+                    activeHole.score.toInt()
+                }
+                
                 columnData.add(
                     ScorecardData(
                         holeNumber = holeNum.toString(),
@@ -228,7 +250,7 @@ fun GolferScorecard(
                         index3 = activeHole.index3,
                         par = activeHole.par.toString(),
                         strokes = activeHole.strokes.toString(),
-                        score = activeHole.score.toInt().toString()
+                        score = calculatedScore.toString()
                     )
                 )
             }
@@ -241,6 +263,33 @@ fun GolferScorecard(
             else -> "SUBTOTAL"
         }
         
+        // Calculate subtotal score using live calculations if available
+        val subtotalScore = if (calculateScore != null) {
+            activeHoleScores.sumOf { hole ->
+                if (hole.strokes > 0) {
+                    val dailyHandicap = if (selectedTab.value == "golfer") {
+                        round.dailyHandicap?.toDouble() ?: 0.0
+                    } else {
+                        round.playingPartnerRound?.dailyHandicap?.toDouble() ?: 0.0
+                    }
+                    val scoreType = mslCompetition?.players?.firstOrNull()?.scoreType ?: "Stableford"
+                    calculateScore(
+                        hole.strokes,
+                        hole.par,
+                        hole.index1,
+                        hole.index2,
+                        hole.index3 ?: 0,
+                        dailyHandicap,
+                        scoreType
+                    )
+                } else {
+                    hole.score.toInt()
+                }
+            }
+        } else {
+            activeHoleScores.sumOf { it.score.toInt() }
+        }
+        
         columnData.add(
             ScorecardData(
                 holeNumber = subtotalName,
@@ -251,7 +300,7 @@ fun GolferScorecard(
                 index3 = null,
                 par = activeHoleScores.sumOf { it.par }.toString(),
                 strokes = activeHoleScores.sumOf { it.strokes }.toString(),
-                score = activeHoleScores.sumOf { it.score.toInt() }.toString()
+                score = subtotalScore.toString()
             )
         )
         
@@ -266,7 +315,7 @@ fun GolferScorecard(
                 index3 = null,
                 par = activeHoleScores.sumOf { it.par }.toString(),
                 strokes = activeHoleScores.sumOf { it.strokes }.toString(),
-                score = activeHoleScores.sumOf { it.score.toInt() }.toString()
+                score = subtotalScore.toString()
             )
         )
     }
