@@ -755,8 +755,11 @@ class PlayRoundViewModel @Inject constructor(
                 
                 android.util.Log.d("PlayRoundVM", "Main golfer hole $currentHole: $currentStrokes -> $newStrokes (par: $par)")
                 
-                // Update the round data and persist to database
-                updateRoundStrokesInDatabase(round, currentHole, newStrokes, isMainGolfer = true)
+                // OPTIMISTIC UPDATE: Update UI immediately
+                updateUIStateOptimistically(round, currentHole, newStrokes, isMainGolfer = true)
+                
+                // BACKGROUND PERSISTENCE: Update database in background
+                persistStrokesInBackground(round, currentHole, newStrokes, isMainGolfer = true)
                 
             } catch (e: Exception) {
                 android.util.Log.e("PlayRoundVM", "Error updating main golfer strokes", e)
@@ -792,8 +795,11 @@ class PlayRoundViewModel @Inject constructor(
                 
                 android.util.Log.d("PlayRoundVM", "Partner hole $currentHole: $currentStrokes -> $newStrokes (par: $par)")
                 
-                // Update the round data and persist to database
-                updateRoundStrokesInDatabase(round, currentHole, newStrokes, isMainGolfer = false)
+                // OPTIMISTIC UPDATE: Update UI immediately
+                updateUIStateOptimistically(round, currentHole, newStrokes, isMainGolfer = false)
+                
+                // BACKGROUND PERSISTENCE: Update database in background
+                persistStrokesInBackground(round, currentHole, newStrokes, isMainGolfer = false)
                 
             } catch (e: Exception) {
                 android.util.Log.e("PlayRoundVM", "Error updating partner strokes", e)
@@ -819,20 +825,127 @@ class PlayRoundViewModel @Inject constructor(
         }
     }
 
-    private suspend fun updateRoundStrokesInDatabase(
+    private fun updateUIStateOptimistically(
         round: com.sogo.golf.msl.domain.model.Round,
         holeNumber: Int,
         newStrokes: Int,
         isMainGolfer: Boolean
     ) {
         try {
-            updateHoleScoreUseCase(round, holeNumber, newStrokes, isMainGolfer)
-            android.util.Log.d("PlayRoundVM", "✅ Hole score updated - Hole $holeNumber, Strokes: $newStrokes, Main golfer: $isMainGolfer")
+            val updatedRound = if (isMainGolfer) {
+                val updatedHoleScores = round.holeScores.map { holeScore ->
+                    if (holeScore.holeNumber == holeNumber) {
+                        val newScore = calculateScoreOptimistically(newStrokes, holeScore, isMainGolfer = true)
+                        holeScore.copy(
+                            strokes = newStrokes,
+                            score = newScore
+                        )
+                    } else {
+                        holeScore
+                    }
+                }
+                round.copy(
+                    holeScores = updatedHoleScores,
+                    lastUpdated = System.currentTimeMillis(),
+                    isSynced = false
+                )
+            } else {
+                val updatedPartnerRound = round.playingPartnerRound?.let { partnerRound ->
+                    val updatedHoleScores = partnerRound.holeScores.map { holeScore ->
+                        if (holeScore.holeNumber == holeNumber) {
+                            val newScore = calculateScoreOptimistically(newStrokes, holeScore, isMainGolfer = false)
+                            holeScore.copy(
+                                strokes = newStrokes,
+                                score = newScore
+                            )
+                        } else {
+                            holeScore
+                        }
+                    }
+                    partnerRound.copy(holeScores = updatedHoleScores)
+                }
+                round.copy(
+                    playingPartnerRound = updatedPartnerRound,
+                    lastUpdated = System.currentTimeMillis(),
+                    isSynced = false
+                )
+            }
             
-            loadCurrentRound()
+            _currentRound.value = updatedRound
+            android.util.Log.d("PlayRoundVM", "✅ UI updated optimistically - Hole $holeNumber, Strokes: $newStrokes, Main golfer: $isMainGolfer")
             
         } catch (e: Exception) {
-            android.util.Log.e("PlayRoundVM", "❌ Error updating round strokes in database", e)
+            android.util.Log.e("PlayRoundVM", "❌ Error updating UI optimistically", e)
+        }
+    }
+
+    private fun calculateScoreOptimistically(
+        strokes: Int, 
+        holeScore: com.sogo.golf.msl.domain.model.HoleScore,
+        isMainGolfer: Boolean
+    ): Float {
+        return try {
+            if (strokes == 0) {
+                return 0f
+            }
+            
+            val competition = localCompetition.value
+            val game = localGame.value
+            
+            if (competition == null || game == null) {
+                android.util.Log.w("PlayRoundVM", "Missing competition or game data for optimistic score calculation")
+                return 0f
+            }
+
+            val scoreType = competition.players.firstOrNull()?.scoreType ?: "Stableford"
+            val dailyHandicap = if (isMainGolfer) {
+                game.dailyHandicap?.toDouble() ?: 0.0
+            } else {
+                val currentGolfer = currentGolfer.value
+                val correctPartner = game.playingPartners.find { partner ->
+                    partner.markedByGolfLinkNumber == currentGolfer?.golfLinkNo
+                }
+                correctPartner?.dailyHandicap?.toDouble() ?: 0.0
+            }
+
+            val holeScoreForCalcs = HoleScoreForCalcs(
+                par = holeScore.par,
+                index1 = holeScore.index1,
+                index2 = holeScore.index2,
+                index3 = holeScore.index3 ?: 0
+            )
+
+            when (scoreType.lowercase()) {
+                "stableford" -> calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
+                "par" -> calcParUseCase(strokes, holeScoreForCalcs, dailyHandicap) ?: 0f
+                "stroke" -> calcStrokeUseCase(strokes, holeScoreForCalcs, dailyHandicap)
+                else -> {
+                    android.util.Log.w("PlayRoundVM", "Unknown score type: $scoreType, defaulting to Stableford")
+                    calcStablefordUseCase(holeScoreForCalcs, dailyHandicap, strokes)
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("PlayRoundVM", "Error calculating optimistic score", e)
+            0f
+        }
+    }
+
+    private fun persistStrokesInBackground(
+        round: com.sogo.golf.msl.domain.model.Round,
+        holeNumber: Int,
+        newStrokes: Int,
+        isMainGolfer: Boolean
+    ) {
+        viewModelScope.launch {
+            try {
+                updateHoleScoreUseCase(round, holeNumber, newStrokes, isMainGolfer)
+                android.util.Log.d("PlayRoundVM", "✅ Background persistence completed - Hole $holeNumber, Strokes: $newStrokes, Main golfer: $isMainGolfer")
+                
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "❌ Background persistence failed - reverting UI", e)
+                
+                loadCurrentRound()
+            }
         }
     }
 
