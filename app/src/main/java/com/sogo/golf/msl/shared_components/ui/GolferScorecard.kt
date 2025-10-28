@@ -14,9 +14,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,12 +35,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,7 +73,8 @@ fun GolferScorecard(
     onPlayingPartnerClicked: () -> Unit,
     onGolferClicked: () -> Unit,
     isNineHoles: Boolean,
-    onScorecardViewed: () -> Unit = {}
+    onScorecardViewed: () -> Unit = {},
+    onShareClicked: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val activity = context as? ComponentActivity
@@ -277,26 +282,31 @@ fun GolferScorecard(
             .background(Color.White)
             .padding(16.dp)
     ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val density = LocalDensity.current
-            var tabsHeight by remember { mutableStateOf(80.dp) }
+        val configuration = LocalConfiguration.current
+        val screenHeight = configuration.screenHeightDp.dp
+        val screenWidth = configuration.screenWidthDp.dp
+        
+        // Calculate responsive header height based on screen size
+        val headerHeight = when {
+            screenHeight >= 800.dp -> 96.dp
+            screenHeight >= 600.dp -> 88.dp
+            else -> 80.dp
+        }
 
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Top
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Top
+        ) {
+            val golferTeeName = getTeeName(mslCompetition, round.golferGLNumber)
+            val partnerTeeName = getTeeName(mslCompetition, round.playingPartnerRound?.golferGLNumber)
+
+            // Tab Headers with fixed height
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(headerHeight),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                val golferTeeName = getTeeName(mslCompetition, round.golferGLNumber)
-                val partnerTeeName = getTeeName(mslCompetition, round.playingPartnerRound?.golferGLNumber)
-
-                // Tab Headers (measure height)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onGloballyPositioned { coords ->
-                            tabsHeight = with(density) { coords.size.height.toDp() }
-                        },
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
                     // Playing Partner Tab (Left)
                     round.playingPartnerRound?.let { partner ->
                         TabHeader(
@@ -322,7 +332,37 @@ fun GolferScorecard(
                             selectedTab.value = "golfer"
                             onGolferClicked()
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        leadingIcon = {
+                            if (onShareClicked != null) {
+                                val isGolferTabActive = selectedTab.value == "golfer"
+                                val iconAlpha = if (isGolferTabActive) 1f else 0.5f
+                                
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = if (isGolferTabActive) {
+                                        Modifier.clickable { onShareClicked() }
+                                    } else {
+                                        Modifier
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Share,
+                                        contentDescription = "Share scorecard",
+                                        tint = Color.White.copy(alpha = iconAlpha),
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    Text(
+                                        text = "Share",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontSize = 12.sp,
+                                        color = Color.White.copy(alpha = iconAlpha),
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
                     )
                 }
 
@@ -332,8 +372,9 @@ fun GolferScorecard(
                 val rowLabels = listOf("Meters", "Index", "Par", "Strokes", "Score")
                 val totalRows = 1 + rowLabels.size // header + data rows
 
-                // Available height for the grid is the BoxWithConstraints maxHeight minus measured header+spacer
-                val availableForTable = (this@BoxWithConstraints.maxHeight - tabsHeight - 3.dp).coerceAtLeast(0.dp)
+                // Calculate available height immediately using screen dimensions
+                // Account for outer padding (16.dp top + 16.dp bottom) + header + spacer
+                val availableForTable = (screenHeight - 32.dp - headerHeight - 3.dp).coerceAtLeast(0.dp)
                 val responsiveCellHeight = (availableForTable / totalRows).coerceAtLeast(32.dp)
 
                 // Determine text sizes based on cell height - maximized for better readability
@@ -368,15 +409,14 @@ fun GolferScorecard(
                 val inColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "in" }
                 val totalColumnIndex = columnData.indexOfFirst { it.holeNumber.lowercase() == "total" }
 
-                key(responsiveCellHeight) {
-                    TableWithFixedFirstColumnSCORECARD(
+                TableWithFixedFirstColumnSCORECARD(
                         columnCount = columnCount,
                         cellWidth = { columnIndex ->
                             val dataIndex = columnIndex - 1
                             if (dataIndex == totalColumnIndex) {
-                                (screenWidth * 0.10).dp  // TOTAL column keeps original width
+                                (screenWidth.value * 0.10f).dp  // TOTAL column keeps original width
                             } else {
-                                (screenWidth * 0.088).dp  // Other columns use 12% reduced width
+                                (screenWidth.value * 0.088f).dp  // Other columns use 12% reduced width
                             }
                         },
                         firstColumnWidth = { 100.dp },
@@ -534,10 +574,8 @@ fun GolferScorecard(
                             }
                         }
                     )
-                }
             }
         }
-    }
 }
 
 private fun getTeeName(mslCompetition: MslCompetition?, golfLinkNumber: String?): String {
@@ -553,42 +591,60 @@ fun TabHeader(
     teeName: String,
     isActive: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    leadingIcon: (@Composable () -> Unit)? = null
 ) {
     val backgroundColor = if (isActive) mslBlue else mslGrey.copy(alpha = 0.6f)
     val textColor = Color.White
     
-    Column(
+    Row(
         modifier = modifier
             .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
             .background(backgroundColor)
-            .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = textColor,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            fontSize = 16.sp,
-            color = textColor.copy(alpha = 0.9f),
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = "$teeName Tee",
-            style = MaterialTheme.typography.bodyLarge,
-            fontSize = 18.sp,
-            color = textColor,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center
-        )
+        leadingIcon?.let { icon ->
+            icon()
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable { onClick() },
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = textColor,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 16.sp,
+                color = textColor.copy(alpha = 0.9f),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "$teeName Tee",
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 18.sp,
+                color = textColor,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
@@ -737,6 +793,7 @@ fun GolferScorecardPreview() {
         mslCompetition = null,
         onPlayingPartnerClicked = {},
         onGolferClicked = {},
-        isNineHoles = false
+        isNineHoles = false,
+        onShareClicked = {}
     )
 }

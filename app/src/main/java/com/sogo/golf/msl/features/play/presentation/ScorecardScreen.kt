@@ -8,7 +8,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import com.sogo.golf.msl.shared_components.ui.GolferScorecard
@@ -20,6 +22,9 @@ fun ScorecardScreen(
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val context = LocalContext.current
+    val sharingViewModel: ScorecardSharingViewModel = hiltViewModel()
+    val sharingState by sharingViewModel.state.collectAsState()
 
     if (isLandscape) {
         if (round != null) {
@@ -37,13 +42,53 @@ fun ScorecardScreen(
             android.util.Log.d("ScorecardScreen", "allHoles.size: ${allHoles.size}")
             android.util.Log.d("ScorecardScreen", "isNineHoles: $isNineHoles")
             
-            GolferScorecard(
-                round = round,
-                mslCompetition = mslCompetition,
-                onPlayingPartnerClicked = {},
-                onGolferClicked = {},
-                isNineHoles = isNineHoles
-            )
+            Box(modifier = Modifier.fillMaxSize()) {
+                GolferScorecard(
+                    round = round,
+                    mslCompetition = mslCompetition,
+                    onPlayingPartnerClicked = {},
+                    onGolferClicked = {},
+                    isNineHoles = isNineHoles,
+                    onShareClicked = {
+                        android.util.Log.d("ScorecardScreen", "Share button clicked")
+                        sharingViewModel.selectPlayer(com.sogo.golf.msl.shared_components.ui.PlayerType.GOLFER)
+                        sharingViewModel.shareScorecard(
+                            context = context,
+                            round = round,
+                            mslCompetition = mslCompetition,
+                            isNineHoles = isNineHoles
+                        )
+                    }
+                )
+
+                // Optional simple progress indicator while generating image
+                if (sharingState.isGeneratingImage) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                    )
+                }
+                
+                // Show error message if sharing failed
+                sharingState.error?.let { error ->
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp)
+                            .background(
+                                color = Color.Red.copy(alpha = 0.9f),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                            )
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = error,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
         } else {
             Box(
                 modifier = Modifier
