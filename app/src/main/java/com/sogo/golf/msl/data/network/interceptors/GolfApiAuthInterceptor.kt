@@ -5,6 +5,7 @@ import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.MslTokenManager
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.dto.PostRefreshTokenRequestDto
+import com.sogo.golf.msl.data.network.interceptors.HeaderCapturingInterceptor
 import com.sogo.golf.msl.data.network.mappers.toDomainModel
 import com.sogo.golf.msl.domain.model.msl.MslTokens
 import com.sogo.golf.msl.domain.exception.TokenRefreshException
@@ -22,7 +23,8 @@ import javax.inject.Inject
 class GolfApiAuthInterceptor @Inject constructor(
     private val mslTokenManager: MslTokenManager,
     private val mpsAuthApiService: MpsAuthApiService,
-    private val jwtTokenDecoder: JwtTokenDecoder
+    private val jwtTokenDecoder: JwtTokenDecoder,
+    private val headerCapturingInterceptor: HeaderCapturingInterceptor
 ) : Interceptor {
 
     companion object {
@@ -120,6 +122,7 @@ class GolfApiAuthInterceptor @Inject constructor(
             try {
                 val refreshContext = getRefreshTokenContext(currentTokens.refreshToken)
                 val authTokenContext = getAuthTokenContext(currentTokens.accessToken)
+                val actualAuthHeader = getActualAuthHeaderForRefresh()
 
                 Sentry.logger().log(
                     SentryLogLevel.FATAL,
@@ -129,6 +132,7 @@ class GolfApiAuthInterceptor @Inject constructor(
                             SentryAttribute.stringAttribute("current_auth_token", currentTokens.accessToken),
                             SentryAttribute.stringAttribute("refresh_context", refreshContext),
                             SentryAttribute.stringAttribute("auth_context", authTokenContext),
+                            SentryAttribute.stringAttribute("actual_auth_header", actualAuthHeader),
                         )
                     ),
                     "Refresh: using this refresh token to get new auth token for ${authTokenContext}"
@@ -137,6 +141,8 @@ class GolfApiAuthInterceptor @Inject constructor(
                 //fail silently
             }
 
+            headerCapturingInterceptor.clearCapturedHeader()
+            
             val response = runBlocking {
                 mpsAuthApiService.refreshToken(
                     PostRefreshTokenRequestDto(currentTokens.refreshToken)
@@ -149,6 +155,7 @@ class GolfApiAuthInterceptor @Inject constructor(
                 try {
                     val refreshContext = getRefreshTokenContext(currentTokens.refreshToken)
                     val authTokenContext = getAuthTokenContext(newTokensDto.accessToken)
+                    val actualAuthHeader = getActualAuthHeaderForRefresh()
 
                     Sentry.logger().log(
                         SentryLogLevel.FATAL,
@@ -158,6 +165,7 @@ class GolfApiAuthInterceptor @Inject constructor(
                                 SentryAttribute.stringAttribute("new_auth_token", newTokensDto.accessToken),
                                 SentryAttribute.stringAttribute("refresh_context", refreshContext),
                                 SentryAttribute.stringAttribute("auth_context", authTokenContext),
+                                SentryAttribute.stringAttribute("actual_auth_header", actualAuthHeader),
                             )
                         ),
                         "Refresh: new tokens returned for ${authTokenContext}"
@@ -222,5 +230,13 @@ class GolfApiAuthInterceptor @Inject constructor(
             Log.w(TAG, "Failed to extract auth token context", e)
             "nameid: error  clubid: error"
         }
+    }
+
+    /**
+     * Gets the actual Authorization header that was used for refresh token requests.
+     * This captures the real header value from the HTTP request after interceptor processing.
+     */
+    private fun getActualAuthHeaderForRefresh(): String {
+        return headerCapturingInterceptor.getLastCapturedAuthHeader() ?: "Header not captured"
     }
 }
