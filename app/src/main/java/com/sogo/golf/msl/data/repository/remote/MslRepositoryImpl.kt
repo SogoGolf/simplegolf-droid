@@ -363,10 +363,10 @@ class MslRepositoryImpl @Inject constructor(
 
     override suspend fun postMslScores(clubId: String, scores: com.sogo.golf.msl.domain.model.msl.v2.ScoresContainer): NetworkResult<com.sogo.golf.msl.domain.model.msl.v2.ScoresResponse> {
         return safeNetworkCall {
-            Log.d(TAG, "Submitting MSL scores for club: $clubId")
+            Log.d(TAG, "Submitting MSL scores for client: $clubId")
 
             val response = golfApiService.postMslScores(
-                clubId = clubId,
+                clientId = clubId,
                 scores = scores
             )
 
@@ -379,7 +379,12 @@ class MslRepositoryImpl @Inject constructor(
                 val scoresResponse = response.body()
                     ?: throw Exception("Empty scores response")
 
-                Log.d(TAG, "✅ Successfully submitted MSL scores")
+                Log.d(TAG, "=== SCORES SUBMISSION RESPONSE ===")
+                Log.d(TAG, "scoreSavedInSimpleGolf: ${scoresResponse.scoreSavedInSimpleGolf}")
+                Log.d(TAG, "errorMessage: ${scoresResponse.errorMessage}")
+
+                // Return the response regardless of scoreSavedInSimpleGolf value
+                // Let the ViewModel handle the business logic
                 scoresResponse
             } else {
                 Log.e(TAG, "❌ Failed to submit MSL scores: ${response.code()} - ${response.message()}")

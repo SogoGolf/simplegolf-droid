@@ -50,9 +50,9 @@ interface GolfApiService {
         @Body request: DeleteMarkerRequestDto
     ): Response<DeleteMarkerResponseDto>
 
-    @POST("v2/{clubId}/score")
+    @POST("v3/{clientId}/score")
     suspend fun postMslScores(
-        @Path("clubId") clubId: String,
+        @Path("clientId") clientId: String,
         @Body scores: com.sogo.golf.msl.domain.model.msl.v2.ScoresContainer
     ): Response<com.sogo.golf.msl.domain.model.msl.v2.ScoresResponse>
 }

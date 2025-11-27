@@ -139,6 +139,30 @@ class ReviewScoresViewModel @AssistedInject constructor(
         _playerSignatures.value = currentSignatures
     }
 
+    fun onErrorDialogDismissed() {
+        val shouldReset = _uiState.value.shouldResetAfterError
+
+        android.util.Log.d(TAG, "Error dialog dismissed. Should reset: $shouldReset")
+
+        if (shouldReset) {
+            // Reset and navigate to home
+            viewModelScope.launch {
+                resetStaleDataUseCase()
+                holeStatePreferences.clearAllHoleStates()
+                navController.navigate("homescreen") {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        }
+
+        // Clear the error dialog state
+        _uiState.value = _uiState.value.copy(
+            showErrorDialog = false,
+            errorMessage = null
+        )
+    }
+
     fun submitRound() {
         viewModelScope.launch {
             val currentRound = _uiState.value.round
@@ -172,44 +196,129 @@ class ReviewScoresViewModel @AssistedInject constructor(
                 submitRoundUseCase(clubId, scoresContainer).onEach { result ->
                     when (result) {
                         is Resource.Success -> {
-                            _roundSubmitState.value = _roundSubmitState.value.copy(
-                                isSending = false,
-                                isSuccess = true,
-                                error = null
-                            )
-                            
-                            val updatedRound = currentRound.copy(
-                                isSubmitted = true,
-                                submittedTime = org.threeten.bp.LocalDateTime.now(),
-                                lastUpdated = System.currentTimeMillis()
-                            )
+                            val response = result.data
 
-                            roundRepository.saveRound(updatedRound)
-                            
-                            // Update MongoDB round submission status immediately after MSL submission succeeds
-                            android.util.Log.d(TAG, "Updating MongoDB round submission status to true after MSL success")
-                            when (val mongoResult = sogoMongoRepository.updateRoundSubmissionStatus(currentRound.id, true)) {
-                                is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
-                                    android.util.Log.d(TAG, "✅ Successfully updated MongoDB round submission status")
+                            android.util.Log.d(TAG, "=== PROCESSING SCORE SUBMISSION RESPONSE ===")
+                            android.util.Log.d(TAG, "scoreSavedInSimpleGolf: ${response?.scoreSavedInSimpleGolf}")
+                            android.util.Log.d(TAG, "errorMessage: ${response?.errorMessage}")
+
+                            // Apply the 4 rules based on response
+                            when {
+                                // Rule 1: scoreSavedInSimpleGolf = true && errorMessage empty → Navigate to home
+                                response?.scoreSavedInSimpleGolf == true && response.errorMessage.isNullOrEmpty() -> {
+                                    android.util.Log.d(TAG, "Rule 1: Success - Navigate to home")
+
+                                    val updatedRound = currentRound.copy(
+                                        isSubmitted = true,
+                                        submittedTime = org.threeten.bp.LocalDateTime.now(),
+                                        lastUpdated = System.currentTimeMillis()
+                                    )
+                                    roundRepository.saveRound(updatedRound)
+
+                                    // Update MongoDB round submission status
+                                    android.util.Log.d(TAG, "Updating MongoDB round submission status to true")
+                                    when (val mongoResult = sogoMongoRepository.updateRoundSubmissionStatus(currentRound.id, true)) {
+                                        is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
+                                            android.util.Log.d(TAG, "✅ Successfully updated MongoDB round submission status")
+                                        }
+                                        is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
+                                            android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round submission status: ${mongoResult.error.toUserMessage()}")
+                                        }
+                                        is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {}
+                                    }
+
+                                    _roundSubmitState.value = _roundSubmitState.value.copy(
+                                        isSending = false,
+                                        isSuccess = true,
+                                        error = null
+                                    )
+
+                                    _uiState.value = _uiState.value.copy(
+                                        isSubmitting = false,
+                                        isSubmitted = true,
+                                        successMessage = "Round submitted successfully!",
+                                        scoreSavedInSimpleGolf = true
+                                    )
+
+                                    trackRoundSubmitted(currentRound)
                                 }
-                                is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
-                                    android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round submission status: ${mongoResult.error.toUserMessage()}")
+
+                                // Rule 2: scoreSavedInSimpleGolf = true && errorMessage NOT empty → Show error, then reset & navigate to home
+                                response?.scoreSavedInSimpleGolf == true && !response.errorMessage.isNullOrEmpty() -> {
+                                    android.util.Log.d(TAG, "Rule 2: Saved with warning - Show error, reset & navigate home")
+
+                                    val updatedRound = currentRound.copy(
+                                        isSubmitted = true,
+                                        submittedTime = org.threeten.bp.LocalDateTime.now(),
+                                        lastUpdated = System.currentTimeMillis()
+                                    )
+                                    roundRepository.saveRound(updatedRound)
+
+                                    // Update MongoDB round submission status
+                                    when (val mongoResult = sogoMongoRepository.updateRoundSubmissionStatus(currentRound.id, true)) {
+                                        is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
+                                            android.util.Log.d(TAG, "✅ Successfully updated MongoDB round submission status")
+                                        }
+                                        is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
+                                            android.util.Log.w(TAG, "⚠️ Failed to update MongoDB round submission status: ${mongoResult.error.toUserMessage()}")
+                                        }
+                                        is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {}
+                                    }
+
+                                    _uiState.value = _uiState.value.copy(
+                                        isSubmitting = false,
+                                        showErrorDialog = true,
+                                        shouldResetAfterError = true,
+                                        errorMessage = response.errorMessage,
+                                        scoreSavedInSimpleGolf = true
+                                    )
+
+                                    trackRoundSubmitted(currentRound)
                                 }
-                                is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
-                                    android.util.Log.d(TAG, "MongoDB round submission status update in progress...")
+
+                                // Rule 3: scoreSavedInSimpleGolf = false && errorMessage empty → Show error, reset & navigate to home
+                                response?.scoreSavedInSimpleGolf == false && response.errorMessage.isNullOrEmpty() -> {
+                                    android.util.Log.d(TAG, "Rule 3: Not saved (no error message) - Show generic error, reset & navigate home")
+
+                                    _uiState.value = _uiState.value.copy(
+                                        isSubmitting = false,
+                                        showErrorDialog = true,
+                                        shouldResetAfterError = true,
+                                        errorMessage = "Score submission failed. Please try again.",
+                                        scoreSavedInSimpleGolf = false
+                                    )
+                                }
+
+                                // Rule 4: scoreSavedInSimpleGolf = false && errorMessage NOT empty → Show error, DO NOT reset
+                                response?.scoreSavedInSimpleGolf == false && !response.errorMessage.isNullOrEmpty() -> {
+                                    android.util.Log.d(TAG, "Rule 4: Not saved with error - Show error, stay on screen")
+
+                                    _roundSubmitState.value = _roundSubmitState.value.copy(
+                                        isSending = false,
+                                        isSuccess = false,
+                                        error = response.errorMessage
+                                    )
+
+                                    _uiState.value = _uiState.value.copy(
+                                        isSubmitting = false,
+                                        showErrorDialog = true,
+                                        shouldResetAfterError = false,
+                                        errorMessage = response.errorMessage,
+                                        scoreSavedInSimpleGolf = false
+                                    )
+                                }
+
+                                // Fallback case
+                                else -> {
+                                    android.util.Log.e(TAG, "Unexpected response state")
+                                    _uiState.value = _uiState.value.copy(
+                                        isSubmitting = false,
+                                        showErrorDialog = true,
+                                        shouldResetAfterError = false,
+                                        errorMessage = "Unexpected error occurred. Please try again."
+                                    )
                                 }
                             }
-                            
-                            _uiState.value = _uiState.value.copy(
-                                isSubmitting = false,
-                                isSubmitted = true,
-                                successMessage = "Round submitted successfully!"
-                            )
-                            
-                            android.util.Log.d(TAG, "Round submitted successfully: ${currentRound.id}")
-                            
-                            // Track round submission
-                            trackRoundSubmitted(currentRound)
                         }
                         is Resource.Error -> {
                             _roundSubmitState.value = _roundSubmitState.value.copy(
@@ -485,7 +594,10 @@ data class ReviewScoresUiState(
     val isSubmitting: Boolean = false,
     val isSubmitted: Boolean = false,
     val errorMessage: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    val showErrorDialog: Boolean = false,
+    val shouldResetAfterError: Boolean = false,
+    val scoreSavedInSimpleGolf: Boolean = false
 )
 
 data class RoundSubmitState(
