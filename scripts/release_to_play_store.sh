@@ -21,15 +21,15 @@ echo ""
 
 # Step 1: Ask for version update type
 echo -e "${YELLOW}How would you like to update the version?${NC}"
-echo "1) Increment build number only (timestamp)"
+echo "1) Increment build number only (+1)"
 echo "2) Set new release version (e.g., 3.1.0)"
 echo -n "Enter choice [1-2]: "
 read -r VERSION_CHOICE
 
 case $VERSION_CHOICE in
     1)
-        echo -e "\n${YELLOW}Incrementing build number...${NC}"
-        ./gradlew setTimestampBuild
+        echo -e "\n${YELLOW}Incrementing build number by +1...${NC}"
+        ./gradlew incrementVersionBuild
         echo -e "${GREEN}✓ Build number incremented${NC}"
         ;;
     2)
@@ -91,9 +91,9 @@ case $VERSION_CHOICE in
             fi
         else
             # Same version, just update build number
-            ./gradlew setTimestampBuild
+            ./gradlew incrementVersionBuild
         fi
-        
+
         echo -e "${GREEN}✓ Version set to $MAJOR.$MINOR.$PATCH with new build number${NC}"
         ;;
     *)
@@ -195,8 +195,38 @@ if [ -z "$AAB_PATH" ]; then
 fi
 echo -e "${GREEN}✓ Found AAB at: $AAB_PATH${NC}"
 
-# Step 7: Upload to Google Play Console
-echo -e "\n${YELLOW}Uploading to Google Play Store (Open Testing)...${NC}"
+# Step 7: Choose Testing Track
+echo -e "\n${YELLOW}Which testing track do you want to use?${NC}"
+echo "1) Internal Testing"
+echo "2) Closed Testing"
+echo "3) Open Testing (Beta)"
+echo -n "Enter choice [1-3]: "
+read -r TRACK_CHOICE
+
+case $TRACK_CHOICE in
+    1)
+        TRACK="internal"
+        TRACK_NAME="Internal Testing"
+        ;;
+    2)
+        TRACK="alpha"
+        TRACK_NAME="Closed Testing"
+        ;;
+    3)
+        TRACK="beta"
+        TRACK_NAME="Open Testing"
+        ;;
+    *)
+        echo -e "${RED}❌ Invalid choice. Defaulting to Internal Testing.${NC}"
+        TRACK="internal"
+        TRACK_NAME="Internal Testing"
+        ;;
+esac
+
+echo -e "\n${GREEN}Selected track: $TRACK_NAME${NC}"
+
+# Step 8: Upload to Google Play Console
+echo -e "\n${YELLOW}Uploading to Google Play Store ($TRACK_NAME)...${NC}"
 
 # Check if we have the necessary Play Store credentials
 if [ -z "$PLAY_STORE_CREDENTIALS_FILE" ]; then
@@ -219,10 +249,18 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-# Check for required Python packages
+# Check for required Python packages (use virtual environment)
+if [ ! -d ".venv" ]; then
+    echo -e "${YELLOW}Creating Python virtual environment...${NC}"
+    python3 -m venv .venv
+fi
+
+source .venv/bin/activate
+
+# Check if packages are installed in venv
 python3 -c "import googleapiclient, google.auth" 2>/dev/null || {
-    echo -e "${YELLOW}Installing required Python packages...${NC}"
-    python3 -m pip install --user google-api-python-client google-auth
+    echo -e "${YELLOW}Installing required Python packages in virtual environment...${NC}"
+    python3 -m pip install google-api-python-client google-auth
 }
 
 echo "Using Google Play Developer API to upload..."
@@ -231,9 +269,10 @@ echo "$RELEASE_NOTES_TEXT"
 echo ""
 
 # Upload to Google Play with release notes
-# Export paths as environment variables
+# Export paths and track as environment variables
 export RELEASE_NOTES_FILE_PATH="$RELEASE_NOTES_FILE"
 export AAB_PATH_ENV="$AAB_PATH"
+export TRACK_ENV="$TRACK"
 
 python3 - <<'PYTHON_EOF'
 import sys
@@ -246,7 +285,7 @@ from googleapiclient.http import MediaFileUpload
 SCOPES = ['https://www.googleapis.com/auth/androidpublisher']
 PACKAGE_NAME = 'com.sogo.golf.msl'
 AAB_FILE = os.environ['AAB_PATH_ENV']
-TRACK = 'beta'  # Open testing track
+TRACK = os.environ['TRACK_ENV']
 
 # Read release notes from file
 try:
@@ -342,15 +381,16 @@ except Exception as e:
 PYTHON_EOF
 
 if [ $? -eq 0 ]; then
-    echo -e "\n${GREEN}✅ Successfully uploaded to Google Play Store Open Testing!${NC}"
-    
+    echo -e "\n${GREEN}✅ Successfully uploaded to Google Play Store ($TRACK_NAME)!${NC}"
+
     # Show final version info
     VERSION=$(grep VERSION_MAJOR version.properties | cut -d'=' -f2).$(grep VERSION_MINOR version.properties | cut -d'=' -f2).$(grep VERSION_PATCH version.properties | cut -d'=' -f2)
-    
+
     echo -e "\n${BLUE}Release Summary:${NC}"
     echo "======================================="
     echo "Version: $VERSION"
     grep -E "VERSION_BUILD" version.properties
+    echo "Track: $TRACK_NAME"
     echo "--------------------------------------"
     echo "Release Notes:"
     echo "$RELEASE_NOTES_TEXT"
@@ -370,6 +410,6 @@ rm -f "$RELEASE_NOTES_FILE" 2>/dev/null || true
 
 echo -e "\n${GREEN}🎉 Release process completed successfully!${NC}"
 echo "Next steps:"
-echo "1. Check Google Play Console for the new release in Open Testing"
+echo "1. Check Google Play Console for the new release in $TRACK_NAME"
 echo "2. Test the release with your testing group"
-echo "3. Promote to production when ready"
+echo "3. Promote to the next track when ready"

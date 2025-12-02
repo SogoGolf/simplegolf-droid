@@ -423,6 +423,83 @@ class PlayingPartnerViewModel @Inject constructor(
                 Log.d("PlayingPartnerVM", "Sogo golfer: ${sogoGolferData?.firstName} (tokens: ${sogoGolferData?.tokenBalance})")
                 Log.d("PlayingPartnerVM", "Competition data: ${competitionData?.players?.size ?: 0} players")
 
+                // ✅ LOG GAME AND COMPETITION DATA TO SENTRY (once at round creation)
+                try {
+                    val golfLinkNo = currentGolferData?.golfLinkNo ?: "unknown"
+
+                    gameData?.let { game ->
+                        val gameAttributes = mutableListOf(
+                            io.sentry.SentryAttribute.stringAttribute("game_golfLinkNumber", golfLinkNo),
+                            io.sentry.SentryAttribute.stringAttribute("game_bookingTime", game.bookingTime?.toString() ?: "null"),
+                            io.sentry.SentryAttribute.stringAttribute("game_mainCompetitionId", game.mainCompetitionId.toString()),
+                            io.sentry.SentryAttribute.stringAttribute("game_numberOfHoles", game.numberOfHoles?.toString() ?: "null"),
+                            io.sentry.SentryAttribute.stringAttribute("game_dailyHandicap", game.dailyHandicap?.toString() ?: "null"),
+                            io.sentry.SentryAttribute.stringAttribute("game_gaHandicap", game.gaHandicap?.toString() ?: "null"),
+                            io.sentry.SentryAttribute.stringAttribute("game_teeColourName", game.teeColourName ?: "null"),
+                            io.sentry.SentryAttribute.stringAttribute("game_playingPartners_count", game.playingPartners.size.toString())
+                        )
+
+                        // Add each playing partner
+                        game.playingPartners.forEachIndexed { idx, partner ->
+                            gameAttributes.add(io.sentry.SentryAttribute.stringAttribute("partner_${idx}_firstName", partner.firstName ?: "null"))
+                            gameAttributes.add(io.sentry.SentryAttribute.stringAttribute("partner_${idx}_lastName", partner.lastName ?: "null"))
+                            gameAttributes.add(io.sentry.SentryAttribute.stringAttribute("partner_${idx}_golfLinkNumber", partner.golfLinkNumber ?: "null"))
+                            gameAttributes.add(io.sentry.SentryAttribute.stringAttribute("partner_${idx}_dailyHandicap", partner.dailyHandicap.toString()))
+                            gameAttributes.add(io.sentry.SentryAttribute.stringAttribute("partner_${idx}_markedBy", partner.markedByGolfLinkNumber ?: "null"))
+                        }
+
+                        Sentry.logger().log(
+                            io.sentry.SentryLogLevel.INFO,
+                            io.sentry.logger.SentryLogParameters.create(
+                                io.sentry.SentryAttributes.of(*gameAttributes.toTypedArray())
+                            ),
+                            "MSL Game Data at Round Creation - $golfLinkNo"
+                        )
+                        Log.d("PlayingPartnerVM", "✅ Game data logged to Sentry")
+                    }
+
+                    competitionData?.let { competition ->
+                        competition.players.forEach { player ->
+                            val playerAttributes = mutableListOf(
+                                io.sentry.SentryAttribute.stringAttribute("player_golfLinkNumber", player.golfLinkNumber ?: "null"),
+                                io.sentry.SentryAttribute.stringAttribute("player_firstName", player.firstName ?: "null"),
+                                io.sentry.SentryAttribute.stringAttribute("player_lastName", player.lastName ?: "null"),
+                                io.sentry.SentryAttribute.stringAttribute("player_dailyHandicap", player.dailyHandicap.toString()),
+                                io.sentry.SentryAttribute.stringAttribute("competitionName", player.competitionName ?: "null"),
+                                io.sentry.SentryAttribute.stringAttribute("competitionType", player.competitionType ?: "null"),
+                                io.sentry.SentryAttribute.stringAttribute("scoreType", player.scoreType ?: "null"),
+                                io.sentry.SentryAttribute.stringAttribute("slopeRating", player.slopeRating.toString()),
+                                io.sentry.SentryAttribute.stringAttribute("scratchRating", player.scratchRating.toString()),
+                                io.sentry.SentryAttribute.stringAttribute("teeColourName", player.teeColourName ?: "null"),
+                                io.sentry.SentryAttribute.stringAttribute("gender", player.gender ?: "null")
+                            )
+
+                            // Add each hole as separate attributes for better readability in Sentry
+                            player.holes.forEach { hole ->
+                                playerAttributes.add(io.sentry.SentryAttribute.stringAttribute("hole_${hole.holeNumber}_par", hole.par.toString()))
+                                playerAttributes.add(io.sentry.SentryAttribute.stringAttribute("hole_${hole.holeNumber}_distance", hole.distance.toString()))
+                                playerAttributes.add(io.sentry.SentryAttribute.stringAttribute("hole_${hole.holeNumber}_extraStrokes", hole.extraStrokes.toString()))
+
+                                // Add stroke indexes
+                                hole.strokeIndexes.forEachIndexed { idx, si ->
+                                    playerAttributes.add(io.sentry.SentryAttribute.stringAttribute("hole_${hole.holeNumber}_strokeIndex_$idx", "handicap(${si.courseHandicapFrom} to ${si.courseHandicapTo}) stroke:${si.stroke}"))
+                                }
+                            }
+
+                            Sentry.logger().log(
+                                io.sentry.SentryLogLevel.INFO,
+                                io.sentry.logger.SentryLogParameters.create(
+                                    io.sentry.SentryAttributes.of(*playerAttributes.toTypedArray())
+                                ),
+                                "MSL Competition Data at Round Creation - $golfLinkNo - Player: ${player.firstName} ${player.lastName}"
+                            )
+                        }
+                        Log.d("PlayingPartnerVM", "✅ Competition data logged to Sentry (${competition.players.size} players)")
+                    }
+                } catch (e: Exception) {
+                    Log.e("PlayingPartnerVM", "⚠️ Failed to log game/competition data to Sentry", e)
+                }
+
                 if (currentGolferData == null) {
                     _uiState.value = _uiState.value.copy(
                         isLetsPlayLoading = false,

@@ -124,7 +124,7 @@ tasks.register("setTimestampBuild") {
 tasks.register("incrementVersionPatch") {
     doLast {
         versionProps["VERSION_PATCH"] = (versionPatch + 1).toString()
-        versionProps["VERSION_BUILD"] = getTimestamp() // Use timestamp here
+        versionProps["VERSION_BUILD"] = (versionBuild + 1).toString() // Sequential increment for Google Play
         versionProps.store(FileOutputStream(versionPropsFile), null)
         println("Version incremented to ${versionProps["VERSION_MAJOR"]}.${versionProps["VERSION_MINOR"]}.${versionProps["VERSION_PATCH"]} (Build: ${versionProps["VERSION_BUILD"]})")
     }
@@ -134,7 +134,7 @@ tasks.register("incrementVersionMinor") {
     doLast {
         versionProps["VERSION_MINOR"] = (versionMinor + 1).toString()
         versionProps["VERSION_PATCH"] = "0"
-        versionProps["VERSION_BUILD"] = getTimestamp() // Use timestamp here
+        versionProps["VERSION_BUILD"] = (versionBuild + 1).toString() // Sequential increment for Google Play
         versionProps.store(FileOutputStream(versionPropsFile), null)
         println("Version incremented to ${versionProps["VERSION_MAJOR"]}.${versionProps["VERSION_MINOR"]}.${versionProps["VERSION_PATCH"]} (Build: ${versionProps["VERSION_BUILD"]})")
     }
@@ -145,7 +145,7 @@ tasks.register("incrementVersionMajor") {
         versionProps["VERSION_MAJOR"] = (versionMajor + 1).toString()
         versionProps["VERSION_MINOR"] = "0"
         versionProps["VERSION_PATCH"] = "0"
-        versionProps["VERSION_BUILD"] = getTimestamp() // Use timestamp here
+        versionProps["VERSION_BUILD"] = (versionBuild + 1).toString() // Sequential increment for Google Play
         versionProps.store(FileOutputStream(versionPropsFile), null)
         println("Version incremented to ${versionProps["VERSION_MAJOR"]}.${versionProps["VERSION_MINOR"]}.${versionProps["VERSION_PATCH"]} (Build: ${versionProps["VERSION_BUILD"]})")
     }

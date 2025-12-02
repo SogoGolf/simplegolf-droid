@@ -26,3 +26,7 @@ app/msl_keystore.jks
 # Sentry Config File
 sentry.properties
 /sentry-wizard
+
+# Python Virtual Environment
+.venv/
+venv/
