@@ -87,6 +87,7 @@ room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 sentry-android-v8180 = { module = "io.sentry:sentry-android", version.ref = "sentryAndroidVersion" }
+sentry-okhttp = { module = "io.sentry:sentry-okhttp", version.ref = "sentryAndroidVersion" }
 signature-pad = { module = "se.warting.signature:signature-pad", version.ref = "signaturePad" }
 threetenabp = { module = "com.jakewharton.threetenabp:threetenabp", version.ref = "threetenabp" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }

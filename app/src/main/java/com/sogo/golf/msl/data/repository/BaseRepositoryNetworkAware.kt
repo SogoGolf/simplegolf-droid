@@ -4,6 +4,8 @@ import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.exception.TokenRefreshException
+import com.sogo.golf.msl.domain.exception.NotFoundException
+import com.sogo.golf.msl.domain.exception.PartnerReservedException
 import io.sentry.Sentry
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withTimeout
@@ -37,18 +39,32 @@ abstract class BaseRepository(
             // This allows normal cancellation to propagate up the coroutine hierarchy
             throw e
         } catch (e: TokenRefreshException) {
+            // Log token refresh issues - these are worth investigating
             Sentry.captureException(e)
             NetworkResult.Error(NetworkError.TokenRefreshFailed)
         } catch (e: TimeoutCancellationException) {
-            Sentry.captureException(e)
+            // Don't log to Sentry - timeouts are usually network/server load issues, not app bugs
             NetworkResult.Error(NetworkError.Timeout)
         } catch (e: IOException) {
-            Sentry.captureException(e)
+            // Don't log to Sentry - includes UnknownHostException, SocketTimeoutException, etc.
+            // These are user network connectivity issues, not app bugs
             NetworkResult.Error(NetworkError.NoConnection)
+        } catch (e: NotFoundException) {
+            // Don't log to Sentry - 404 is often expected (e.g., new user without SOGO account)
+            NetworkResult.Error(NetworkError.NotFound)
+        } catch (e: PartnerReservedException) {
+            // Don't log to Sentry - partner already reserved is an expected scenario
+            NetworkResult.Error(NetworkError.Unknown(e.message ?: "Partner already reserved"))
         } catch (e: HttpException) {
-            Sentry.captureException(e)
+            // Don't log to Sentry - HTTP errors (4xx, 5xx) are server-side issues
+            // Only log if it's an unexpected status code that indicates an app bug
+            if (e.code() in 500..599) {
+                // Server errors might indicate backend issues worth tracking
+                Sentry.captureException(e)
+            }
             NetworkResult.Error(NetworkError.ServerError)
         } catch (e: Exception) {
+            // Log unexpected exceptions - these could be actual bugs
             Sentry.captureException(e)
             NetworkResult.Error(NetworkError.Unknown(e.message ?: "Unknown error"))
         }

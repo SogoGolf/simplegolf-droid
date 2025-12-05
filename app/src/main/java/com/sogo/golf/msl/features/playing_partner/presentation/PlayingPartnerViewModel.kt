@@ -389,7 +389,7 @@ class PlayingPartnerViewModel @Inject constructor(
                 isRefreshLoading = false,
                 errorMessage = "Refresh failed: ${e.message}"
             )
-            Sentry.captureException(e)
+            // Don't log to Sentry - refresh failures are usually network issues
             false
         }
     }
@@ -539,7 +539,6 @@ class PlayingPartnerViewModel @Inject constructor(
                             isLetsPlayLoading = false,
                             errorMessage = "Failed to select marker: ${markerResult.error.toUserMessage()}"
                         )
-                        Sentry.captureMessage("Call PUT marker failed.")
                         return@launch
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }

@@ -80,26 +80,27 @@ class FeeLocalDbRepositoryImpl @Inject constructor(
     override suspend fun fetchAndSaveFees(): NetworkResult<List<Fee>> {
         Log.d(TAG, "fetchAndSaveFees called")
 
-        return safeNetworkCall {
-            // Call the API to get fees data
-            when (val result = sogoMongoRepository.getFees()) {
-                is NetworkResult.Success -> {
-                    val fees = result.data
-                    Log.d(TAG, "API returned ${fees.size} fees")
+        // Call the API to get fees data
+        return when (val result = sogoMongoRepository.getFees()) {
+            is NetworkResult.Success -> {
+                val fees = result.data
+                Log.d(TAG, "API returned ${fees.size} fees")
 
-                    // Replace all fees in database
-                    replaceFeesInDatabase(fees)
+                // Replace all fees in database
+                replaceFeesInDatabase(fees)
 
-                    Log.d(TAG, "Fees replaced successfully in database")
-                    fees
-                }
-                is NetworkResult.Error -> {
-                    Log.e(TAG, "API call failed: ${result.error}")
-                    throw Exception("Failed to fetch fees: ${result.error.toUserMessage()}")
-                }
-                is NetworkResult.Loading -> {
-                    throw Exception("Unexpected loading state")
-                }
+                Log.d(TAG, "Fees replaced successfully in database")
+                NetworkResult.Success(fees)
+            }
+            is NetworkResult.Error -> {
+                Log.d(TAG, "Failed to fetch fees from API: ${result.error}")
+                // Just return the error - don't throw exception (no need to log to Sentry)
+                result
+            }
+            is NetworkResult.Loading -> {
+                // This shouldn't happen, but just return an error if it does
+                Log.e(TAG, "Unexpected loading state from getFees()")
+                NetworkResult.Error(NetworkError.Unknown("Unexpected loading state"))
             }
         }
     }

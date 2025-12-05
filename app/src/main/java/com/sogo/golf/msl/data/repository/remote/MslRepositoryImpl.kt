@@ -307,7 +307,12 @@ class MslRepositoryImpl @Inject constructor(
                     Unit // Return Unit for success
                 } else {
                     Log.e(TAG, "❌ API returned error: ${markerResponse.errorMessage}")
-                    throw Exception("Failed to select marker: ${markerResponse.errorMessage}")
+                    // Check if this is a "partner reserved" error (expected scenario)
+                    if (markerResponse.errorMessage.contains("reserved by", ignoreCase = true)) {
+                        throw com.sogo.golf.msl.domain.exception.PartnerReservedException("Failed to select marker: ${markerResponse.errorMessage}")
+                    } else {
+                        throw Exception("Failed to select marker: ${markerResponse.errorMessage}")
+                    }
                 }
             } else {
                 Log.e(TAG, "❌ Failed to select marker: ${response.code()} - ${response.message()}")

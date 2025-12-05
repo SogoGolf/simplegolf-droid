@@ -193,6 +193,7 @@ dependencies {
 
     //Sentry error logs
     implementation(libs.sentry.android.v8180)
+    implementation(libs.sentry.okhttp)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -18,6 +18,7 @@ import com.sogo.golf.msl.data.network.dto.mongodb.toDto
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.NetworkError
+import com.sogo.golf.msl.domain.exception.NotFoundException
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.mongodb.Fee
 import com.sogo.golf.msl.domain.model.mongodb.RoundSummary
@@ -85,7 +86,8 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 // Include the error code in the exception message so we can detect 404s later
                 // 404 for SOGO golfer means the golfer doesn't exist yet (which is OK for new users)
                 if (errorCode == 404) {
-                    throw Exception("SogoGolfer not found (404): ${response.message()}")
+                    // Use a custom exception for 404s so we don't log them to Sentry
+                    throw NotFoundException("SogoGolfer not found for golfLinkNo: $golfLinkNo")
                 } else {
                     throw Exception("Failed to get SogoGolfer ($errorCode): ${response.message()}")
                 }
@@ -187,13 +189,16 @@ class SogoMongoRepositoryImpl @Inject constructor(
             )
             
             val response = sogoMongoApiService.updateAllHoleScores(roundId, payload)
-            
+
             if (response.isSuccessful) {
                 Log.d(TAG, "Successfully bulk updated all hole scores")
                 Unit
             } else {
-                Log.e(TAG, "Failed to bulk update hole scores: ${response.code()} - ${response.message()}")
-                throw Exception("Failed to bulk update hole scores: ${response.message()}")
+                val errorBody = response.errorBody()?.string() ?: "No error body"
+                val statusCode = response.code()
+                Log.e(TAG, "Failed to bulk update hole scores: $statusCode - ${response.message()}")
+                Log.e(TAG, "Response body: $errorBody")
+                throw Exception("Failed to bulk update hole scores (HTTP $statusCode): ${response.message()} - $errorBody")
             }
         }
     }

@@ -17,6 +17,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.sentry.okhttp.SentryOkHttpInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -75,6 +76,7 @@ object NetworkModule {
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(SentryOkHttpInterceptor())
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
@@ -91,6 +93,7 @@ object NetworkModule {
         golfApiAuthInterceptor: GolfApiAuthInterceptor
     ): Retrofit {
         val golfApiClient = OkHttpClient.Builder()
+            .addInterceptor(SentryOkHttpInterceptor())
             .addInterceptor(golfApiAuthInterceptor)  // Add auth headers FIRST
             .addInterceptor(loggingInterceptor)      // Then log the request WITH headers
             .connectTimeout(30, TimeUnit.SECONDS)

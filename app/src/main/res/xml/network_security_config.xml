@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Base configuration for all connections -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust preinstalled CAs (system default) -->
+            <certificates src="system" />
+            <!-- Also trust user-installed CAs (for debugging with Charles/Fiddler if needed) -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!--
+    This configuration helps Android 9 and older devices trust Let's Encrypt certificates.
+    Android 9 doesn't trust the newer Let's Encrypt root CA (ISRG Root X1) by default,
+    which causes SSL certificate validation errors for many modern servers.
+
+    By including both 'system' and 'user' certificate sources, we ensure:
+    - Android 9 devices can connect to Let's Encrypt-secured servers
+    - Newer Android versions continue to work normally
+    - Debug builds can use proxy tools like Charles Proxy
+    -->
+</network-security-config>
