@@ -12,6 +12,7 @@ import com.sogo.golf.msl.data.network.api.SogoGeneralApi
 import com.sogo.golf.msl.data.network.interceptors.GolfApiAuthInterceptor
 import com.sogo.golf.msl.data.network.interceptors.SogoApiAuthInterceptor
 import com.sogo.golf.msl.data.network.interceptors.MpsAuthInterceptor
+import com.sogo.golf.msl.data.network.interceptors.HeaderCapturingInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -130,10 +131,12 @@ object NetworkModule {
     @MpsAuthApi
     fun provideMpsAuthApiRetrofit(
         baseOkHttpClient: OkHttpClient,
-        mpsAuthInterceptor: MpsAuthInterceptor
+        mpsAuthInterceptor: MpsAuthInterceptor,
+        headerCapturingInterceptor: HeaderCapturingInterceptor
     ): Retrofit {
         val mpsAuthApiClient = baseOkHttpClient.newBuilder()
             .addInterceptor(mpsAuthInterceptor)
+            .addInterceptor(headerCapturingInterceptor)
             .build()
 
         return Retrofit.Builder()
