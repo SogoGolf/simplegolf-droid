@@ -1,6 +1,7 @@
 // Update to app/src/main/java/com/sogo/golf/msl/data/repository/AuthRepositoryImpl.kt
 package com.sogo.golf.msl.data.repository
 
+import com.onesignal.OneSignal
 import com.sogo.golf.msl.data.local.preferences.AuthPreferences
 import com.sogo.golf.msl.data.local.preferences.ClubPreferences
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
@@ -138,6 +139,10 @@ class AuthRepositoryImpl @Inject constructor(
             
             // 🎯 Clear include round preferences
             includeRoundPreferences.clearAllPreferences()
+
+            // 🔔 Unlink device from user for push notifications
+            OneSignal.logout()
+            android.util.Log.d("AuthRepository", "OneSignal: Logged out")
 
             _authState.value = AuthState(isLoggedIn = false, hasActiveRound = false)
             

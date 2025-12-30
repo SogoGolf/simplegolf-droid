@@ -1,6 +1,7 @@
 package com.sogo.golf.msl.domain.usecase.auth
 
 import android.util.Log
+import com.onesignal.OneSignal
 import com.sogo.golf.msl.MslTokenManager
 import com.sogo.golf.msl.analytics.AnalyticsManager
 import com.sogo.golf.msl.domain.model.NetworkResult
@@ -118,7 +119,17 @@ class ProcessMslAuthCodeUseCase @Inject constructor(
                                 
                                 // Set user ID to golflink number now that we have it
                                 analyticsManager.setUserId(golfer.golfLinkNo)
-                                
+
+                                // Link device to golfer for targeted push notifications
+                                OneSignal.login(golfer.golfLinkNo)
+                                Log.d(TAG, "OneSignal: Logged in with external ID: ${golfer.golfLinkNo}")
+
+                                // Set email for OneSignal user profile
+                                golfer.email?.let { email ->
+                                    OneSignal.User.addEmail(email)
+                                    Log.d(TAG, "OneSignal: Added email: $email")
+                                }
+
                                 // Identify user with all properties now that we have complete data
                                 val userProperties = mutableMapOf<String, Any>()
                                 tokenClaims?.golferId?.let { userProperties["golfer_id"] = it }
