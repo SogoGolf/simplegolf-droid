@@ -16,6 +16,6 @@ class GetAppVersionUseCase @Inject constructor(
         } else {
             packageInfo.versionCode
         }
-        return "$versionName #$versionCode"
+        return "Android $versionName #$versionCode"
     }
 }

@@ -36,6 +36,8 @@ import com.sogo.golf.msl.domain.usecase.transaction.CheckExistingTransactionUseC
 import com.sogo.golf.msl.domain.usecase.app.GetAppVersionUseCase
 import com.sogo.golf.msl.domain.usecase.app.GetStateInfoUseCase
 import com.sogo.golf.msl.domain.usecase.transaction.CreateTransactionUseCase
+import com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateGolferUseCase
+import com.sogo.golf.msl.data.network.api.UpdateGolferRequestDto
 import com.sogo.golf.msl.shared.utils.ObjectIdUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.sentry.Sentry
@@ -77,7 +79,8 @@ class PlayingPartnerViewModel @Inject constructor(
     private val updateTokenBalanceUseCase: com.sogo.golf.msl.domain.usecase.sogo_golfer.UpdateTokenBalanceUseCase,
     private val analyticsManager: AnalyticsManager,
     private val getAppVersionUseCase: GetAppVersionUseCase,
-    private val getStateInfoUseCase: GetStateInfoUseCase
+    private val getStateInfoUseCase: GetStateInfoUseCase,
+    private val updateGolferUseCase: UpdateGolferUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PlayingPartnerUiState())
@@ -714,6 +717,31 @@ class PlayingPartnerViewModel @Inject constructor(
                         Sentry.captureException(Exception("Failed to save round to MongoDB"))
                     }
                     is NetworkResult.Loading -> { /* Ignore */ }
+                }
+
+                // Step 7b: Update golfer device info
+                val email = sogoGolferData.email
+                val dateOfBirth = sogoGolferData.dateOfBirth
+                if (email != null && dateOfBirth != null) {
+                    Log.d("PlayingPartnerVM", "🔄 Updating golfer device info...")
+                    val deviceInfoRequest = UpdateGolferRequestDto(
+                        email = email,
+                        dateOfBirth = dateOfBirth,
+                        deviceModel = android.os.Build.MODEL,
+                        deviceManufacturer = android.os.Build.MANUFACTURER,
+                        deviceOS = "Android",
+                        deviceOSVersion = android.os.Build.VERSION.RELEASE,
+                        sogoAppVersion = getAppVersionUseCase()
+                    )
+                    when (val updateResult = updateGolferUseCase(sogoGolferData.golfLinkNo, deviceInfoRequest)) {
+                        is NetworkResult.Success -> {
+                            Log.d("PlayingPartnerVM", "✅ Golfer device info updated successfully")
+                        }
+                        is NetworkResult.Error -> {
+                            Log.w("PlayingPartnerVM", "⚠️ Failed to update golfer device info: ${updateResult.error}")
+                        }
+                        is NetworkResult.Loading -> { /* Ignore */ }
+                    }
                 }
 
                 _uiState.value = _uiState.value.copy(
