@@ -58,6 +58,7 @@ import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
 import com.sogo.golf.msl.shared_components.ui.ScreenWithDrawer
 import com.sogo.golf.msl.shared_components.ui.UnifiedScreenHeader
 import com.sogo.golf.msl.shared_components.ui.UserInfoSection
+import com.sogo.golf.msl.shared_components.ui.components.MarqueeText
 import com.sogo.golf.msl.shared_components.ui.components.NetworkMessageSnackbar
 import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 import kotlinx.coroutines.launch
@@ -137,6 +138,14 @@ fun CompetitionsScreen(
                 .statusBarsPadding()
                 .padding(top = 56.dp) // Account for header height
         ) {
+            // Club message of the day - only show if message exists
+            localGame?.scorecardMessageOfTheDay?.takeIf { it.isNotBlank() }?.let { message ->
+                MarqueeText(
+                    text = message,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             UserInfoSection(
                 golfer = currentGolfer,
                 game = localGame
