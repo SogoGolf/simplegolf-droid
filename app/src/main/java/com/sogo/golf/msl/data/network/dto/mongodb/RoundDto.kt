@@ -3,6 +3,7 @@ package com.sogo.golf.msl.data.network.dto.mongodb
 import com.google.gson.annotations.SerializedName
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.HoleScore
+import com.sogo.golf.msl.domain.model.StrokeIndexEntry
 import com.sogo.golf.msl.domain.model.PlayingPartnerRound
 import com.sogo.golf.msl.domain.model.MslMetaData
 import com.sogo.golf.msl.domain.model.StateInfo
@@ -219,33 +220,42 @@ data class RoundDto(
     val createdDate: String? = null
 )
 
+data class StrokeIndexEntryDto(
+    @SerializedName("from") val from: Int = 0,
+    @SerializedName("to") val to: Int = 0,
+    @SerializedName("stroke") val stroke: Int = 0
+)
+
 data class HoleScoreDto(
     @SerializedName("holeNumber")
     val holeNumber: Int = 0,
-    
+
     @SerializedName("par")
     val par: Int = 0,
-    
+
     @SerializedName("strokes")
     val strokes: Int = 0,
-    
+
     @SerializedName("score")
     val score: Float = 0f,
-    
+
     @SerializedName("index1")
     val index1: Int = 0,
-    
+
     @SerializedName("index2")
     val index2: Int = 0,
-    
+
     @SerializedName("index3")
     val index3: Int? = null,
-    
+
     @SerializedName("meters")
     val meters: Int = 0,
-    
+
     @SerializedName("isBallPickedUp")
-    val isBallPickedUp: Boolean? = false
+    val isBallPickedUp: Boolean? = false,
+
+    @SerializedName("strokeIndexes")
+    val strokeIndexes: List<StrokeIndexEntryDto>? = null
 )
 
 data class PlayingPartnerRoundDto(
@@ -408,7 +418,10 @@ fun HoleScore.toDto(): HoleScoreDto {
         index2 = index2,
         index3 = index3,
         meters = meters,
-        isBallPickedUp = isBallPickedUp
+        isBallPickedUp = isBallPickedUp,
+        strokeIndexes = strokeIndexes?.map {
+            StrokeIndexEntryDto(from = it.from, to = it.to, stroke = it.stroke)
+        }
     )
 }
 

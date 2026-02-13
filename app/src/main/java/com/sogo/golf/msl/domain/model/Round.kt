@@ -99,7 +99,14 @@ data class HoleScore(
     val startTime: String? = null,
     val startLocation: Location? = null,
     val finishTime: String? = null,
-    val finishLocation: Location? = null
+    val finishLocation: Location? = null,
+    val strokeIndexes: List<StrokeIndexEntry>? = null
+)
+
+data class StrokeIndexEntry(
+    val from: Int,
+    val to: Int,
+    val stroke: Int
 )
 
 data class Location(

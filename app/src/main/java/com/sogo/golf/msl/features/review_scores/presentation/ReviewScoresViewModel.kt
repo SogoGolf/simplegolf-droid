@@ -144,23 +144,23 @@ class ReviewScoresViewModel @AssistedInject constructor(
 
         android.util.Log.d(TAG, "Error dialog dismissed. Should reset: $shouldReset")
 
+        // Clear the error dialog state
+        _uiState.value = _uiState.value.copy(
+            showErrorDialog = false,
+            errorMessage = null
+        )
+
         if (shouldReset) {
             // Reset and navigate to home
             viewModelScope.launch {
                 resetStaleDataUseCase()
                 holeStatePreferences.clearAllHoleStates()
                 navController.navigate("homescreen") {
-                    popUpTo(0) { inclusive = true }
+                    popUpTo("homescreen") { inclusive = true }
                     launchSingleTop = true
                 }
             }
         }
-
-        // Clear the error dialog state
-        _uiState.value = _uiState.value.copy(
-            showErrorDialog = false,
-            errorMessage = null
-        )
     }
 
     fun submitRound() {
