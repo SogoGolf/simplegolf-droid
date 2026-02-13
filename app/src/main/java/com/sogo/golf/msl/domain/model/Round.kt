@@ -147,5 +147,9 @@ data class PlayingPartnerRound(
 )
 
 data class MslMetaData(
-    val isIncludeRoundOnSogo: Boolean? = null
+    val isIncludeRoundOnSogo: Boolean? = null,
+    val platform: String? = null,
+    val deviceType: String? = null,
+    val osVersion: String? = null,
+    val appVersion: String? = null
 )

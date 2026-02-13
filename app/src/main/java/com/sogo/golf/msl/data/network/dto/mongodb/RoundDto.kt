@@ -336,7 +336,15 @@ data class StateInfoDto(
 
 data class MslMetaDataDto(
     @SerializedName("isIncludeRoundOnSogo")
-    val isIncludeRoundOnSogo: Boolean? = null
+    val isIncludeRoundOnSogo: Boolean? = null,
+    @SerializedName("platform")
+    val platform: String? = null,
+    @SerializedName("deviceType")
+    val deviceType: String? = null,
+    @SerializedName("osVersion")
+    val osVersion: String? = null,
+    @SerializedName("appVersion")
+    val appVersion: String? = null
 )
 
 fun Round.toDto(): RoundDto {
@@ -461,6 +469,10 @@ fun StateInfo.toDto(): StateInfoDto {
 
 fun MslMetaData.toDto(): MslMetaDataDto {
     return MslMetaDataDto(
-        isIncludeRoundOnSogo = isIncludeRoundOnSogo
+        isIncludeRoundOnSogo = isIncludeRoundOnSogo,
+        platform = platform,
+        deviceType = deviceType,
+        osVersion = osVersion,
+        appVersion = appVersion
     )
 }

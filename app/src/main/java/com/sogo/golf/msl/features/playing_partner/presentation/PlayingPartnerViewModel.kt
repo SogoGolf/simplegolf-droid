@@ -860,7 +860,13 @@ class PlayingPartnerViewModel @Inject constructor(
             markerGLNumber = selectedPartner.golfLinkNumber,
             markerLastName = selectedPartner.lastName,
 
-            mslMetaData = MslMetaData(isIncludeRoundOnSogo = includeRoundValue),
+            mslMetaData = MslMetaData(
+                isIncludeRoundOnSogo = includeRoundValue,
+                platform = "Android",
+                deviceType = android.os.Build.MODEL,
+                osVersion = android.os.Build.VERSION.RELEASE,
+                appVersion = getAppVersionUseCase()
+            ),
 
             playingPartnerRound = playingPartnerRound,
 
