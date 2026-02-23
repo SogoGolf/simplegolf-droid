@@ -7,6 +7,7 @@ import com.sogo.golf.msl.analytics.AnalyticsManager
 import com.sogo.golf.msl.data.local.preferences.IncludeRoundPreferences
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.domain.model.HoleScore
+import com.sogo.golf.msl.domain.model.StrokeIndexEntry
 import com.sogo.golf.msl.domain.model.MslMetaData
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.PlayingPartnerRound
@@ -859,7 +860,13 @@ class PlayingPartnerViewModel @Inject constructor(
             markerGLNumber = selectedPartner.golfLinkNumber,
             markerLastName = selectedPartner.lastName,
 
-            mslMetaData = MslMetaData(isIncludeRoundOnSogo = includeRoundValue),
+            mslMetaData = MslMetaData(
+                isIncludeRoundOnSogo = includeRoundValue,
+                platform = "Android",
+                deviceType = android.os.Build.MODEL,
+                osVersion = android.os.Build.VERSION.RELEASE,
+                appVersion = getAppVersionUseCase()
+            ),
 
             playingPartnerRound = playingPartnerRound,
 
@@ -920,6 +927,9 @@ class PlayingPartnerViewModel @Inject constructor(
                 meters = holeData.distance,
                 strokes = 0,
                 score = 0f,
+                strokeIndexes = holeData.strokeIndexes.map {
+                    StrokeIndexEntry(from = it.courseHandicapFrom, to = it.courseHandicapTo, stroke = it.stroke)
+                }
             )
         }
     }

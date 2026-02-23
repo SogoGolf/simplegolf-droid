@@ -45,6 +45,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.sogo.golf.msl.domain.model.Round
 import com.sogo.golf.msl.domain.model.HoleScore
 import com.sogo.golf.msl.domain.model.PlayingPartnerRound
+import com.sogo.golf.msl.domain.model.StrokeIndexEntry
 import com.sogo.golf.msl.domain.model.msl.MslCompetition
 import com.sogo.golf.msl.shared_components.ui.scorecard.TableWithFixedFirstColumnSCORECARD
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
@@ -54,9 +55,7 @@ data class ScorecardData(
     val holeNumber: String,
     val meters: String,
     val index: String,
-    val index1: Int?,
-    val index2: Int?,
-    val index3: Int?,
+    val indexValues: List<Int> = emptyList(),
     val par: String,
     val strokes: String,
     val score: String
@@ -125,14 +124,13 @@ fun GolferScorecard(
         // Add holes 1-9
         for (holeNum in 1..9) {
             val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
+            val idxValues = activeHole?.let { getIndexValues(it) } ?: emptyList()
             columnData.add(
                 ScorecardData(
                     holeNumber = holeNum.toString(),
                     meters = activeHole?.meters?.toString() ?: "0",
-                    index = "${activeHole?.index1 ?: 0}/${activeHole?.index2 ?: 0}/${activeHole?.index3 ?: "-"}",
-                    index1 = activeHole?.index1,
-                    index2 = activeHole?.index2,
-                    index3 = activeHole?.index3,
+                    index = idxValues.joinToString("/").ifEmpty { "-" },
+                    indexValues = idxValues,
                     par = activeHole?.par?.toString() ?: "0",
                     strokes = activeHole?.strokes?.toString() ?: "0",
                     score = activeHole?.score?.toInt()?.toString() ?: "0"
@@ -146,9 +144,6 @@ fun GolferScorecard(
                 holeNumber = "OUT",
                 meters = calculateOutDistance(activeHoleScores).toString(),
                 index = "",
-                index1 = null,
-                index2 = null,
-                index3 = null,
                 par = calculateOutPar(activeHoleScores).toString(),
                 strokes = calculateOutStrokes(activeHoleScores).toString(),
                 score = calculateOutScore(activeHoleScores).toString()
@@ -158,14 +153,13 @@ fun GolferScorecard(
         // Add holes 10-18
         for (holeNum in 10..18) {
             val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
+            val idxValues = activeHole?.let { getIndexValues(it) } ?: emptyList()
             columnData.add(
                 ScorecardData(
                     holeNumber = holeNum.toString(),
                     meters = activeHole?.meters?.toString() ?: "0",
-                    index = "${activeHole?.index1 ?: 0}/${activeHole?.index2 ?: 0}/${activeHole?.index3 ?: "-"}",
-                    index1 = activeHole?.index1,
-                    index2 = activeHole?.index2,
-                    index3 = activeHole?.index3,
+                    index = idxValues.joinToString("/").ifEmpty { "-" },
+                    indexValues = idxValues,
                     par = activeHole?.par?.toString() ?: "0",
                     strokes = activeHole?.strokes?.toString() ?: "0",
                     score = activeHole?.score?.toInt()?.toString() ?: "0"
@@ -179,9 +173,6 @@ fun GolferScorecard(
                 holeNumber = "IN",
                 meters = calculateInDistance(activeHoleScores).toString(),
                 index = "",
-                index1 = null,
-                index2 = null,
-                index3 = null,
                 par = calculateInPar(activeHoleScores).toString(),
                 strokes = calculateInStrokes(activeHoleScores).toString(),
                 score = calculateInScore(activeHoleScores).toString()
@@ -194,9 +185,6 @@ fun GolferScorecard(
                 holeNumber = "TOTAL",
                 meters = calculateTotalDistance(activeHoleScores).toString(),
                 index = "",
-                index1 = null,
-                index2 = null,
-                index3 = null,
                 par = calculateTotalPar(activeHoleScores).toString(),
                 strokes = calculateTotalStrokes(activeHoleScores).toString(),
                 score = calculateTotalScore(activeHoleScores).toString()
@@ -218,14 +206,13 @@ fun GolferScorecard(
         for (holeNum in holesPlayed) {
             val activeHole = activeHoleScores.find { it.holeNumber == holeNum }
             if (activeHole != null) {
+                val idxValues = getIndexValues(activeHole)
                 columnData.add(
                     ScorecardData(
                         holeNumber = holeNum.toString(),
                         meters = activeHole.meters.toString(),
-                        index = "${activeHole.index1}/${activeHole.index2}/${activeHole.index3 ?: "-"}",
-                        index1 = activeHole.index1,
-                        index2 = activeHole.index2,
-                        index3 = activeHole.index3,
+                        index = idxValues.joinToString("/").ifEmpty { "-" },
+                        indexValues = idxValues,
                         par = activeHole.par.toString(),
                         strokes = activeHole.strokes.toString(),
                         score = activeHole.score.toInt().toString()
@@ -246,24 +233,18 @@ fun GolferScorecard(
                 holeNumber = subtotalName,
                 meters = activeHoleScores.sumOf { it.meters }.toString(),
                 index = "",
-                index1 = null,
-                index2 = null,
-                index3 = null,
                 par = activeHoleScores.sumOf { it.par }.toString(),
                 strokes = activeHoleScores.sumOf { it.strokes }.toString(),
                 score = activeHoleScores.sumOf { it.score.toInt() }.toString()
             )
         )
-        
+
         // Add TOTAL column at the end for 9-hole rounds (same as subtotal)
         columnData.add(
             ScorecardData(
                 holeNumber = "TOTAL",
                 meters = activeHoleScores.sumOf { it.meters }.toString(),
                 index = "",
-                index1 = null,
-                index2 = null,
-                index3 = null,
                 par = activeHoleScores.sumOf { it.par }.toString(),
                 strokes = activeHoleScores.sumOf { it.strokes }.toString(),
                 score = activeHoleScores.sumOf { it.score.toInt() }.toString()
@@ -472,16 +453,8 @@ fun GolferScorecard(
                                             .padding(4.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        if (rowData == "Index" && (data.index1 != null || data.index2 != null || data.index3 != null)) {
-                                            // Responsive sizes for index values - all three numbers same size
-                                            val centerSize = when {
-                                                cellTextSize.value >= 26f -> 22.sp
-                                                cellTextSize.value >= 24f -> 20.sp
-                                                cellTextSize.value >= 22f -> 18.sp
-                                                cellTextSize.value >= 20f -> 16.sp
-                                                else -> 14.sp
-                                            }
-                                            val cornerSize = when {
+                                        if (rowData == "Index" && data.indexValues.isNotEmpty()) {
+                                            val idxSize = when {
                                                 cellTextSize.value >= 26f -> 22.sp
                                                 cellTextSize.value >= 24f -> 20.sp
                                                 cellTextSize.value >= 22f -> 18.sp
@@ -489,35 +462,86 @@ fun GolferScorecard(
                                                 else -> 14.sp
                                             }
 
-                                            // Top-left: index1
-                                            if (data.index1 != null) {
-                                                Text(
-                                                    text = data.index1.toString(),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    fontSize = cornerSize,
-                                                    color = textColor,
-                                                    modifier = Modifier.align(Alignment.TopStart).padding(start = 1.dp)
-                                                )
-                                            }
-                                            // Center: index2
-                                            if (data.index2 != null) {
-                                                Text(
-                                                    text = data.index2.toString(),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    fontSize = centerSize,
-                                                    color = textColor,
-                                                    modifier = Modifier.align(Alignment.Center)
-                                                )
-                                            }
-                                            // Bottom-right: index3 (if present)
-                                            if (data.index3 != null) {
-                                                Text(
-                                                    text = data.index3.toString(),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    fontSize = cornerSize,
-                                                    color = textColor,
-                                                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp)
-                                                )
+                                            when (data.indexValues.size) {
+                                                1 -> {
+                                                    Text(
+                                                        text = data.indexValues[0].toString(),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontSize = idxSize,
+                                                        color = textColor,
+                                                        modifier = Modifier.align(Alignment.Center)
+                                                    )
+                                                }
+                                                2 -> {
+                                                    Text(
+                                                        text = data.indexValues[0].toString(),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontSize = idxSize,
+                                                        color = textColor,
+                                                        modifier = Modifier.align(Alignment.TopStart).padding(start = 1.dp)
+                                                    )
+                                                    Text(
+                                                        text = data.indexValues[1].toString(),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontSize = idxSize,
+                                                        color = textColor,
+                                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp)
+                                                    )
+                                                }
+                                                3 -> {
+                                                    Text(
+                                                        text = data.indexValues[0].toString(),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontSize = idxSize,
+                                                        color = textColor,
+                                                        modifier = Modifier.align(Alignment.TopStart).padding(start = 1.dp)
+                                                    )
+                                                    Text(
+                                                        text = data.indexValues[1].toString(),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontSize = idxSize,
+                                                        color = textColor,
+                                                        modifier = Modifier.align(Alignment.Center)
+                                                    )
+                                                    Text(
+                                                        text = data.indexValues[2].toString(),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontSize = idxSize,
+                                                        color = textColor,
+                                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp)
+                                                    )
+                                                }
+                                                else -> {
+                                                    // 4+ values: four corners
+                                                    Text(
+                                                        text = data.indexValues[0].toString(),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontSize = idxSize,
+                                                        color = textColor,
+                                                        modifier = Modifier.align(Alignment.TopStart).padding(start = 1.dp)
+                                                    )
+                                                    Text(
+                                                        text = data.indexValues[1].toString(),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontSize = idxSize,
+                                                        color = textColor,
+                                                        modifier = Modifier.align(Alignment.TopEnd).padding(end = 1.dp)
+                                                    )
+                                                    Text(
+                                                        text = data.indexValues[2].toString(),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontSize = idxSize,
+                                                        color = textColor,
+                                                        modifier = Modifier.align(Alignment.BottomStart).padding(start = 1.dp)
+                                                    )
+                                                    Text(
+                                                        text = data.indexValues[3].toString(),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontSize = idxSize,
+                                                        color = textColor,
+                                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp)
+                                                    )
+                                                }
                                             }
                                         } else {
                                             // Non-Index rows or summary columns: original single value
@@ -538,6 +562,15 @@ fun GolferScorecard(
             }
         }
     }
+}
+
+private fun getIndexValues(hole: HoleScore): List<Int> {
+    return hole.strokeIndexes?.map { it.stroke }
+        ?: listOfNotNull(
+            hole.index1.takeIf { it > 0 },
+            hole.index2.takeIf { it > 0 },
+            hole.index3?.takeIf { it > 0 }
+        )
 }
 
 private fun getTeeName(mslCompetition: MslCompetition?, golfLinkNumber: String?): String {

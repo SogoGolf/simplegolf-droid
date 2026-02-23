@@ -314,11 +314,15 @@ private fun Screen4Portrait(
             }
             val mainGolferPar = mainGolferHoleData?.par ?: 0
             val mainGolferDistance = mainGolferHoleData?.meters ?: 0
-            val mainGolferStrokeIndexes = listOfNotNull(
-                mainGolferHoleData?.index1?.takeIf { it > 0 },
-                mainGolferHoleData?.index2?.takeIf { it > 0 },
-                mainGolferHoleData?.index3?.takeIf { it > 0 }
-            ).joinToString("/").ifEmpty { "-" }
+            val mainGolferStrokeIndexes = mainGolferHoleData?.strokeIndexes
+                ?.map { it.stroke }
+                ?.joinToString("/")
+                ?.ifEmpty { null }
+                ?: listOfNotNull(
+                    mainGolferHoleData?.index1?.takeIf { it > 0 },
+                    mainGolferHoleData?.index2?.takeIf { it > 0 },
+                    mainGolferHoleData?.index3?.takeIf { it > 0 }
+                ).joinToString("/").ifEmpty { "-" }
             
             // Playing partner's hole data
             val partnerHoleData = currentRoundValue?.playingPartnerRound?.holeScores?.find { 
@@ -326,11 +330,15 @@ private fun Screen4Portrait(
             }
             val partnerPar = partnerHoleData?.par ?: 0
             val partnerDistance = partnerHoleData?.meters ?: 0
-            val partnerStrokeIndexes = listOfNotNull(
-                partnerHoleData?.index1?.takeIf { it > 0 },
-                partnerHoleData?.index2?.takeIf { it > 0 },
-                partnerHoleData?.index3?.takeIf { it > 0 }
-            ).joinToString("/").ifEmpty { "-" }
+            val partnerStrokeIndexes = partnerHoleData?.strokeIndexes
+                ?.map { it.stroke }
+                ?.joinToString("/")
+                ?.ifEmpty { null }
+                ?: listOfNotNull(
+                    partnerHoleData?.index1?.takeIf { it > 0 },
+                    partnerHoleData?.index2?.takeIf { it > 0 },
+                    partnerHoleData?.index3?.takeIf { it > 0 }
+                ).joinToString("/").ifEmpty { "-" }
             
             // Extract stroke data from Round object for current hole
             val mainGolferStrokes = currentRoundValue?.holeScores?.find { 

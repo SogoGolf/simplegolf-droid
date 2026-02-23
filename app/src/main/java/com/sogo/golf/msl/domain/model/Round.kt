@@ -99,7 +99,14 @@ data class HoleScore(
     val startTime: String? = null,
     val startLocation: Location? = null,
     val finishTime: String? = null,
-    val finishLocation: Location? = null
+    val finishLocation: Location? = null,
+    val strokeIndexes: List<StrokeIndexEntry>? = null
+)
+
+data class StrokeIndexEntry(
+    val from: Int,
+    val to: Int,
+    val stroke: Int
 )
 
 data class Location(
@@ -140,5 +147,9 @@ data class PlayingPartnerRound(
 )
 
 data class MslMetaData(
-    val isIncludeRoundOnSogo: Boolean? = null
+    val isIncludeRoundOnSogo: Boolean? = null,
+    val platform: String? = null,
+    val deviceType: String? = null,
+    val osVersion: String? = null,
+    val appVersion: String? = null
 )
