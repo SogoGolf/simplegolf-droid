@@ -37,9 +37,17 @@ class UpdatePickupUseCase @Inject constructor(
         index3: Int?
     ) {
         try {
-            // Look up extraStrokes from competition data
+            // Look up extraStrokes from the CORRECT player's competition data
             val competition = getLocalCompetitionUseCase().first()
-            val extraStrokes = competition?.players?.firstOrNull()?.holes
+            val playerGolfLinkNumber = if (isMainGolfer) {
+                round.golflinkNo ?: round.golferGLNumber
+            } else {
+                round.playingPartnerRound?.golflinkNo ?: round.playingPartnerRound?.golferGLNumber
+            }
+            val competitionPlayer = competition?.players?.find { player ->
+                player.golfLinkNumber == playerGolfLinkNumber
+            }
+            val extraStrokes = competitionPlayer?.holes
                 ?.find { it.holeNumber == holeNumber }
                 ?.extraStrokes
 
