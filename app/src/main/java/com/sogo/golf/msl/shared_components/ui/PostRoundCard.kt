@@ -101,7 +101,9 @@ fun PostRoundCard(
                     compTypeLower == "stroke" -> "To Par"
                     else -> "Pts"
                 }
-                val formattedCompScore = when {
+                val formattedCompScore = if (isDQ && compTypeLower == "stroke") {
+                    "DQ"
+                } else when {
                     compTypeLower == "par" || compTypeLower == "stroke" -> {
                         val n = compScoreTotal.toIntOrNull()
                         if (n == null) compScoreTotal else if (n > 0) "+$n" else n.toString()
