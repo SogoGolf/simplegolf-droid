@@ -43,7 +43,8 @@ fun PostRoundCard(
     onSignatureClick: () -> Unit,
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.White,
-    signerName: String = playerName
+    signerName: String = playerName,
+    isDQ: Boolean = false
 ) {
     Card(
         modifier = modifier
@@ -70,9 +71,9 @@ fun PostRoundCard(
             Spacer(modifier = Modifier.height(4.dp))
             
             Text(
-                text = competitionType.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                text = if (isDQ) "Stroke - Player Disqualified" else competitionType.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
                 fontSize = 18.sp,
-                color = Color.White,
+                color = if (isDQ) MSLColors.mslYellow else Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
@@ -82,7 +83,7 @@ fun PostRoundCard(
             Text(
                 text = "Daily Handicap: $dailyHandicap",
                 fontSize = 18.sp,
-                color = Color.White,
+                color = if (isDQ) MSLColors.mslYellow else Color.White,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
@@ -108,10 +109,10 @@ fun PostRoundCard(
                     else -> compScoreTotal
                 }
 
-                ScoreColumn("Front 9", frontNineScore)
-                ScoreColumn("Back 9", backNineScore)
-                ScoreColumn("Total", grandTotalStrokes)
-                ScoreColumn(compLabel, formattedCompScore)
+                ScoreColumn("Front 9", frontNineScore, isDQ)
+                ScoreColumn("Back 9", backNineScore, isDQ)
+                ScoreColumn("Total", grandTotalStrokes, isDQ)
+                ScoreColumn(compLabel, formattedCompScore, isDQ)
             }
             
             Spacer(modifier = Modifier.height(12.dp))
@@ -132,15 +133,17 @@ fun PostRoundCard(
 @Composable
 private fun ScoreColumn(
     label: String,
-    score: String
+    score: String,
+    isDQ: Boolean = false
 ) {
+    val textColor = if (isDQ) MSLColors.mslYellow else Color.White
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = label,
             fontSize = 16.sp,
-            color = Color.White,
+            color = textColor,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(4.dp))
@@ -148,7 +151,7 @@ private fun ScoreColumn(
             text = score,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
+            color = textColor,
             textAlign = TextAlign.Center
         )
     }

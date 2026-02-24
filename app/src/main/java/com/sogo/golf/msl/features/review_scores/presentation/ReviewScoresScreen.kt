@@ -170,6 +170,14 @@ private fun ReviewScoresPortrait(
                         modifier = Modifier
                             .fillMaxSize()
                     ) {
+                        // Derive DQ state: stroke round + any hole picked up = disqualified
+                        val isMainGolferDQ = uiState.round!!.compType.equals("stroke", ignoreCase = true)
+                            && uiState.round!!.holeScores.any { it.isBallPickedUp == true }
+                        val isPartnerDQ = uiState.round!!.playingPartnerRound?.let { partner ->
+                            partner.compType.equals("stroke", ignoreCase = true)
+                                && partner.holeScores.any { it.isBallPickedUp == true }
+                        } ?: false
+
                         // Cards container with weight to fill available space
                         Column(
                             modifier = Modifier
@@ -206,7 +214,8 @@ private fun ReviewScoresPortrait(
                                     },
                                     backgroundColor = MSLColors.mslBlue,
                                     signerName = "${uiState.round!!.golferFirstName ?: ""} ${uiState.round!!.golferLastName ?: ""}".trim(),
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    isDQ = isPartnerDQ
                                 )
                             }
 
@@ -245,7 +254,8 @@ private fun ReviewScoresPortrait(
                                 } else {
                                     "${uiState.round!!.golferFirstName ?: ""} ${uiState.round!!.golferLastName ?: ""}".trim()
                                 },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                isDQ = isMainGolferDQ
                             )
                         }
                         

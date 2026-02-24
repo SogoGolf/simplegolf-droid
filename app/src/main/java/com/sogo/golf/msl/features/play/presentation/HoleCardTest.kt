@@ -49,6 +49,7 @@ fun HoleCardTest(
     onPlusButtonClick: () -> Unit = {},
     onMinusButtonClick: () -> Unit = {},
     isBallPickedUp: Boolean = false,
+    isDQ: Boolean = false,
     onPickupButtonClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -117,7 +118,7 @@ fun HoleCardTest(
                 val scaleFactor = baseScale.coerceIn(0.6f, 1.2f)  // Tighter bounds for consistent sizing
 
                 // Build points label based on competition type
-                val pointsText = when {
+                val pointsText = if (isDQ) "DQ" else when {
                     competitionType.equals("par", ignoreCase = true) ||
                             competitionType.equals("stroke", ignoreCase = true) -> {
                         if (currentPoints > 0) "+$currentPoints" else "$currentPoints"
@@ -126,7 +127,7 @@ fun HoleCardTest(
                     else -> "$currentPoints pts"
                 }
                 // Build total score label based on competition type
-                val totalScoreText = when {
+                val totalScoreText = if (isDQ) "DQ" else when {
                     competitionType.equals("par", ignoreCase = true) ||
                             competitionType.equals("stroke", ignoreCase = true) -> {
                         if (totalScore > 0) "+$totalScore" else "$totalScore"
@@ -225,7 +226,7 @@ fun HoleCardTest(
                             )
                             Text(
                                 text = pointsText,
-                                color = Color.Gray.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
+                                color = if (isDQ) Color.Red else Color.Gray.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
                                 fontSize = (19 * scaleFactor).sp,
                                 modifier = Modifier.offset(y = (-10 * scaleFactor).dp)
                             )
@@ -251,28 +252,17 @@ fun HoleCardTest(
                 Spacer(modifier = Modifier.height((5 * scaleFactor).dp))
 
                 // Pickup button
-                val isStrokeRound = competitionType.equals("stroke", ignoreCase = true)
                 Button(
                     onClick = onPickupButtonClick,
-                    enabled = !isStrokeRound,
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = when {
-                            isBallPickedUp -> Color.Red
-                            else -> MSLColors.mslYellow
-                        },
-                        contentColor = Color.Black,
-                        disabledContainerColor = MSLColors.mslYellow.copy(alpha = 0.55f),
-                        disabledContentColor = Color.Gray
+                        containerColor = if (isBallPickedUp) Color.Red else MSLColors.mslYellow,
+                        contentColor = Color.Black
                     )
                 ) {
                     Text(
                         text = "Pickup",
-                        color = when {
-                            isStrokeRound -> Color.Black.copy(alpha = 0.3f)
-                            isBallPickedUp -> Color.White
-                            else -> Color.Black
-                        },
+                        color = if (isBallPickedUp) Color.White else Color.Black,
                         fontSize = (18 * scaleFactor).sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = (16 * scaleFactor).dp)
@@ -328,7 +318,7 @@ fun HoleCardTest(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = totalScoreText,
-                                color = Color.White,
+                                color = if (isDQ) Color.Red else Color.White,
                                 fontSize = (30 * scaleFactor).sp,
                                 fontWeight = FontWeight.Normal
                             )

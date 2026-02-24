@@ -350,13 +350,19 @@ private fun Screen4Portrait(
             }?.strokes ?: 0
 
             // Extract pickup states for current hole
-            val mainGolferPickedUp = currentRoundValue?.holeScores?.find { 
-                it.holeNumber == currentHoleNumber 
+            val mainGolferPickedUp = currentRoundValue?.holeScores?.find {
+                it.holeNumber == currentHoleNumber
             }?.isBallPickedUp ?: false
-            
-            val partnerPickedUp = currentRoundValue?.playingPartnerRound?.holeScores?.find { 
-                it.holeNumber == currentHoleNumber 
+
+            val partnerPickedUp = currentRoundValue?.playingPartnerRound?.holeScores?.find {
+                it.holeNumber == currentHoleNumber
             }?.isBallPickedUp ?: false
+
+            // Derive DQ state: stroke round + any hole picked up = disqualified
+            val isMainGolferDQ = mainGolferScoreType.equals("stroke", ignoreCase = true)
+                && currentRoundValue?.holeScores?.any { it.isBallPickedUp == true } == true
+            val isPartnerDQ = partnerScoreType.equals("stroke", ignoreCase = true)
+                && currentRoundValue?.playingPartnerRound?.holeScores?.any { it.isBallPickedUp == true } == true
 
             // Look up extraStrokes from competition data for EACH player
             val mainGolferExtraStrokes = localCompetitionValue?.players
@@ -419,6 +425,7 @@ private fun Screen4Portrait(
                 onPlusButtonClick = { playRoundViewModel.onPartnerPlusButtonClick() },
                 onMinusButtonClick = { playRoundViewModel.onPartnerMinusButtonClick() },
                 isBallPickedUp = partnerPickedUp,
+                isDQ = isPartnerDQ,
                 onPickupButtonClick = { playRoundViewModel.onPartnerPickupButtonClick() },
                 modifier = Modifier
                     .fillMaxSize()
@@ -456,6 +463,7 @@ private fun Screen4Portrait(
                 onPlusButtonClick = { playRoundViewModel.onMainGolferPlusButtonClick() },
                 onMinusButtonClick = { playRoundViewModel.onMainGolferMinusButtonClick() },
                 isBallPickedUp = mainGolferPickedUp,
+                isDQ = isMainGolferDQ,
                 onPickupButtonClick = { playRoundViewModel.onMainGolferPickupButtonClick() },
                 modifier = Modifier
                     .fillMaxSize()

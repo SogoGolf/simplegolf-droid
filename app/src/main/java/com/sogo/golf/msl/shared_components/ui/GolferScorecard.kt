@@ -114,6 +114,13 @@ fun GolferScorecard(
 
     // Get active player's data based on selected tab
     val activeHoleScores = if (selectedTab.value == "golfer") filteredHoleScores else filteredPartnerHoleScores
+
+    // Derive DQ state: stroke round + any hole picked up = disqualified
+    val isGolferDQ = round.compType.equals("stroke", ignoreCase = true)
+        && holeScores.any { it.isBallPickedUp == true }
+    val isPartnerDQ = round.playingPartnerRound?.compType.equals("stroke", ignoreCase = true)
+        && partnerHoleScores.any { it.isBallPickedUp == true }
+    val isActiveDQ = if (selectedTab.value == "golfer") isGolferDQ else isPartnerDQ
     
     // Create column data for the grid
     val columnData = mutableListOf<ScorecardData>()
@@ -430,11 +437,13 @@ fun GolferScorecard(
                                 val dataIndex = columnIndex - 1
                                 if (dataIndex < columnData.size) {
                                     val data = columnData[dataIndex]
-                                    val cellValue = when (rowData) {
-                                        "Meters" -> data.meters
-                                        "Index" -> data.index
-                                        "Par" -> data.par
-                                        "Strokes" -> data.strokes
+                                    val isScoreRow = rowData == "Score"
+                                    val cellValue = when {
+                                        isScoreRow && isActiveDQ -> "DQ"
+                                        rowData == "Meters" -> data.meters
+                                        rowData == "Index" -> data.index
+                                        rowData == "Par" -> data.par
+                                        rowData == "Strokes" -> data.strokes
                                         else -> data.score
                                     }
 
@@ -443,6 +452,7 @@ fun GolferScorecard(
                                         else -> Color.White
                                     }
                                     val textColor = when {
+                                        isScoreRow && isActiveDQ -> Color.Red
                                         dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> Color.White
                                         else -> Color.Black
                                     }
