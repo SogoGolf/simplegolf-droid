@@ -70,8 +70,14 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 val rawSogoGolfer = response.body()
                 Log.d(TAG, "Raw response body: $rawSogoGolfer")
 
-                val sogoGolfer = rawSogoGolfer?.toDomainModel()
-                    ?: throw Exception("Empty SogoGolfer response")
+                // Check if response is empty/null - API may return 200 with empty body
+                // for golfers that don't exist yet (new users)
+                if (rawSogoGolfer == null || rawSogoGolfer.id == null) {
+                    Log.d(TAG, "SogoGolfer response has null id - golfer does not exist yet (new user)")
+                    throw Exception("SogoGolfer not found (404): Golfer does not exist yet")
+                }
+
+                val sogoGolfer = rawSogoGolfer.toDomainModel()
 
                 Log.d(TAG, "Successfully retrieved SogoGolfer: ${sogoGolfer.firstName} ${sogoGolfer.lastName}")
                 Log.d(TAG, "SogoGolfer details - Email: ${sogoGolfer.email}, Club: ${sogoGolfer.club}, Handicap: ${sogoGolfer.handicap}")
@@ -81,7 +87,7 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 val errorCode = response.code()
                 Log.e(TAG, "Failed to get SogoGolfer: $errorCode - ${response.message()}")
                 Log.e(TAG, "Response body: ${response.errorBody()?.string()}")
-                
+
                 // Include the error code in the exception message so we can detect 404s later
                 // 404 for SOGO golfer means the golfer doesn't exist yet (which is OK for new users)
                 if (errorCode == 404) {

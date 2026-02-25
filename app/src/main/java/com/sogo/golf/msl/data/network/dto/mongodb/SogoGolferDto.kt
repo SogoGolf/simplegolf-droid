@@ -7,19 +7,19 @@ import com.sogo.golf.msl.domain.model.mongodb.SogoState
 
 data class SogoGolferDto(
     @SerializedName("id")
-    val id: String,
+    val id: String? = null,
 
     @SerializedName("entityId")
     val entityId: String? = null,
 
     @SerializedName("golflinkNo")
-    val golfLinkNo: String,
+    val golfLinkNo: String? = null,
 
     @SerializedName("firstName")
-    val firstName: String,
+    val firstName: String? = null,
 
     @SerializedName("lastName")
-    val lastName: String,
+    val lastName: String? = null,
 
     @SerializedName("email")
     val email: String? = null,
@@ -99,11 +99,11 @@ data class SogoStateDto(
 
 fun SogoGolferDto.toDomainModel(): SogoGolfer {
     return SogoGolfer(
-        id = id,
+        id = id ?: "",
         entityId = entityId,
-        golfLinkNo = golfLinkNo,
-        firstName = firstName,
-        lastName = lastName,
+        golfLinkNo = golfLinkNo ?: "",
+        firstName = firstName ?: "",
+        lastName = lastName ?: "",
         email = email,
         phone = phone,
         mobileNo = mobileNo,

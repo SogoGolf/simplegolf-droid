@@ -298,11 +298,24 @@ fun HomeScreen(
                     }
                 }
 
-                // Show message when button is disabled due to missing golflink number  
-                if (!homeUiState.isLoading && !updateState.isCheckingForUpdate && 
+                // Show message when button is disabled due to missing golflink number
+                if (!homeUiState.isLoading && !updateState.isCheckingForUpdate &&
                     currentGolfer?.golfLinkNo.isNullOrBlank() == true) {
                     Text(
                         text = "Your GolfLink number was not provided to the app. Please contact your club to ensure this is set up on your profile.",
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp, vertical = 18.dp)
+                    )
+                }
+
+                // Show error message when SOGO data fetch fails
+                if (!homeUiState.isLoading && homeUiState.errorMessage != null) {
+                    Text(
+                        text = homeUiState.errorMessage ?: "",
                         color = Color.White,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
