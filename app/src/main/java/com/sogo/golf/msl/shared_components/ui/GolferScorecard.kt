@@ -122,6 +122,12 @@ fun GolferScorecard(
     val isPartnerDQ = round.playingPartnerRound?.compType.equals("stroke", ignoreCase = true)
         && partnerHoleScores.any { it.isBallPickedUp == true }
     val isActiveDQ = if (selectedTab.value == "golfer") isGolferDQ else isPartnerDQ
+    val activeCompType = if (selectedTab.value == "golfer") {
+        round.compType
+    } else {
+        round.playingPartnerRound?.compType
+    }
+    val showsStrokePointBars = activeCompType?.contains("stableford", ignoreCase = true) == true
     
     // Create column data for the grid
     val columnData = mutableListOf<ScorecardData>()
@@ -462,7 +468,7 @@ fun GolferScorecard(
                                         isSummaryColumn -> Color.White
                                         else -> Color.Black
                                     }
-                                    val strokeBarColor = if (isStrokesRow && !isSummaryColumn) {
+                                    val strokeBarColor = if (showsStrokePointBars && isStrokesRow && !isSummaryColumn) {
                                         scorePointBarColor(data.scoreValue)
                                     } else {
                                         null
@@ -804,6 +810,7 @@ fun GolferScorecardPreview() {
         golferFirstName = "Julius",
         golferLastName = "Wire",
         dailyHandicap = 16.2f,
+        compType = "stableford",
         holeScores = holeScores
     )
 
@@ -811,6 +818,7 @@ fun GolferScorecardPreview() {
         golferFirstName = "Peter",
         golferLastName = "Farrier",
         dailyHandicap = 28.0,
+        compType = "stableford",
         playingPartnerRound = partnerRound,
         holeScores = holeScores
     )
