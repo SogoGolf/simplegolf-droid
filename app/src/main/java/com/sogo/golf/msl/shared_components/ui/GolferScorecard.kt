@@ -58,7 +58,8 @@ data class ScorecardData(
     val indexValues: List<Int> = emptyList(),
     val par: String,
     val strokes: String,
-    val score: String
+    val score: String,
+    val scoreValue: Int? = null
 )
 
 @Composable
@@ -140,7 +141,8 @@ fun GolferScorecard(
                     indexValues = idxValues,
                     par = activeHole?.par?.toString() ?: "0",
                     strokes = activeHole?.strokes?.toString() ?: "0",
-                    score = activeHole?.score?.toInt()?.toString() ?: "0"
+                    score = activeHole?.score?.toInt()?.toString() ?: "0",
+                    scoreValue = activeHole?.score?.toInt()
                 )
             )
         }
@@ -169,7 +171,8 @@ fun GolferScorecard(
                     indexValues = idxValues,
                     par = activeHole?.par?.toString() ?: "0",
                     strokes = activeHole?.strokes?.toString() ?: "0",
-                    score = activeHole?.score?.toInt()?.toString() ?: "0"
+                    score = activeHole?.score?.toInt()?.toString() ?: "0",
+                    scoreValue = activeHole?.score?.toInt()
                 )
             )
         }
@@ -222,7 +225,8 @@ fun GolferScorecard(
                         indexValues = idxValues,
                         par = activeHole.par.toString(),
                         strokes = activeHole.strokes.toString(),
-                        score = activeHole.score.toInt().toString()
+                        score = activeHole.score.toInt().toString(),
+                        scoreValue = activeHole.score.toInt()
                     )
                 )
             }
@@ -438,6 +442,8 @@ fun GolferScorecard(
                                 if (dataIndex < columnData.size) {
                                     val data = columnData[dataIndex]
                                     val isScoreRow = rowData == "Score"
+                                    val isStrokesRow = rowData == "Strokes"
+                                    val isSummaryColumn = dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex
                                     val cellValue = when {
                                         isScoreRow && isActiveDQ -> "DQ"
                                         rowData == "Meters" -> data.meters
@@ -448,21 +454,43 @@ fun GolferScorecard(
                                     }
 
                                     val backgroundColor = when {
-                                        dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> mslBlue
+                                        isSummaryColumn -> mslBlue
                                         else -> Color.White
                                     }
                                     val textColor = when {
                                         isScoreRow && isActiveDQ -> Color.Red
-                                        dataIndex == outColumnIndex || dataIndex == inColumnIndex || dataIndex == totalColumnIndex -> Color.White
+                                        isSummaryColumn -> Color.White
                                         else -> Color.Black
+                                    }
+                                    val strokeBarColor = if (isStrokesRow && !isSummaryColumn) {
+                                        scorePointBarColor(data.scoreValue)
+                                    } else {
+                                        null
                                     }
 
                                     Box(
                                         modifier = Modifier
-                                            .background(backgroundColor)
-                                            .padding(4.dp),
+                                            .background(backgroundColor),
                                         contentAlignment = Alignment.Center
                                     ) {
+                                        strokeBarColor?.let { barColor ->
+                                            Column(modifier = Modifier.fillMaxSize()) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(6.dp)
+                                                        .background(barColor)
+                                                )
+                                                Spacer(modifier = Modifier.weight(1f))
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(6.dp)
+                                                        .background(barColor)
+                                                )
+                                            }
+                                        }
+
                                         if (rowData == "Index" && data.indexValues.isNotEmpty()) {
                                             val idxSize = when {
                                                 cellTextSize.value >= 26f -> 22.sp
@@ -479,7 +507,7 @@ fun GolferScorecard(
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         fontSize = idxSize,
                                                         color = textColor,
-                                                        modifier = Modifier.align(Alignment.Center)
+                                                        modifier = Modifier.align(Alignment.Center).padding(4.dp)
                                                     )
                                                 }
                                                 2 -> {
@@ -488,14 +516,14 @@ fun GolferScorecard(
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         fontSize = idxSize,
                                                         color = textColor,
-                                                        modifier = Modifier.align(Alignment.TopStart).padding(start = 1.dp)
+                                                        modifier = Modifier.align(Alignment.TopStart).padding(start = 5.dp, top = 4.dp)
                                                     )
                                                     Text(
                                                         text = data.indexValues[1].toString(),
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         fontSize = idxSize,
                                                         color = textColor,
-                                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp)
+                                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 5.dp, bottom = 4.dp)
                                                     )
                                                 }
                                                 3 -> {
@@ -504,21 +532,21 @@ fun GolferScorecard(
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         fontSize = idxSize,
                                                         color = textColor,
-                                                        modifier = Modifier.align(Alignment.TopStart).padding(start = 1.dp)
+                                                        modifier = Modifier.align(Alignment.TopStart).padding(start = 5.dp, top = 4.dp)
                                                     )
                                                     Text(
                                                         text = data.indexValues[1].toString(),
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         fontSize = idxSize,
                                                         color = textColor,
-                                                        modifier = Modifier.align(Alignment.Center)
+                                                        modifier = Modifier.align(Alignment.Center).padding(4.dp)
                                                     )
                                                     Text(
                                                         text = data.indexValues[2].toString(),
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         fontSize = idxSize,
                                                         color = textColor,
-                                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp)
+                                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 5.dp, bottom = 4.dp)
                                                     )
                                                 }
                                                 else -> {
@@ -528,28 +556,28 @@ fun GolferScorecard(
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         fontSize = idxSize,
                                                         color = textColor,
-                                                        modifier = Modifier.align(Alignment.TopStart).padding(start = 1.dp)
+                                                        modifier = Modifier.align(Alignment.TopStart).padding(start = 5.dp, top = 4.dp)
                                                     )
                                                     Text(
                                                         text = data.indexValues[1].toString(),
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         fontSize = idxSize,
                                                         color = textColor,
-                                                        modifier = Modifier.align(Alignment.TopEnd).padding(end = 1.dp)
+                                                        modifier = Modifier.align(Alignment.TopEnd).padding(end = 5.dp, top = 4.dp)
                                                     )
                                                     Text(
                                                         text = data.indexValues[2].toString(),
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         fontSize = idxSize,
                                                         color = textColor,
-                                                        modifier = Modifier.align(Alignment.BottomStart).padding(start = 1.dp)
+                                                        modifier = Modifier.align(Alignment.BottomStart).padding(start = 5.dp, bottom = 4.dp)
                                                     )
                                                     Text(
                                                         text = data.indexValues[3].toString(),
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         fontSize = idxSize,
                                                         color = textColor,
-                                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 1.dp)
+                                                        modifier = Modifier.align(Alignment.BottomEnd).padding(end = 5.dp, bottom = 4.dp)
                                                     )
                                                 }
                                             }
@@ -560,7 +588,8 @@ fun GolferScorecard(
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontSize = cellTextSize,
                                                 color = textColor,
-                                                textAlign = TextAlign.Center
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.padding(4.dp)
                                             )
                                         }
                                     }
@@ -587,6 +616,17 @@ private fun getTeeName(mslCompetition: MslCompetition?, golfLinkNumber: String?)
     return mslCompetition?.players?.find { 
         it.golfLinkNumber == golfLinkNumber 
     }?.teeName ?: "--"
+}
+
+private fun scorePointBarColor(scoreValue: Int?): Color? {
+    return when (scoreValue) {
+        1 -> Color(0xFFFF0000)
+        2 -> Color(0xFFFFFF00)
+        3 -> Color(0xFFB8B8B8)
+        4 -> Color(0xFF00D6D6)
+        5 -> Color(0xFF00FF00)
+        else -> null
+    }
 }
 
 @Composable
