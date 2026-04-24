@@ -37,6 +37,7 @@ fun HoleCardTest(
     teeColor: String = "Black",
     competitionType: String = "Stableford",
     dailyHandicap: Int = 10,
+    shotsReceived: Int = 0,
     strokes: Int = 3,
     currentPoints: Int = 2,
     par: Int = 5,
@@ -136,8 +137,10 @@ fun HoleCardTest(
                 }
 
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy((6 * scaleFactor).dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = (8 * scaleFactor).dp, bottom = (12 * scaleFactor).dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Header with name
                     Text(
@@ -148,128 +151,141 @@ fun HoleCardTest(
                         modifier = Modifier.padding(top = (4 * scaleFactor).dp)
                     )
 
-                // Tee type and handicap row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = teeColor,
-                            color = Color.White,
-                            fontSize = (24 * scaleFactor).sp,
-                            fontWeight = FontWeight.Normal
-                        )
-                        Text(
-                            text = "Type: $competitionType",
-                            color = Color.White,
-                            fontSize = (18 * scaleFactor).sp
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = dailyHandicap.toString(),
-                            color = Color.White,
-                            fontSize = (24 * scaleFactor).sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Daily Handicap",
-                            color = Color.White,
-                            fontSize = (18 * scaleFactor).sp
-                        )
-                    }
-                }
+                    Spacer(modifier = Modifier.height((6 * scaleFactor).dp))
 
-                // Score adjustment controls
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = if (isBallPickedUp) { {} } else onMinusButtonClick,
-                        enabled = !isBallPickedUp,
-                        modifier = Modifier
-                            .size(65.dp)
-                            .clip(CircleShape)
-                            .background(MSLColors.mslYellow.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
+                    // Tee type and handicap row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            "-",
-                            color = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
-                            fontSize = (38 * scaleFactor).sp,
-                            fontWeight = FontWeight.Normal
-                        )
-                    }
-
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(88.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
-                            .clickable(enabled = !isBallPickedUp) {
-                                if (!isBallPickedUp) onStrokeButtonClick()
-                            }
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = strokes.toString(),
-                                color = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
-                                fontSize = (56 * scaleFactor).sp,
-                                fontWeight = FontWeight.Medium
+                                text = teeColor,
+                                color = Color.White,
+                                fontSize = (24 * scaleFactor).sp,
+                                fontWeight = FontWeight.Normal
                             )
                             Text(
-                                text = pointsText,
-                                color = if (isDQ) Color.Red else Color.Gray.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
-                                fontSize = (19 * scaleFactor).sp,
-                                modifier = Modifier.offset(y = (-10 * scaleFactor).dp)
+                                text = "Type: $competitionType",
+                                color = Color.White,
+                                fontSize = (18 * scaleFactor).sp
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = dailyHandicap.toString(),
+                                color = Color.White,
+                                fontSize = (24 * scaleFactor).sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Daily Handicap",
+                                color = Color.White,
+                                fontSize = (18 * scaleFactor).sp
                             )
                         }
                     }
 
-                    IconButton(
-                        onClick = if (isBallPickedUp) { {} } else onPlusButtonClick,
-                        enabled = !isBallPickedUp,
-                        modifier = Modifier
-                            .size(65.dp)
-                            .clip(CircleShape)
-                            .background(MSLColors.mslYellow.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Plus",
-                            tint = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f)
-                        )
-                    }
-                }
+                    Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
 
-                Spacer(modifier = Modifier.height((5 * scaleFactor).dp))
-
-                // Pickup button
-                Button(
-                    onClick = onPickupButtonClick,
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isBallPickedUp) Color.Red else MSLColors.mslYellow,
-                        contentColor = Color.Black
-                    )
-                ) {
                     Text(
-                        text = "Pickup",
-                        color = if (isBallPickedUp) Color.White else Color.Black,
-                        fontSize = (18 * scaleFactor).sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = (16 * scaleFactor).dp)
+                        text = "Shots: $shotsReceived",
+                        color = Color.White.copy(alpha = if (isBallPickedUp) 0.7f else 0.95f),
+                        fontSize = (16 * scaleFactor).sp,
+                        fontWeight = FontWeight.Medium
                     )
-                }
+
+                    Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
+
+                    // Score adjustment controls
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(
+                            onClick = if (isBallPickedUp) { {} } else onMinusButtonClick,
+                            enabled = !isBallPickedUp,
+                            modifier = Modifier
+                                .size(65.dp)
+                                .clip(CircleShape)
+                                .background(MSLColors.mslYellow.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
+                        ) {
+                            Text(
+                                "-",
+                                color = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
+                                fontSize = (38 * scaleFactor).sp,
+                                fontWeight = FontWeight.Normal
+                            )
+                        }
+
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(88.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
+                                .clickable(enabled = !isBallPickedUp) {
+                                    if (!isBallPickedUp) onStrokeButtonClick()
+                                }
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = strokes.toString(),
+                                    color = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
+                                    fontSize = (56 * scaleFactor).sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = pointsText,
+                                    color = if (isDQ) Color.Red else Color.Gray.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f),
+                                    fontSize = (19 * scaleFactor).sp,
+                                    modifier = Modifier.offset(y = (-10 * scaleFactor).dp)
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = if (isBallPickedUp) { {} } else onPlusButtonClick,
+                            enabled = !isBallPickedUp,
+                            modifier = Modifier
+                                .size(65.dp)
+                                .clip(CircleShape)
+                                .background(MSLColors.mslYellow.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f))
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Plus",
+                                tint = Color.Black.copy(alpha = if (isBallPickedUp) 0.5f else 1.0f)
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height((5 * scaleFactor).dp))
+
+                    // Pickup button
+                    Button(
+                        onClick = onPickupButtonClick,
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isBallPickedUp) Color.Red else MSLColors.mslYellow,
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Text(
+                            text = "Pickup",
+                            color = if (isBallPickedUp) Color.White else Color.Black,
+                            fontSize = (18 * scaleFactor).sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = (16 * scaleFactor).dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f, fill = true))
 
                     // Bottom stats row
                     Row(
@@ -347,4 +363,3 @@ fun HoleCardTestPreview() {
         HoleCardTest()
     }
 }
-
