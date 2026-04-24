@@ -1,5 +1,11 @@
 # Release Notes
 
+This file is only a scratch pad for Google Play release notes. The upload script and API upload flow do not read this file automatically.
+
+When the user asks to deploy Android to the store, use [PLAY_STORE_RELEASE.md](/Users/angusjohnston/src-android/simplegolf-droid/PLAY_STORE_RELEASE.md) as the source of truth.
+
+Google Play release notes are uploaded as plain text in `en-US`.
+
 ## Latest Release
 
 ### What's New

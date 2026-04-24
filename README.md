@@ -1,9 +1,22 @@
 # SimpleGolf Android App
 
-## 🚀 DEPLOYING TO GOOGLE PLAY OPEN TESTING
+## 🚀 DEPLOYING TO GOOGLE PLAY
+
+For the exact release workflow, including:
+
+- the default `internal` testing deploy
+- the interactive script path
+- the manual upload path when the build number was already bumped
+- the exact credentials and signing checks
+- the exact Google Play API upload command
+- the release-notes format used for `en-US`
+
+use [PLAY_STORE_RELEASE.md](/Users/angusjohnston/src-android/simplegolf-droid/PLAY_STORE_RELEASE.md).
 
 ### Quick Deploy (Recommended)
-To deploy a new update to the Open Testing channel on Google Play:
+When the user asks to send Android to the store for testing, treat [PLAY_STORE_RELEASE.md](/Users/angusjohnston/src-android/simplegolf-droid/PLAY_STORE_RELEASE.md) as the source of truth. The default testing target is Google Play `internal` unless the user explicitly asks for another track.
+
+To deploy with the interactive script:
 
 ```bash
 ./scripts/release_to_play_store.sh
@@ -11,21 +24,22 @@ To deploy a new update to the Open Testing channel on Google Play:
 
 This script will:
 1. Prompt you for the new version number
-2. Update the version in the app's build.gradle
+2. Update the version in `version.properties`
 3. Build a release AAB (Android App Bundle)
 4. Sign the AAB with the release keystore
-5. Upload to Google Play Console's Open Testing track
-6. Handle all the configuration automatically
+5. Upload to the Google Play track you choose in the script
+6. Upload your release notes as `en-US`
+7. Handle the configuration automatically
 
 ### Prerequisites
 - Ensure you have the release keystore configured
 - Make sure you have Google Play Console API access set up
-- Have your service account JSON key file in place
+- Export `PLAY_STORE_CREDENTIALS_FILE` to the service-account JSON key file path
 
 ### What Happens After Deployment
-- The app will be available in Open Testing within a few minutes
-- Testers enrolled in Open Testing will see the update within 2-4 hours
-- You can monitor the rollout status in the Google Play Console
+- The app usually appears in Play Console within a few minutes
+- `internal` builds are usually visible to testers faster than `beta`
+- You can monitor the rollout status in Google Play Console
 
 ---
 
