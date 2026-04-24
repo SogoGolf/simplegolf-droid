@@ -2,6 +2,7 @@ package com.sogo.golf.msl.shared_components.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
@@ -58,8 +61,7 @@ data class ScorecardData(
     val indexValues: List<Int> = emptyList(),
     val par: String,
     val strokes: String,
-    val score: String,
-    val scoreValue: Int? = null
+    val score: String
 )
 
 @Composable
@@ -122,12 +124,6 @@ fun GolferScorecard(
     val isPartnerDQ = round.playingPartnerRound?.compType.equals("stroke", ignoreCase = true)
         && partnerHoleScores.any { it.isBallPickedUp == true }
     val isActiveDQ = if (selectedTab.value == "golfer") isGolferDQ else isPartnerDQ
-    val activeCompType = if (selectedTab.value == "golfer") {
-        round.compType
-    } else {
-        round.playingPartnerRound?.compType
-    }
-    val showsStrokePointBars = activeCompType?.contains("stableford", ignoreCase = true) == true
     
     // Create column data for the grid
     val columnData = mutableListOf<ScorecardData>()
@@ -147,8 +143,7 @@ fun GolferScorecard(
                     indexValues = idxValues,
                     par = activeHole?.par?.toString() ?: "0",
                     strokes = activeHole?.strokes?.toString() ?: "0",
-                    score = activeHole?.score?.toInt()?.toString() ?: "0",
-                    scoreValue = activeHole?.score?.toInt()
+                    score = activeHole?.score?.toInt()?.toString() ?: "0"
                 )
             )
         }
@@ -177,8 +172,7 @@ fun GolferScorecard(
                     indexValues = idxValues,
                     par = activeHole?.par?.toString() ?: "0",
                     strokes = activeHole?.strokes?.toString() ?: "0",
-                    score = activeHole?.score?.toInt()?.toString() ?: "0",
-                    scoreValue = activeHole?.score?.toInt()
+                    score = activeHole?.score?.toInt()?.toString() ?: "0"
                 )
             )
         }
@@ -231,8 +225,7 @@ fun GolferScorecard(
                         indexValues = idxValues,
                         par = activeHole.par.toString(),
                         strokes = activeHole.strokes.toString(),
-                        score = activeHole.score.toInt().toString(),
-                        scoreValue = activeHole.score.toInt()
+                        score = activeHole.score.toInt().toString()
                     )
                 )
             }
@@ -468,10 +461,22 @@ fun GolferScorecard(
                                         isSummaryColumn -> Color.White
                                         else -> Color.Black
                                     }
-                                    val strokeBarColor = if (showsStrokePointBars && isStrokesRow && !isSummaryColumn) {
-                                        scorePointBarColor(data.scoreValue)
+                                    val strokeMarkerStyle = if (
+                                        isStrokesRow &&
+                                        !isSummaryColumn &&
+                                        data.strokes != "0"
+                                    ) {
+                                        scoreReferenceMarkerStyle(
+                                            strokes = data.strokes.toIntOrNull(),
+                                            par = data.par.toIntOrNull()
+                                        )
                                     } else {
                                         null
+                                    }
+                                    val displayTextColor = if (strokeMarkerStyle?.usesWhiteText == true) {
+                                        Color.White
+                                    } else {
+                                        textColor
                                     }
 
                                     Box(
@@ -479,22 +484,12 @@ fun GolferScorecard(
                                             .background(backgroundColor),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        strokeBarColor?.let { barColor ->
-                                            Column(modifier = Modifier.fillMaxSize()) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .height(6.dp)
-                                                        .background(barColor)
-                                                )
-                                                Spacer(modifier = Modifier.weight(1f))
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .height(6.dp)
-                                                        .background(barColor)
-                                                )
-                                            }
+                                        strokeMarkerStyle?.let { markerStyle ->
+                                            ScoreReferenceMarker(
+                                                markerStyle = markerStyle,
+                                                cellHeight = responsiveCellHeight,
+                                                modifier = Modifier.align(Alignment.Center)
+                                            )
                                         }
 
                                         if (rowData == "Index" && data.indexValues.isNotEmpty()) {
@@ -593,7 +588,7 @@ fun GolferScorecard(
                                                 text = cellValue,
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontSize = cellTextSize,
-                                                color = textColor,
+                                                color = displayTextColor,
                                                 textAlign = TextAlign.Center,
                                                 modifier = Modifier.padding(4.dp)
                                             )
@@ -624,14 +619,109 @@ private fun getTeeName(mslCompetition: MslCompetition?, golfLinkNumber: String?)
     }?.teeName ?: "--"
 }
 
-private fun scorePointBarColor(scoreValue: Int?): Color? {
-    return when (scoreValue) {
-        1 -> Color(0xFFFF0000)
-        2 -> Color(0xFFFFFF00)
-        3 -> Color(0xFFB8B8B8)
-        4 -> Color(0xFF00D6D6)
-        5 -> Color(0xFF00FF00)
+private enum class ScoreReferenceMarkerStyle {
+    OutlineCircle,
+    FilledCircle,
+    FilledDoubleCircle,
+    OutlineSquare,
+    FilledSquare,
+    FilledDoubleSquare
+}
+
+private val ScoreReferenceMarkerStyle.usesWhiteText: Boolean
+    get() = when (this) {
+        ScoreReferenceMarkerStyle.FilledCircle,
+        ScoreReferenceMarkerStyle.FilledDoubleCircle,
+        ScoreReferenceMarkerStyle.FilledSquare,
+        ScoreReferenceMarkerStyle.FilledDoubleSquare -> true
+        else -> false
+    }
+
+private fun scoreReferenceMarkerStyle(strokes: Int?, par: Int?): ScoreReferenceMarkerStyle? {
+    if (strokes == null || par == null || par <= 0 || strokes == 0) return null
+
+    return when (strokes - par) {
+        in Int.MIN_VALUE until -2 -> ScoreReferenceMarkerStyle.FilledDoubleCircle
+        -2 -> ScoreReferenceMarkerStyle.FilledCircle
+        -1 -> ScoreReferenceMarkerStyle.OutlineCircle
+        1 -> ScoreReferenceMarkerStyle.OutlineSquare
+        2 -> ScoreReferenceMarkerStyle.FilledSquare
+        in 3..Int.MAX_VALUE -> ScoreReferenceMarkerStyle.FilledDoubleSquare
         else -> null
+    }
+}
+
+@Composable
+private fun ScoreReferenceMarker(
+    markerStyle: ScoreReferenceMarkerStyle,
+    cellHeight: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier
+) {
+    val markerSize = (cellHeight * 0.70f).coerceIn(26.dp, 44.dp)
+    val doublePadding = (markerSize * 0.14f).coerceIn(3.dp, 6.dp)
+    val strokeWidth = if (markerSize >= 34.dp) 2.dp else 1.5.dp
+    val markerColor = Color.Black
+
+    Box(
+        modifier = modifier.size(markerSize),
+        contentAlignment = Alignment.Center
+    ) {
+        when (markerStyle) {
+            ScoreReferenceMarkerStyle.OutlineCircle -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .border(strokeWidth, markerColor, CircleShape)
+                )
+            }
+            ScoreReferenceMarkerStyle.FilledCircle -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(markerColor, CircleShape)
+                )
+            }
+            ScoreReferenceMarkerStyle.FilledDoubleCircle -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .border(strokeWidth, markerColor, CircleShape)
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(doublePadding)
+                        .background(markerColor, CircleShape)
+                )
+            }
+            ScoreReferenceMarkerStyle.OutlineSquare -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .border(strokeWidth, markerColor, RoundedCornerShape(0.dp))
+                )
+            }
+            ScoreReferenceMarkerStyle.FilledSquare -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(markerColor, RoundedCornerShape(0.dp))
+                )
+            }
+            ScoreReferenceMarkerStyle.FilledDoubleSquare -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .border(strokeWidth, markerColor, RoundedCornerShape(0.dp))
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(doublePadding)
+                        .background(markerColor, RoundedCornerShape(0.dp))
+                )
+            }
+        }
     }
 }
 
