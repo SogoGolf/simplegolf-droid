@@ -189,6 +189,8 @@ fun HoleCardTest(
 
                     Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
 
+                    // Temporarily hide shots received UI for a separate update.
+                    /*
                     Text(
                         text = "Shots: $shotsReceived",
                         color = Color.White.copy(alpha = if (isBallPickedUp) 0.7f else 0.95f),
@@ -197,6 +199,7 @@ fun HoleCardTest(
                     )
 
                     Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
+                    */
 
                     // Score adjustment controls
                     Row(
