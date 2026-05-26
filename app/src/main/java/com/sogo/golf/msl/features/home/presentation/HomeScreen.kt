@@ -4,8 +4,6 @@ package com.sogo.golf.msl.features.home.presentation
 import android.app.Activity
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -87,9 +85,6 @@ fun HomeScreen(
     val sogoGolfer by homeViewModel.sogoGolfer.collectAsState()
     val homeUiState by homeViewModel.uiState.collectAsState()
 
-    // Collect the updateState properly
-    val updateState by homeViewModel.updateState.collectAsState()
-
     val scrollState = rememberScrollState()
 
     val configuration = LocalConfiguration.current
@@ -99,43 +94,11 @@ fun HomeScreen(
     val context = LocalContext.current
     val activity = context as Activity
 
-    var shouldStartCompetition by remember { mutableStateOf(false) }
     var showGolferDataConfirmationSheet by remember { mutableStateOf(false) }
 
     // Initialize the ViewModel with skipDataFetch parameter
     LaunchedEffect(skipDataFetch) {
         homeViewModel.setSkipDataFetch(skipDataFetch)
-    }
-
-    val updateLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        homeViewModel.handleUpdateResult(result)
-    }
-
-    // Handle navigation after update check
-    LaunchedEffect(shouldStartCompetition, updateState) {
-        if (shouldStartCompetition) {
-            when {
-                updateState.isCheckingForUpdate -> {
-                    // Still checking, wait...
-                }
-                updateState.updateAvailable -> {
-                    // Update required - AppUpdateManager handles this
-                    // Reset flag since we're not navigating
-                    shouldStartCompetition = false
-                }
-                !updateState.isCheckingForUpdate && !updateState.updateAvailable -> {
-                    // No update needed - navigate
-                    shouldStartCompetition = false
-                    onNavigateToCompetition()
-                }
-                updateState.updateError != null -> {
-                    // Error occurred - reset flag and let user see error
-                    shouldStartCompetition = false
-                }
-            }
-        }
     }
 
     // Set status bar color to match blue background
@@ -230,76 +193,33 @@ fun HomeScreen(
             showGolferDataConfirmationSheet = true
         } else {
             Log.d("HomeScreen", "Terms accepted - proceeding with competition start")
-            shouldStartCompetition = true
-                            // Call the modified method with both callbacks
-                            homeViewModel.checkForUpdatesAndStartCompetition(
-                                activity = activity,
-                                activityResultLauncher = updateLauncher,
-                                onUpdateCheckComplete = {
-                                    // Update check completed - if we reach here, update was required
-                                    // UI should show loading state until update finishes
-                                },
-                                onNoUpdateRequired = {
-                                    // This is handled in LaunchedEffect above
-                                }
-                            )
+            onNavigateToCompetition()
                         }
                     },
-                    enabled = (!updateState.isCheckingForUpdate && !homeUiState.isLoading && homeViewModel.hasRequiredData()).also { enabled ->
+                    enabled = (!homeUiState.isLoading && homeViewModel.hasRequiredData()).also { enabled ->
                         Log.d("HomeScreen", "🔴 BUTTON STATE: enabled=$enabled, currentGolfer.golfLinkNo='${currentGolfer?.golfLinkNo}', localGame.golflinkNumber='${localGame?.golflinkNumber}'")
-                    }, // Disable while checking or loading initial data
+                    }, // Disable while loading initial data
                     modifier = Modifier
                         .padding(horizontal = screenWidth * 0.15f)
                         .height(80.dp)
-                        .fillMaxWidth()
-                        .then(
-                            if (updateState.isCheckingForUpdate) {
-                                Modifier.border(
-                                    width = 0.5.dp,
-                                    color = Color.Gray.copy(alpha = 0.5f),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                            } else {
-                                Modifier
-                            }
-                        ),
+                        .fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = mslYellow,
                         contentColor = Color.Black
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    // Show different text based on state
-                    if (updateState.isCheckingForUpdate) {
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                color = Color.Black
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Checking for updates...",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    } else {
-                        Text(
-                            text = "Start Home Club Competition Round",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Normal,
-                            textAlign = TextAlign.Center,
-                            fontSize = MaterialTheme.typography.bodyLarge.fontSize
-                        )
-                    }
+                    Text(
+                        text = "Start Home Club Competition Round",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Normal,
+                        textAlign = TextAlign.Center,
+                        fontSize = MaterialTheme.typography.bodyLarge.fontSize
+                    )
                 }
 
                 // Show message when button is disabled due to missing golflink number
-                if (!homeUiState.isLoading && !updateState.isCheckingForUpdate &&
+                if (!homeUiState.isLoading &&
                     currentGolfer?.golfLinkNo.isNullOrBlank() == true) {
                     Text(
                         text = "Your GolfLink number was not provided to the app. Please contact your club to ensure this is set up on your profile.",
@@ -323,63 +243,6 @@ fun HomeScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 32.dp, vertical = 18.dp)
                     )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Show error message if update fails
-                updateState.updateError?.let { error ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 32.dp, vertical = 8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Update Error",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = error,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                // Dismiss button
-                                OutlinedButton(
-                                    onClick = { homeViewModel.clearUpdateError() }
-                                ) {
-                                    Text("Dismiss")
-                                }
-                                // Retry button
-                                Button(
-                                    onClick = {
-                                        homeViewModel.clearUpdateError()
-                                        shouldStartCompetition = true
-                                        homeViewModel.checkForUpdatesAndStartCompetition(
-                                            activity = activity,
-                                            activityResultLauncher = updateLauncher,
-                                            onUpdateCheckComplete = { },
-                                            onNoUpdateRequired = { }
-                                        )
-                                    }
-                                ) {
-                                    Text("Retry")
-                                }
-                            }
-                        }
-                    }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -465,14 +328,8 @@ fun HomeScreen(
                             sogoGolfer = sogoGolfer, // Pass existing SOGO golfer data
                             onDismiss = {
                                 showGolferDataConfirmationSheet = false
-                                // After terms are accepted, proceed with competition start
-                                shouldStartCompetition = true
-                                homeViewModel.checkForUpdatesAndStartCompetition(
-                                    activity = activity,
-                                    activityResultLauncher = updateLauncher,
-                                    onUpdateCheckComplete = { },
-                                    onNoUpdateRequired = { }
-                                )
+                                // After terms are accepted, navigate to competition
+                                onNavigateToCompetition()
                             }
                         )
                     }

@@ -12,10 +12,12 @@ import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
 import com.sogo.golf.msl.data.network.dto.mongodb.TransactionDto
 import com.sogo.golf.msl.data.network.dto.mongodb.LeaderboardRequestDto
 import com.sogo.golf.msl.data.network.dto.mongodb.LeaderboardResponseDto
+import com.sogo.golf.msl.domain.model.MobileAppVersionPlatformConfig
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -99,6 +101,11 @@ interface SogoMongoApiService {
     suspend fun getLeaderboard(
         @Body request: LeaderboardRequestDto
     ): Response<List<LeaderboardResponseDto>>
+    @GET("mobileAppVersionConfig/platform/{platform}")
+    suspend fun getMobileAppVersionPlatformConfig(
+        @Path("platform") platform: String,
+        @Header("Authorization") authHeader: String
+    ): Response<MobileAppVersionPlatformConfig>
 
 
     @POST("golfers")

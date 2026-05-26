@@ -7,6 +7,8 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -15,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,6 +30,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.sogo.golf.msl.app.lifecycle.AppLifecycleManager
 import com.sogo.golf.msl.app.lifecycle.AppResumeAction
+import com.sogo.golf.msl.app.update.AppUpdateManager
+import com.sogo.golf.msl.app.update.ForceUpdateOverlay
 import com.sogo.golf.msl.domain.repository.remote.AuthRepository
 import com.sogo.golf.msl.features.playing_partner.presentation.PlayingPartnerScreen
 import com.sogo.golf.msl.features.competitions.presentation.CompetitionsScreen
@@ -60,6 +65,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var appLifecycleManager: AppLifecycleManager
 
+    @Inject
+    lateinit var appUpdateManager: AppUpdateManager
+
     private var navController: NavController? = null // ✅ Keep reference to NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,6 +96,12 @@ class MainActivity : ComponentActivity() {
                 val viewModel: NavViewModel = hiltViewModel()
                 val authState by viewModel.authState.collectAsState()
 
+                // Server-driven update check on launch
+                val updateState by appUpdateManager.updateState.collectAsState()
+                LaunchedEffect(Unit) {
+                    appUpdateManager.checkForUpdate()
+                }
+
                 // State to control splash visibility and track initialization
                 var showSplash by rememberSaveable { mutableStateOf(true) }
                 var isInitializationComplete by remember { mutableStateOf(false) }
@@ -114,7 +128,10 @@ class MainActivity : ComponentActivity() {
                         isInitializationComplete = isInitializationComplete
                     )
                 } else {
+                    // Force update overlay at root level — blocks entire app like iOS
+                    val isPromptVisible = updateState.isUpdateRequired || updateState.isOptionalUpdateAvailable
 
+                    Box(modifier = Modifier.fillMaxSize()) {
                     NavHost(navController = navController, startDestination = startDestination) {
                         composable("login") {
                             SetPortraitOrientation()
@@ -206,6 +223,22 @@ class MainActivity : ComponentActivity() {
                             CompetitionLeaderboardScreen(navController)
                         }
                     }
+
+                    if (isPromptVisible) {
+                        ForceUpdateOverlay(
+                            message = updateState.updateMessage,
+                            newVersion = updateState.minimumRequiredVersion,
+                            currentVersion = BuildConfig.VERSION_NAME,
+                            isRequired = updateState.isUpdateRequired,
+                            onUpdate = { appUpdateManager.openPlayStore() },
+                            onDismiss = if (updateState.isOptionalUpdateAvailable) {
+                                { appUpdateManager.dismissOptionalUpdate() }
+                            } else {
+                                null
+                            }
+                        )
+                    }
+                    } // end Box
                 }
             }
         }

@@ -3,9 +3,6 @@ package com.sogo.golf.msl.features.home.presentation
 
 import android.util.Log
 import android.util.Patterns
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.IntentSenderRequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
@@ -46,7 +43,6 @@ class HomeViewModel @Inject constructor(
         val getMslGolferUseCase: GetMslGolferUseCase,
         private val getLocalGameUseCase: GetLocalGameUseCase,
         private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
-        private val appUpdateManager: com.sogo.golf.msl.app.update.AppUpdateManager,
         private val fetchAndSaveFeesUseCase: FetchAndSaveFeesUseCase, // ✅ ADD THIS
         private val fetchAndSaveSogoGolferUseCase: FetchAndSaveSogoGolferUseCase,
         private val getSogoGolferUseCase: GetSogoGolferUseCase,
@@ -93,8 +89,6 @@ class HomeViewModel @Inject constructor(
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = null
             )
-
-        val updateState = appUpdateManager.updateState
 
         // ✅ SOGO GOLFER ACCESS - Combine both currentGolfer and localGame flows
         val sogoGolfer = kotlinx.coroutines.flow.combine(currentGolfer, localGame) { golfer, game ->
@@ -315,34 +309,6 @@ class HomeViewModel @Inject constructor(
             Log.d(TAG, "Tracked confirm_golfer_data_success event")
         }
 
-        fun checkForUpdatesAndStartCompetition(
-            activity: android.app.Activity,
-            activityResultLauncher: ActivityResultLauncher<IntentSenderRequest>,
-            onUpdateCheckComplete: () -> Unit,
-            onNoUpdateRequired: () -> Unit
-        ) {
-            Log.d(TAG, "=== CHECKING FOR UPDATES BEFORE STARTING COMPETITION ===")
-
-            // Simply trigger the update check
-            // The UI will observe updateState and handle the flow
-            appUpdateManager.checkForUpdates(activity, activityResultLauncher)
-        }
-
-        // NEW: Handle update result
-        fun handleUpdateResult(result: ActivityResult) {
-            appUpdateManager.handleUpdateResult(result)
-        }
-
-        // NEW: Clear update error
-        fun clearUpdateError() {
-            appUpdateManager.clearError()
-        }
-
-        override fun onCleared() {
-            super.onCleared()
-            // Clean up update manager resources
-            appUpdateManager.cleanup()
-        }
 
         // Track if SOGO fetch has completed successfully (even if no golfer found)
         private var sogoFetchCompleted = false

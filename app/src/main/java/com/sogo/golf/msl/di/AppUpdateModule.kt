@@ -3,6 +3,7 @@ package com.sogo.golf.msl.di
 
 import android.content.Context
 import com.sogo.golf.msl.app.update.AppUpdateManager
+import com.sogo.golf.msl.data.network.api.SogoMongoApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +18,7 @@ object AppUpdateModule {
     @Provides
     @Singleton
     fun provideAppUpdateManager(
-        @ApplicationContext context: Context
-    ): AppUpdateManager = AppUpdateManager(context)
+        @ApplicationContext context: Context,
+        sogoMongoApiService: SogoMongoApiService
+    ): AppUpdateManager = AppUpdateManager(context, sogoMongoApiService)
 }

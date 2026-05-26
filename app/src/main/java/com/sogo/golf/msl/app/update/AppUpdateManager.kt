@@ -1,220 +1,172 @@
-// app/src/main/java/com/sogo/golf/msl/app/update/AppUpdateManager.kt
 package com.sogo.golf.msl.app.update
 
-import android.app.Activity
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.IntentSenderRequest
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.lifecycleScope
-import com.google.android.play.core.appupdate.AppUpdateInfo
-import com.google.android.play.core.appupdate.AppUpdateManager
-import com.google.android.play.core.appupdate.AppUpdateManagerFactory
-import com.google.android.play.core.appupdate.AppUpdateOptions
-import com.google.android.play.core.install.InstallState
-import com.google.android.play.core.install.InstallStateUpdatedListener
-import com.google.android.play.core.install.model.AppUpdateType
-import com.google.android.play.core.install.model.InstallStatus
-import com.google.android.play.core.install.model.UpdateAvailability
+import com.sogo.golf.msl.BuildConfig
+import com.sogo.golf.msl.data.network.api.SogoMongoApiService
+import com.sogo.golf.msl.domain.model.MobileAppVersionPlatformConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
 data class UpdateState(
     val isCheckingForUpdate: Boolean = false,
-    val updateAvailable: Boolean = false,
-    val updateError: String? = null,
-    val updateInfo: AppUpdateInfo? = null
+    val isUpdateRequired: Boolean = false,
+    val isOptionalUpdateAvailable: Boolean = false,
+    val updateMessage: String = "",
+    val minimumRequiredVersion: String = ""
 )
 
 @Singleton
 class AppUpdateManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val sogoMongoApiService: SogoMongoApiService
 ) {
     companion object {
         private const val TAG = "AppUpdateManager"
+        private const val PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.sogo.golf.msl"
+        private const val PREFS_NAME = "app_update_prefs"
+        private const val KEY_DISMISSED_VERSION_BUCKET = "dismissed_optional_update_version_bucket"
     }
-
-    private val appUpdateManager: AppUpdateManager = AppUpdateManagerFactory.create(context)
 
     private val _updateState = MutableStateFlow(UpdateState())
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
-    // Note: No install state listener needed since we only use immediate updates
+    private val prefs by lazy {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
 
-    /**
-     * Check for app updates and determine update strategy
-     */
-    fun checkForUpdates(
-        activity: Activity,
-        activityResultLauncher: ActivityResultLauncher<IntentSenderRequest>
-    ) {
-        if (activity !is LifecycleOwner) {
-            Log.e(TAG, "Activity must implement LifecycleOwner")
+    private var dismissedOptionalVersionBucket: String?
+        get() = prefs.getString(KEY_DISMISSED_VERSION_BUCKET, null)
+        set(value) {
+            if (value.isNullOrEmpty()) {
+                prefs.edit().remove(KEY_DISMISSED_VERSION_BUCKET).apply()
+            } else {
+                prefs.edit().putString(KEY_DISMISSED_VERSION_BUCKET, value).apply()
+            }
+        }
+
+    suspend fun checkForUpdate(platform: String = "android") {
+        _updateState.value = _updateState.value.copy(isCheckingForUpdate = true)
+
+        val currentVersion = BuildConfig.VERSION_NAME
+        if (currentVersion.isBlank()) {
+            Log.e(TAG, "❌ Failed to get current app version")
+            _updateState.value = _updateState.value.copy(isCheckingForUpdate = false)
             return
         }
 
-        val lifecycleOwner = activity as LifecycleOwner
-
-        lifecycleOwner.lifecycleScope.launch {
-            try {
-                _updateState.value = _updateState.value.copy(
-                    isCheckingForUpdate = true,
-                    updateError = null
-                )
-
-                Log.d(TAG, "Checking for app updates...")
-
-                val appUpdateInfoTask = appUpdateManager.appUpdateInfo
-                appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
-                    Log.d(TAG, "Update check completed. Availability: ${appUpdateInfo.updateAvailability()}")
-                    Log.d(TAG, "Available version code: ${appUpdateInfo.availableVersionCode()}")
-                    Log.d(TAG, "Client version staleness: ${appUpdateInfo.clientVersionStalenessDays()}")
-
-                    _updateState.value = _updateState.value.copy(
-                        isCheckingForUpdate = false,
-                        updateInfo = appUpdateInfo
-                    )
-
-                    when (appUpdateInfo.updateAvailability()) {
-                        UpdateAvailability.UPDATE_AVAILABLE -> {
-                            Log.d(TAG, "✅ Update available!")
-                            _updateState.value = _updateState.value.copy(updateAvailable = true)
-
-                            // ALWAYS force immediate update - no exceptions
-                            val staleness = appUpdateInfo.clientVersionStalenessDays() ?: 0
-                            Log.d(TAG, "🚨 Update available (app is $staleness days old) - FORCING IMMEDIATE update")
-                            startImmediateUpdate(activity, appUpdateInfo, activityResultLauncher)
-                        }
-                        UpdateAvailability.UPDATE_NOT_AVAILABLE -> {
-                            Log.d(TAG, "✅ App is up to date")
-                            _updateState.value = _updateState.value.copy(updateAvailable = false)
-                        }
-                        UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS -> {
-                            Log.d(TAG, "🔄 Developer triggered update in progress")
-                            // Resume any in-progress update
-                            resumeUpdateIfNeeded(activity, appUpdateInfo, activityResultLauncher)
-                        }
-                        else -> {
-                            Log.d(TAG, "❓ Unknown update availability: ${appUpdateInfo.updateAvailability()}")
-                        }
-                    }
-                }.addOnFailureListener { exception ->
-                    Log.e(TAG, "❌ Failed to check for updates", exception)
-
-                    val errorMessage = when {
-                        exception.message?.contains("ERROR_APP_NOT_OWNED") == true -> {
-                            "Development build - update check skipped"
-                        }
-                        else -> "Failed to check for updates: ${exception.message}"
-                    }
-
-                    _updateState.value = _updateState.value.copy(
-                        isCheckingForUpdate = false,
-                        updateError = errorMessage
-                    )
-                }
-
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ Exception during update check", e)
-                _updateState.value = _updateState.value.copy(
-                    isCheckingForUpdate = false,
-                    updateError = "Update check failed: ${e.message}"
-                )
-            }
-        }
-    }
-
-    /**
-     * Start immediate update (blocks the app until update is complete)
-     * This is now the ONLY update strategy - no flexible updates
-     */
-    private fun startImmediateUpdate(
-        activity: Activity,
-        appUpdateInfo: AppUpdateInfo,
-        activityResultLauncher: ActivityResultLauncher<IntentSenderRequest>
-    ) {
         try {
-            Log.d(TAG, "🚨 FORCING immediate update - user must install to continue...")
+            val authHeader = "Bearer ${BuildConfig.MONGO_API_KEY}"
+            val response = sogoMongoApiService.getMobileAppVersionPlatformConfig(platform, authHeader)
 
-            if (appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
-                val updateOptions = AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build()
-
-                appUpdateManager.startUpdateFlowForResult(
-                    appUpdateInfo,
-                    activityResultLauncher,
-                    updateOptions
-                )
+            if (response.isSuccessful) {
+                val config = response.body() ?: MobileAppVersionPlatformConfig()
+                handleConfig(currentVersion, config)
             } else {
-                Log.e(TAG, "❌ Immediate update not allowed by Google Play")
-                _updateState.value = _updateState.value.copy(
-                    updateError = "Update required but not supported on this device. Please update manually from Google Play."
-                )
+                Log.e(TAG, "❌ Failed to check for app update: ${response.code()} - ${response.message()}")
+                clearUpdateState()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to start immediate update", e)
+            Log.e(TAG, "❌ Failed to check for app update: ${e.message}")
+            clearUpdateState()
+        }
+
+        _updateState.value = _updateState.value.copy(isCheckingForUpdate = false)
+    }
+
+    private fun handleConfig(currentVersion: String, config: MobileAppVersionPlatformConfig) {
+        val needsUpdate = isVersionOutdated(currentVersion, config.minimumRequiredVersion)
+
+        if (!needsUpdate) {
+            clearUpdateState()
+            return
+        }
+
+        val resolvedMessage = config.updateMessage.ifEmpty {
+            "A newer version of the app is available. Please update to continue."
+        }
+
+        if (config.forceUpdateEnabled) {
+            // Blocking prompt — no "Later" button
             _updateState.value = _updateState.value.copy(
-                updateError = "Failed to start required update: ${e.message}"
+                isUpdateRequired = true,
+                isOptionalUpdateAvailable = false,
+                updateMessage = resolvedMessage,
+                minimumRequiredVersion = config.minimumRequiredVersion
+            )
+        } else {
+            // Dismissible prompt — user can tap "Later"
+            val bucket = promptVersionBucket(config.minimumRequiredVersion)
+            if (dismissedOptionalVersionBucket == bucket) {
+                clearUpdateState()
+                return
+            }
+
+            _updateState.value = _updateState.value.copy(
+                isUpdateRequired = false,
+                isOptionalUpdateAvailable = true,
+                updateMessage = resolvedMessage,
+                minimumRequiredVersion = config.minimumRequiredVersion
             )
         }
     }
 
-    /**
-     * Handle the result of an update flow
-     */
-    fun handleUpdateResult(result: ActivityResult) {
-        when (result.resultCode) {
-            Activity.RESULT_OK -> {
-                Log.d(TAG, "✅ Update completed successfully")
-                // For immediate updates, this usually means the app will restart
+    fun openPlayStore() {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(PLAY_STORE_URL)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            Activity.RESULT_CANCELED -> {
-                Log.w(TAG, "⚠️ User canceled the update")
-                _updateState.value = _updateState.value.copy(
-                    updateError = "Update was canceled. Please update to continue using the app."
-                )
-            }
-            else -> {
-                Log.e(TAG, "❌ Update failed with result code: ${result.resultCode}")
-                _updateState.value = _updateState.value.copy(
-                    updateError = "Update failed. Please try again or update manually from Google Play."
-                )
-            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to open Play Store: ${e.message}")
         }
     }
 
-    /**
-     * Resume any in-progress updates - always immediate updates
-     */
-    private fun resumeUpdateIfNeeded(
-        activity: Activity,
-        appUpdateInfo: AppUpdateInfo,
-        activityResultLauncher: ActivityResultLauncher<IntentSenderRequest>
-    ) {
-        if (appUpdateInfo.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
-            Log.d(TAG, "🔄 Resuming immediate update...")
-            startImmediateUpdate(activity, appUpdateInfo, activityResultLauncher)
+    fun dismissOptionalUpdate() {
+        val version = _updateState.value.minimumRequiredVersion
+        clearUpdateState()
+        dismissedOptionalVersionBucket = if (version.isBlank()) null else promptVersionBucket(version)
+    }
+
+    private fun clearUpdateState() {
+        _updateState.value = _updateState.value.copy(
+            isUpdateRequired = false,
+            isOptionalUpdateAvailable = false,
+            updateMessage = "",
+            minimumRequiredVersion = ""
+        )
+    }
+
+    private fun isVersionOutdated(currentVersion: String, minimumVersion: String): Boolean {
+        val currentComponents = parseVersion(currentVersion)
+        val minimumComponents = parseVersion(minimumVersion)
+        val maxCount = maxOf(currentComponents.size, minimumComponents.size)
+
+        for (index in 0 until maxCount) {
+            val current = currentComponents.getOrElse(index) { 0 }
+            val minimum = minimumComponents.getOrElse(index) { 0 }
+
+            if (current < minimum) return true
+            if (current > minimum) return false
         }
+
+        return false
     }
 
-    /**
-     * Clear error state
-     */
-    fun clearError() {
-        _updateState.value = _updateState.value.copy(updateError = null)
+    private fun parseVersion(version: String): List<Int> {
+        return Regex("\\d+").findAll(version).mapNotNull { it.value.toIntOrNull() }.toList()
     }
 
-    /**
-     * Clean up resources - simplified since no listeners needed for immediate updates
-     */
-    fun cleanup() {
-        // No cleanup needed for immediate updates
-        Log.d(TAG, "AppUpdateManager cleanup completed")
+    private fun promptVersionBucket(version: String): String {
+        val components = parseVersion(version)
+        val major = components.getOrElse(0) { 0 }
+        val minor = components.getOrElse(1) { 0 }
+        return "$major.$minor"
     }
 }
