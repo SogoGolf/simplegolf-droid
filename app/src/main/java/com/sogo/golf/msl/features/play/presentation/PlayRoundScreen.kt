@@ -266,7 +266,7 @@ private fun Screen4Portrait(
         ) {
             // Add spacing between nav bar and first card
             Spacer(modifier = Modifier.height(10.dp))
-            
+
             // Extract golfer data from Room database
             val currentGolferValue = currentGolfer
             val localGameValue = localGame
