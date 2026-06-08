@@ -12,6 +12,7 @@ import com.sogo.golf.msl.MslTokenManager
 import com.sogo.golf.msl.data.network.api.GolfApiService
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.api.SogoApiService
+import com.sogo.golf.msl.analytics.AnalyticsManager
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.exception.TokenRefreshException
@@ -29,6 +30,7 @@ class MslRepositoryImpl @Inject constructor(
     private val networkChecker: NetworkChecker,
     private val mslTokenManager: MslTokenManager,
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
+    private val analyticsManager: AnalyticsManager,
     ) : BaseRepository(networkChecker), MslRepository {
 
     companion object {
@@ -349,6 +351,17 @@ class MslRepositoryImpl @Inject constructor(
                 } else {
                     Log.e(TAG, "❌ API returned error: Request to delete marker failed.. ${markerResponse.errorMessage}")
                     logger().log(SentryLogLevel.ERROR, "DELETE marker API returned error - playerGolfLinkNumber: $playerGolfLinkNumber, clubId: $clubIdStr, errorMessage: ${markerResponse.errorMessage}")
+                    
+                    val authToken = mslTokenManager.getAuthorizationHeader()
+                    analyticsManager.trackEvent(
+                        AnalyticsManager.EVENT_DELETE_MARKER_API_ERROR,
+                        mapOf(
+                            "playerGolfLinkNumber" to playerGolfLinkNumber,
+                            "clubId" to clubIdStr,
+                            "errorMessage" to (markerResponse.errorMessage ?: "unknown"),
+                            "authToken" to (authToken ?: "not_available")
+                        )
+                    )
                     Unit
                 }
             } else {
@@ -356,6 +369,19 @@ class MslRepositoryImpl @Inject constructor(
                 val errorBody = response.errorBody()?.string()
                 Log.e(TAG, "Response body: $errorBody")
                 logger().log(SentryLogLevel.ERROR, "DELETE marker HTTP request failed - playerGolfLinkNumber: $playerGolfLinkNumber, clubId: $clubIdStr, httpCode: ${response.code()}, httpMessage: ${response.message()}, responseBody: $errorBody")
+                
+                val authToken = mslTokenManager.getAuthorizationHeader()
+                analyticsManager.trackEvent(
+                    AnalyticsManager.EVENT_DELETE_MARKER_API_ERROR,
+                    mapOf(
+                        "playerGolfLinkNumber" to playerGolfLinkNumber,
+                        "clubId" to clubIdStr,
+                        "httpCode" to response.code(),
+                        "httpMessage" to (response.message() ?: "unknown"),
+                        "responseBody" to (errorBody ?: "empty"),
+                        "authToken" to (authToken ?: "not_available")
+                    )
+                )
                 Unit
             }
         }
