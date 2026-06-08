@@ -41,6 +41,7 @@ fun ScreenWithDrawer(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var showDebugScreen by remember { mutableStateOf(false) }
+    var showSupportScreen by remember { mutableStateOf(false) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -51,7 +52,8 @@ fun ScreenWithDrawer(
                     scope.launch {
                         drawerState.close()
                     }
-                }
+                },
+                onShowSupport = { showSupportScreen = true }
             )
         }
     ) {
@@ -113,6 +115,13 @@ fun ScreenWithDrawer(
     if (showDebugScreen) {
         DebugScreen(
             onDismiss = { showDebugScreen = false }
+        )
+    }
+    
+    // Show support screen as modal
+    if (showSupportScreen) {
+        GetSupportWebView(
+            onDismiss = { showSupportScreen = false }
         )
     }
 }
