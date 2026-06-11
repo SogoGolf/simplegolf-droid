@@ -11,7 +11,7 @@ import android.util.Log
 import com.sogo.golf.msl.MslTokenManager
 import com.sogo.golf.msl.data.network.api.GolfApiService
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
-import com.sogo.golf.msl.data.network.api.SogoApiService
+import com.sogo.golf.msl.data.network.api.SogoMongoApiService
 import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.exception.TokenRefreshException
@@ -24,7 +24,7 @@ import javax.inject.Singleton
 @Singleton
 class MslRepositoryImpl @Inject constructor(
     private val golfApiService: GolfApiService,
-    private val sogoApiService: SogoApiService,
+    private val sogoMongoApiService: SogoMongoApiService,
     private val mpsAuthApiService: MpsAuthApiService,
     private val networkChecker: NetworkChecker,
     private val mslTokenManager: MslTokenManager,
@@ -65,7 +65,7 @@ class MslRepositoryImpl @Inject constructor(
             Log.d(TAG, "Getting preliminary token for club: $clubId")
 
             val request = PostPrelimTokenRequestDto(clubId = clubId)
-            val response = sogoApiService.getPreliminaryToken(request)
+            val response = sogoMongoApiService.getPreliminaryToken(request)
 
             if (response.isSuccessful) {
                 val prelimToken = response.body()?.toDomainModel()
