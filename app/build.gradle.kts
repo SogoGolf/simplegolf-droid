@@ -58,7 +58,6 @@ android {
         buildConfigField("String", "REALM_APP_ID", "\"${prodProps["REALM_APP_ID"] ?: "default-realm"}\"")
         buildConfigField("String", "MONGO_API_KEY", "\"${prodProps["MONGO_API_KEY"] ?: "default-mongo"}\"")
 
-        buildConfigField("String", "SOGO_OCP_SUBSCRIPTION_KEY", "\"${prodProps["SOGO_OCP_SUBSCRIPTION_KEY"] ?: "default-key"}\"")
         buildConfigField("String", "SOGO_AUTHORIZATION", "\"${prodProps["SOGO_AUTHORIZATION"] ?: "default-auth"}\"")
         buildConfigField("String", "SOGO_GCP_API", "\"${prodProps["SOGO_GCP_API"] ?: "default-gcp.com"}\"")
         buildConfigField("String", "SOGO_MONGO_API", "\"${prodProps["SOGO_MONGO_API"] ?: "default-gcp.com"}\"")
