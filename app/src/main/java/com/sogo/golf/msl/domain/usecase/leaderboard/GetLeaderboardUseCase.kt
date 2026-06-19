@@ -28,9 +28,8 @@ class GetLeaderboardUseCase @Inject constructor(
         try {
             Log.d(TAG, "Fetching leaderboard: from=$from, to=$to, topX=$topX, holes=$numberHoles, identifier=$leaderboardIdentifier")
 
-            // Leaderboard now comes from our Mongo API (POST /leaderboard),
-            // replacing the deprecated Azure sogo-general endpoint. No OCP key
-            // header required. An empty board returns [] (200), not an error.
+            // Leaderboard comes from our Mongo API (POST /leaderboard).
+            // An empty board returns [] (200), not an error.
             val request = LeaderboardRequestDto(
                 from = from,
                 to = to,

@@ -27,9 +27,8 @@ import retrofit2.http.Query
 
 interface SogoMongoApiService {
 
-    // Mints the MSL preliminary token (replaces the deprecated Azure
-    // sogo-api.azure-api.net/v1/msl/token). RSA-encrypts the club credential
-    // server-side; needs only the JSON body, no OCP/Basic auth header.
+    // Mints the MSL preliminary token. RSA-encrypts the club credential
+    // server-side; needs only the JSON body, no extra auth header.
     @POST("msl/token")
     suspend fun getPreliminaryToken(
         @Body request: PostPrelimTokenRequestDto
