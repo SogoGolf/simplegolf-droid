@@ -2,6 +2,7 @@
 package com.sogo.golf.msl.data.repository
 
 import com.onesignal.OneSignal
+import com.revenuecat.purchases.Purchases
 import com.sogo.golf.msl.data.local.preferences.AuthPreferences
 import com.sogo.golf.msl.data.local.preferences.ClubPreferences
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
@@ -143,6 +144,10 @@ class AuthRepositoryImpl @Inject constructor(
             // 🔔 Unlink device from user for push notifications
             OneSignal.logout()
             android.util.Log.d("AuthRepository", "OneSignal: Logged out")
+
+            // 💳 Reset RevenueCat back to an anonymous user
+            Purchases.sharedInstance.logOut()
+            android.util.Log.d("AuthRepository", "RevenueCat: Logged out")
 
             _authState.value = AuthState(isLoggedIn = false, hasActiveRound = false)
             

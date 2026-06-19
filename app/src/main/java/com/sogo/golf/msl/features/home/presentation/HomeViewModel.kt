@@ -4,6 +4,10 @@ package com.sogo.golf.msl.features.home.presentation
 import android.util.Log
 import android.util.Patterns
 import androidx.lifecycle.ViewModel
+import com.revenuecat.purchases.CustomerInfo
+import com.revenuecat.purchases.Purchases
+import com.revenuecat.purchases.PurchasesError
+import com.revenuecat.purchases.interfaces.LogInCallback
 import androidx.lifecycle.viewModelScope
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
@@ -203,6 +207,21 @@ class HomeViewModel @Inject constructor(
                         )
                         return@launch
                     }
+
+                    // Identify the golfer to RevenueCat on every authenticated launch, so
+                    // already-logged-in users who install an update (and never re-login)
+                    // are still attributed instead of anonymous. Mirrors iOS HomeViewModel.
+                    Purchases.sharedInstance.logIn(
+                        golfLinkNo,
+                        object : LogInCallback {
+                            override fun onReceived(customerInfo: CustomerInfo, created: Boolean) {
+                                Log.d(TAG, "RevenueCat: Identified user $golfLinkNo (created: $created)")
+                            }
+                            override fun onError(error: PurchasesError) {
+                                Log.e(TAG, "RevenueCat: logIn failed: ${error.message}")
+                            }
+                        }
+                    )
 
                     when (val sogoGolferResult = fetchAndSaveSogoGolferUseCase(golfLinkNo)) {
                         is NetworkResult.Success -> {

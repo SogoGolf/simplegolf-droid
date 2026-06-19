@@ -2,6 +2,10 @@ package com.sogo.golf.msl.domain.usecase.auth
 
 import android.util.Log
 import com.onesignal.OneSignal
+import com.revenuecat.purchases.CustomerInfo
+import com.revenuecat.purchases.Purchases
+import com.revenuecat.purchases.PurchasesError
+import com.revenuecat.purchases.interfaces.LogInCallback
 import com.sogo.golf.msl.MslTokenManager
 import com.sogo.golf.msl.analytics.AnalyticsManager
 import com.sogo.golf.msl.domain.model.NetworkResult
@@ -123,6 +127,19 @@ class ProcessMslAuthCodeUseCase @Inject constructor(
                                 // Link device to golfer for targeted push notifications
                                 OneSignal.login(golfer.golfLinkNo)
                                 Log.d(TAG, "OneSignal: Logged in with external ID: ${golfer.golfLinkNo}")
+
+                                // Identify the golfer to RevenueCat so purchases aren't anonymous
+                                Purchases.sharedInstance.logIn(
+                                    golfer.golfLinkNo,
+                                    object : LogInCallback {
+                                        override fun onReceived(customerInfo: CustomerInfo, created: Boolean) {
+                                            Log.d(TAG, "RevenueCat: Identified user ${golfer.golfLinkNo} (created: $created)")
+                                        }
+                                        override fun onError(error: PurchasesError) {
+                                            Log.e(TAG, "RevenueCat: logIn failed: ${error.message}")
+                                        }
+                                    }
+                                )
 
                                 // Set email for OneSignal user profile
                                 golfer.email?.let { email ->
