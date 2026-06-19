@@ -130,6 +130,7 @@ private fun PacePill(
 ) {
     Row(
         modifier = Modifier
+            .offset(x = 5.dp)
             .height(30.dp)
             .clip(RoundedCornerShape(percent = 50))
             .background(if (status.isBehind) MSLColors.mslRed else MSLColors.mslGreen)
@@ -362,13 +363,21 @@ private object PacePopoverColors {
     val noticeText = Color(0xFF6B4705)
 }
 
-private fun calculateMockPaceStatus(
+private const val DEFAULT_HOLE_MINUTES = 14
+
+private fun calculatePaceStatus(
     game: MslGame?,
     round: com.sogo.golf.msl.domain.model.Round?,
     currentHoleNumber: Int,
+    expectedMinutesByHole: Map<Int, Int>,
     nowMillis: Long
 ): PaceStatus {
-    val currentHoleExpected = MockPaceOfPlayData.expectedMinutes(currentHoleNumber, round?.teeColor)
+    fun expectedMinutes(holeNumber: Int): Int {
+        val minutes = expectedMinutesByHole[holeNumber] ?: 0
+        return if (minutes > 0) minutes else DEFAULT_HOLE_MINUTES
+    }
+
+    val currentHoleExpected = expectedMinutes(currentHoleNumber)
     val holeCycle = buildPaceHoleCycle(
         startingHole = game?.startingHoleNumber ?: 1,
         numberOfHoles = game?.numberOfHoles ?: 18
@@ -380,18 +389,7 @@ private fun calculateMockPaceStatus(
         listOf(currentHoleNumber)
     }
     val expectedElapsed = holesThroughCurrent.sumOf { holeNumber ->
-        MockPaceOfPlayData.expectedMinutes(holeNumber, round?.teeColor)
-    }
-
-    MockPaceOfPlayData.mockedMinutesBehind(currentHoleNumber)?.let { mockedMinutesBehind ->
-        return PaceStatus(
-            currentHoleNumber = currentHoleNumber,
-            currentHoleExpectedMinutes = currentHoleExpected,
-            expectedElapsedMinutes = expectedElapsed,
-            actualElapsedMinutes = expectedElapsed + mockedMinutesBehind,
-            minutesBehind = mockedMinutesBehind,
-            startsInMinutes = 0
-        )
+        expectedMinutes(holeNumber)
     }
 
     val startMillis = resolvePaceStartMillis(game, round)
@@ -429,48 +427,27 @@ private fun calculateMockPaceStatus(
     )
 }
 
-private object MockPaceOfPlayData {
-    private val expectedMinutesByHole = mapOf(
-        1 to 14,
-        2 to 14,
-        3 to 10,
-        4 to 12,
-        5 to 14,
-        6 to 10,
-        7 to 13,
-        8 to 15,
-        9 to 14,
-        10 to 14,
-        11 to 12,
-        12 to 11,
-        13 to 14,
-        14 to 13,
-        15 to 12,
-        16 to 15,
-        17 to 11,
-        18 to 14
-    )
-
-    fun expectedMinutes(holeNumber: Int, teeColor: String?): Int {
-        return expectedMinutesByHole[holeNumber] ?: 14
-    }
-
-    fun mockedMinutesBehind(holeNumber: Int): Int? {
-        return if (holeNumber == 2) 5 else null
-    }
-}
-
 private fun resolvePaceStartMillis(
     game: MslGame?,
     round: com.sogo.golf.msl.domain.model.Round?
 ): Long? {
+    val actualStartMillis = round?.startTime?.toEpochMillis()
     val bookingTime = game?.bookingTime
-    if (bookingTime != null) {
+    val teeMillis = if (bookingTime != null) {
         val roundDate = round?.roundDate?.toLocalDate() ?: LocalDate.now()
-        return LocalDateTime.of(roundDate, bookingTime.toLocalTime()).toEpochMillis()
+        LocalDateTime.of(roundDate, bookingTime.toLocalTime()).toEpochMillis()
+    } else {
+        null
     }
 
-    return round?.startTime?.toEpochMillis()
+    // Pace runs from the booked tee time, but if the golfer teed off before
+    // their slot, measure from the actual round start so the clock still runs.
+    // i.e. start = earlier of (tee time, actual start).
+    return when {
+        teeMillis != null && actualStartMillis != null -> minOf(teeMillis, actualStartMillis)
+        teeMillis != null -> teeMillis
+        else -> actualStartMillis
+    }
 }
 
 private fun LocalDateTime.toEpochMillis(): Long {
@@ -527,11 +504,15 @@ private fun Screen4Portrait(
         }
     }
 
-    val paceStatus = remember(localGame, currentRound, currentHoleNumber, paceNowMillis) {
-        calculateMockPaceStatus(
+    val paceStatus = remember(localGame, localCompetition, currentRound, currentHoleNumber, paceNowMillis) {
+        val expectedMinutesByHole = localCompetition?.players?.firstOrNull()?.holes
+            ?.associate { it.holeNumber to it.playTimeMinutes }
+            ?: emptyMap()
+        calculatePaceStatus(
             game = localGame,
             round = currentRound,
             currentHoleNumber = currentHoleNumber,
+            expectedMinutesByHole = expectedMinutesByHole,
             nowMillis = paceNowMillis
         )
     }
