@@ -1,24 +1,30 @@
 package com.sogo.golf.msl.features.play.presentation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,19 +45,33 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.sogo.golf.msl.domain.model.msl.MslGame
 import com.sogo.golf.msl.navigation.NavViewModel
 import com.sogo.golf.msl.ui.theme.MSLColors
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import com.sogo.golf.msl.ui.theme.MSLColors.mslGrey
+import kotlinx.coroutines.delay
+import org.threeten.bp.LocalDate
+import org.threeten.bp.LocalDateTime
+import org.threeten.bp.ZoneId
 
 @Composable
 fun PlayRoundScreen(
@@ -83,6 +103,397 @@ fun PlayRoundScreen(
     }
 }
 
+
+
+private data class PaceStatus(
+    val currentHoleNumber: Int,
+    val currentHoleExpectedMinutes: Int,
+    val expectedElapsedMinutes: Int,
+    val actualElapsedMinutes: Int,
+    val minutesBehind: Int,
+    val startsInMinutes: Int
+) {
+    val isBehind: Boolean
+        get() = minutesBehind > 0
+
+    val hasStarted: Boolean
+        get() = startsInMinutes <= 0
+
+    val pillText: String
+        get() = if (isBehind) "${minutesBehind}m" else "Ok"
+}
+
+@Composable
+private fun PacePill(
+    status: PaceStatus,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .height(30.dp)
+            .clip(RoundedCornerShape(percent = 50))
+            .background(if (status.isBehind) MSLColors.mslRed else MSLColors.mslGreen)
+            .clickable(onClick = onClick)
+            .padding(start = 10.dp, end = if (status.isBehind) 10.dp else 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PaceClockIcon(
+            tint = Color.White,
+            modifier = Modifier.size(14.dp)
+        )
+
+        Text(
+            text = status.pillText,
+            color = Color.White,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+private fun PaceClockIcon(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val strokeWidth = size.minDimension * 0.12f
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val radius = size.minDimension * 0.42f
+        val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+
+        drawCircle(
+            color = tint,
+            radius = radius,
+            center = center,
+            style = stroke
+        )
+        drawLine(
+            color = tint,
+            start = center,
+            end = Offset(center.x, center.y - radius * 0.48f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = center,
+            end = Offset(center.x + radius * 0.46f, center.y + radius * 0.30f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+@Composable
+private fun PaceOfPlayPopover(
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val barHeights = listOf(20.dp, 23.dp, 21.dp, 28.dp, 40.dp, 48.dp, 56.dp)
+    val barColors = listOf(
+        PacePopoverColors.green,
+        PacePopoverColors.green,
+        PacePopoverColors.green,
+        PacePopoverColors.green,
+        PacePopoverColors.gold,
+        PacePopoverColors.gold,
+        PacePopoverColors.gold
+    )
+
+    Box(modifier = modifier) {
+        Canvas(
+            modifier = Modifier
+                .size(width = 34.dp, height = 20.dp)
+                .offset(x = 64.dp, y = (-16).dp)
+                .zIndex(1f)
+        ) {
+            val path = Path().apply {
+                moveTo(size.width / 2f, 0f)
+                lineTo(size.width, size.height)
+                lineTo(0f, size.height)
+                close()
+            }
+            drawPath(path = path, color = PacePopoverColors.panel)
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .shadow(4.dp, RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(12.dp))
+                .background(PacePopoverColors.panel)
+                .padding(start = 20.dp, end = 20.dp, top = 26.dp, bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(verticalAlignment = Alignment.Top) {
+                Text(
+                    text = "Pace of play",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Dismiss pace details",
+                        tint = PacePopoverColors.mutedText,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = "2 min behind",
+                    color = PacePopoverColors.gold,
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "On track for 4:25 - target 4:18",
+                    color = PacePopoverColors.mutedText,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                PaceInfoTile(
+                    title = "Group ahead",
+                    value = "1 hole up",
+                    modifier = Modifier.weight(1f)
+                )
+                PaceInfoTile(
+                    title = "Group behind",
+                    value = "On your tail",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                barHeights.forEachIndexed { index, height ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(height)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(barColors[index])
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(PacePopoverColors.notice)
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Warning,
+                    contentDescription = null,
+                    tint = PacePopoverColors.noticeText,
+                    modifier = Modifier.size(17.dp)
+                )
+                Text(
+                    text = "Slipped on the last 3 holes - play ready golf and close the gap to the group ahead.",
+                    color = PacePopoverColors.noticeText,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PaceInfoTile(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .height(70.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(PacePopoverColors.tile)
+            .padding(horizontal = 14.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = title,
+            color = PacePopoverColors.mutedText,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = value,
+            color = Color.White,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1
+        )
+    }
+}
+
+private object PacePopoverColors {
+    val panel = Color(0xFF2B2E29)
+    val tile = Color(0xFF1F211C)
+    val mutedText = Color(0xFFB3B3A8)
+    val gold = Color(0xFFA87A05)
+    val green = Color(0xFF3D8F40)
+    val notice = Color(0xFFFFEDB8)
+    val noticeText = Color(0xFF6B4705)
+}
+
+private fun calculateMockPaceStatus(
+    game: MslGame?,
+    round: com.sogo.golf.msl.domain.model.Round?,
+    currentHoleNumber: Int,
+    nowMillis: Long
+): PaceStatus {
+    val currentHoleExpected = MockPaceOfPlayData.expectedMinutes(currentHoleNumber, round?.teeColor)
+    val holeCycle = buildPaceHoleCycle(
+        startingHole = game?.startingHoleNumber ?: 1,
+        numberOfHoles = game?.numberOfHoles ?: 18
+    )
+    val currentIndex = holeCycle.indexOf(currentHoleNumber)
+    val holesThroughCurrent = if (currentIndex >= 0) {
+        holeCycle.take(currentIndex + 1)
+    } else {
+        listOf(currentHoleNumber)
+    }
+    val expectedElapsed = holesThroughCurrent.sumOf { holeNumber ->
+        MockPaceOfPlayData.expectedMinutes(holeNumber, round?.teeColor)
+    }
+
+    MockPaceOfPlayData.mockedMinutesBehind(currentHoleNumber)?.let { mockedMinutesBehind ->
+        return PaceStatus(
+            currentHoleNumber = currentHoleNumber,
+            currentHoleExpectedMinutes = currentHoleExpected,
+            expectedElapsedMinutes = expectedElapsed,
+            actualElapsedMinutes = expectedElapsed + mockedMinutesBehind,
+            minutesBehind = mockedMinutesBehind,
+            startsInMinutes = 0
+        )
+    }
+
+    val startMillis = resolvePaceStartMillis(game, round)
+
+    if (startMillis == null) {
+        return PaceStatus(
+            currentHoleNumber = currentHoleNumber,
+            currentHoleExpectedMinutes = currentHoleExpected,
+            expectedElapsedMinutes = expectedElapsed,
+            actualElapsedMinutes = 0,
+            minutesBehind = 0,
+            startsInMinutes = 0
+        )
+    }
+
+    val startsInMinutes = if (nowMillis < startMillis) {
+        kotlin.math.ceil((startMillis - nowMillis) / 60_000.0).toInt()
+    } else {
+        0
+    }
+    val actualElapsed = if (nowMillis > startMillis) {
+        ((nowMillis - startMillis) / 60_000L).toInt()
+    } else {
+        0
+    }
+    val minutesBehind = maxOf(0, actualElapsed - expectedElapsed)
+
+    return PaceStatus(
+        currentHoleNumber = currentHoleNumber,
+        currentHoleExpectedMinutes = currentHoleExpected,
+        expectedElapsedMinutes = expectedElapsed,
+        actualElapsedMinutes = actualElapsed,
+        minutesBehind = minutesBehind,
+        startsInMinutes = startsInMinutes
+    )
+}
+
+private object MockPaceOfPlayData {
+    private val expectedMinutesByHole = mapOf(
+        1 to 14,
+        2 to 14,
+        3 to 10,
+        4 to 12,
+        5 to 14,
+        6 to 10,
+        7 to 13,
+        8 to 15,
+        9 to 14,
+        10 to 14,
+        11 to 12,
+        12 to 11,
+        13 to 14,
+        14 to 13,
+        15 to 12,
+        16 to 15,
+        17 to 11,
+        18 to 14
+    )
+
+    fun expectedMinutes(holeNumber: Int, teeColor: String?): Int {
+        return expectedMinutesByHole[holeNumber] ?: 14
+    }
+
+    fun mockedMinutesBehind(holeNumber: Int): Int? {
+        return if (holeNumber == 2) 5 else null
+    }
+}
+
+private fun resolvePaceStartMillis(
+    game: MslGame?,
+    round: com.sogo.golf.msl.domain.model.Round?
+): Long? {
+    val bookingTime = game?.bookingTime
+    if (bookingTime != null) {
+        val roundDate = round?.roundDate?.toLocalDate() ?: LocalDate.now()
+        return LocalDateTime.of(roundDate, bookingTime.toLocalTime()).toEpochMillis()
+    }
+
+    return round?.startTime?.toEpochMillis()
+}
+
+private fun LocalDateTime.toEpochMillis(): Long {
+    return atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+}
+
+private fun buildPaceHoleCycle(startingHole: Int, numberOfHoles: Int): List<Int> {
+    val normalizedStart = startingHole.coerceIn(1, 18)
+    val normalizedCount = numberOfHoles.takeIf { it > 0 } ?: 18
+    val holes = mutableListOf<Int>()
+    var currentHole = normalizedStart
+
+    repeat(normalizedCount) {
+        holes.add(currentHole)
+        currentHole += 1
+        if (currentHole > 18) {
+            currentHole = 1
+        }
+    }
+
+    return holes
+}
+
 @Composable
 private fun Screen4Portrait(
     navController: NavController,
@@ -106,6 +517,24 @@ private fun Screen4Portrait(
 
     var showBackConfirmDialog by remember { mutableStateOf(false) }
     var showAbandonDialog by remember { mutableStateOf(false) }
+    var showPacePopover by remember { mutableStateOf(false) }
+    var paceNowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000)
+            paceNowMillis = System.currentTimeMillis()
+        }
+    }
+
+    val paceStatus = remember(localGame, currentRound, currentHoleNumber, paceNowMillis) {
+        calculateMockPaceStatus(
+            game = localGame,
+            round = currentRound,
+            currentHoleNumber = currentHoleNumber,
+            nowMillis = paceNowMillis
+        )
+    }
 
     BackHandler(enabled = true) {
         if (showBackButton) {
@@ -144,44 +573,54 @@ private fun Screen4Portrait(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     //LEFT ARROW SECTION
-                    Box(
+                    Row(
                         modifier = Modifier
                             .weight(2f)
-                            .fillMaxWidth(),
+                            .height(48.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
                     ) {
-                        if (showBackButton) {
-
-                            Box(
-                                modifier = Modifier
-                                    //.background(Color.Red)
-                                    .height(48.dp)
-                                    .fillMaxWidth()
-                                    .clickable(
-                                        // Let Compose manage its own InteractionSource for perf
-                                        interactionSource = null,
-                                        // Use new Material3 ripple; or set indication = null if you want no ripple
-                                        indication = ripple(bounded = true)
-                                    ) {
-                                                                            // Check if we're on the starting hole
-                                    val startingHoleNumber = localGame?.startingHoleNumber ?: 1
-                                    if (currentHoleNumber == startingHoleNumber) {
-                                        // On starting hole - show confirmation dialog
-                                        showBackConfirmDialog = true
-                                    } else {
-                                        // Not on starting hole - navigate normally
-                                        playRoundViewModel.navigateToPreviousHole()
-                                    }
-                                },
-                                contentAlignment = Alignment.CenterStart // keep icon anchored right
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                    contentDescription = "Previous Hole",
-                                    tint = MSLColors.mslGunMetal,
-                                    modifier = Modifier.size(46.dp)
-                                )
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (showBackButton) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clickable(
+                                            // Let Compose manage its own InteractionSource for perf
+                                            interactionSource = null,
+                                            // Use new Material3 ripple; or set indication = null if you want no ripple
+                                            indication = ripple(bounded = true)
+                                        ) {
+                                            // Check if we're on the starting hole
+                                            val startingHoleNumber = localGame?.startingHoleNumber ?: 1
+                                            if (currentHoleNumber == startingHoleNumber) {
+                                                // On starting hole - show confirmation dialog
+                                                showBackConfirmDialog = true
+                                            } else {
+                                                // Not on starting hole - navigate normally
+                                                playRoundViewModel.navigateToPreviousHole()
+                                            }
+                                        },
+                                    contentAlignment = Alignment.CenterStart // keep icon anchored right
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                        contentDescription = "Previous Hole",
+                                        tint = MSLColors.mslGunMetal,
+                                        modifier = Modifier.size(46.dp)
+                                    )
+                                }
                             }
                         }
+
+                        PacePill(
+                            status = paceStatus,
+                            onClick = { showPacePopover = !showPacePopover }
+                        )
                     }
 
                     //HOLE SECTION
@@ -253,17 +692,32 @@ private fun Screen4Portrait(
                         }
                     }
                 }
+
             }
         }
         // No bottomBar parameter = no bottom bar
     ) { paddingValues ->
         // Your screen content
 
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)  // This properly respects the Scaffold's content padding
         ) {
+            val cardSpacing = with(LocalDensity.current) {
+                (2 * density).dp
+            }
+            val topCardTop = 10.dp
+            val topCardHeight = ((maxHeight - topCardTop - cardSpacing - 5.dp) / 2)
+                .coerceAtLeast(300.dp)
+            val pacePopoverHeight = minOf(
+                maxHeight - topCardTop - 12.dp,
+                maxOf(topCardHeight + 45.dp, 395.dp)
+            )
+
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
             // Add spacing between nav bar and first card
             Spacer(modifier = Modifier.height(10.dp))
             
@@ -436,10 +890,7 @@ private fun Screen4Portrait(
 
             // Gap between cards
             //Spacer(modifier = Modifier.height(10.dp))
-            with(LocalDensity.current) {
-                val spacingDp = (2 * density).dp
-                Spacer(modifier = Modifier.height(spacingDp))
-            }
+            Spacer(modifier = Modifier.height(cardSpacing))
 
             // Bottom card - Main Golfer
             HoleCardTest(
@@ -475,6 +926,32 @@ private fun Screen4Portrait(
 
             Spacer(Modifier.height(5.dp))
         }
+
+            if (showPacePopover) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.34f))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            showPacePopover = false
+                        }
+                        .zIndex(1f)
+                )
+
+                PaceOfPlayPopover(
+                    onDismiss = { showPacePopover = false },
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = topCardTop)
+                        .padding(horizontal = 10.dp)
+                        .fillMaxWidth()
+                        .height(pacePopoverHeight)
+                        .zIndex(2f)
+                )
+            }
 
         // Back confirmation dialog
         if (showBackConfirmDialog) {
@@ -642,4 +1119,6 @@ private fun Screen4Portrait(
             }
         }
     }
+}
+
 }
