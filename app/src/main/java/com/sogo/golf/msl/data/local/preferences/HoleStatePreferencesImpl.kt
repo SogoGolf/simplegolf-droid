@@ -16,6 +16,7 @@ class HoleStatePreferencesImpl @Inject constructor(
     companion object {
         private const val HOLE_STATE_PREFS = "hole_state_preferences"
         private const val KEY_CURRENT_HOLE = "current_hole_"
+        private const val KEY_PACE_SNAPSHOTS = "pace_snapshots_"
     }
 
     private val masterKey = MasterKey.Builder(context)
@@ -60,5 +61,22 @@ class HoleStatePreferencesImpl @Inject constructor(
     override suspend fun clearAllHoleStates() {
         prefs.edit().clear().apply()
         android.util.Log.d("HoleStatePrefs", "🗑️ Cleared ALL hole states")
+    }
+
+    override suspend fun savePaceSnapshots(roundId: String, snapshots: Map<Int, Long>) {
+        // Encode as "hole:millis;hole:millis" — no serialization dependency needed.
+        val encoded = snapshots.entries.joinToString(";") { "${it.key}:${it.value}" }
+        prefs.edit().putString(KEY_PACE_SNAPSHOTS + roundId, encoded).apply()
+    }
+
+    override suspend fun getPaceSnapshots(roundId: String): Map<Int, Long> {
+        val encoded = prefs.getString(KEY_PACE_SNAPSHOTS + roundId, null)
+        if (encoded.isNullOrEmpty()) return emptyMap()
+        return encoded.split(";").mapNotNull { entry ->
+            val parts = entry.split(":")
+            val hole = parts.getOrNull(0)?.toIntOrNull()
+            val millis = parts.getOrNull(1)?.toLongOrNull()
+            if (hole != null && millis != null) hole to millis else null
+        }.toMap()
     }
 }

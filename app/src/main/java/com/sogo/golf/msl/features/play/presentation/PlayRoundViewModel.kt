@@ -135,6 +135,37 @@ class PlayRoundViewModel @Inject constructor(
     private val _currentHoleNumber = MutableStateFlow(getInitialHoleNumber())
     val currentHoleNumber: StateFlow<Int> = _currentHoleNumber.asStateFlow()
 
+    // Wall-clock time (epoch millis) each hole was completed — score entered and
+    // swiped forward. A completed hole's pace freezes at that instant, so
+    // reviewing it shows the pace as it was when the golfer left it. In-memory
+    // per round for now (a mid-round process death clears it; persistence is a
+    // follow-up). Reset when a different round loads.
+    private val _holeCompletionMillis = MutableStateFlow<Map<Int, Long>>(emptyMap())
+    val holeCompletionMillis: StateFlow<Map<Int, Long>> = _holeCompletionMillis.asStateFlow()
+    private var paceSnapshotRoundId: String? = null
+
+    /** Freeze a hole's pace at the moment it is left (first time only). Persisted
+     * so it survives a force-quit / OS-kill mid-round. */
+    private fun recordPaceCompletion(holeNumber: Int) {
+        if (_holeCompletionMillis.value.containsKey(holeNumber)) return
+        val updated = _holeCompletionMillis.value + (holeNumber to System.currentTimeMillis())
+        _holeCompletionMillis.value = updated
+        val roundId = paceSnapshotRoundId
+        if (roundId != null) {
+            viewModelScope.launch { holeStatePreferences.savePaceSnapshots(roundId, updated) }
+        }
+    }
+
+    /**
+     * A hole only counts as "complete" (and so freezes its pace) once BOTH the
+     * golfer's and the playing partner's scores have been entered for it.
+     */
+    private fun bothScoresEntered(round: com.sogo.golf.msl.domain.model.Round?, holeNumber: Int): Boolean {
+        val mainStrokes = round?.holeScores?.firstOrNull { it.holeNumber == holeNumber }?.strokes ?: 0
+        val partnerStrokes = round?.playingPartnerRound?.holeScores?.firstOrNull { it.holeNumber == holeNumber }?.strokes ?: 0
+        return mainStrokes > 0 && partnerStrokes > 0
+    }
+
 
     init {
         // 🔄 DEBUG: Log when data is loaded
@@ -213,6 +244,12 @@ class PlayRoundViewModel @Inject constructor(
     private suspend fun loadCurrentRound() {
         try {
             val round = getActiveTodayRoundUseCase()
+            // Load this round's persisted pace snapshots (survives force-quit / OS kill).
+            if (round?.id != paceSnapshotRoundId) {
+                paceSnapshotRoundId = round?.id
+                _holeCompletionMillis.value =
+                    if (round != null) holeStatePreferences.getPaceSnapshots(round.id) else emptyMap()
+            }
             _currentRound.value = round
             android.util.Log.d("PlayRoundVM", "Loaded current round: ${round?.id}")
         } catch (e: Exception) {
@@ -534,6 +571,11 @@ class PlayRoundViewModel @Inject constructor(
             val currentIndex = cycle.indexOf(currentHole - 1)
             
             if (currentIndex >= 0 && currentIndex < cycle.size - 1) {
+                // A hole is complete only when BOTH scores are in; leaving such a
+                // hole freezes its pace. An incomplete hole stays live.
+                if (bothScoresEntered(_currentRound.value, currentHole)) {
+                    recordPaceCompletion(currentHole)
+                }
                 // Move to next hole in cycle
                 val nextIndex = currentIndex + 1
                 val newHole = cycle[nextIndex] + 1
