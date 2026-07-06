@@ -118,49 +118,66 @@ private data class PaceStatus(
     val actualElapsedSeconds: Int,
     val minutesBehind: Int,
     val startsInMinutes: Int,
+    val secondsUntilStart: Int,
     val startMillis: Long?
 ) {
-    val isBehind: Boolean
-        get() = minutesBehind > 0
-
     val hasStarted: Boolean
         get() = startsInMinutes <= 0
 
-    /** Minutes of slack before falling behind on the current hole. Negative once behind. */
-    val bufferMinutes: Int
-        get() = expectedElapsedMinutes - actualElapsedMinutes
+    /**
+     * Seconds of slack before falling behind the pace target at the current hole.
+     * Positive = time in hand (green); negative = seconds behind (red).
+     */
+    val bufferSeconds: Int
+        get() = expectedElapsedMinutes * 60 - actualElapsedSeconds
+
+    val isBehind: Boolean
+        get() = hasStarted && bufferSeconds < 0
 
     /**
-     * The pill always shows a live number: a countdown of remaining slack while
-     * on pace (green), the minutes behind while behind (red), or a countdown to
-     * the booked tee time before the round has started (neutral).
+     * The single live number shown on the pill and as the popover's hero: a
+     * countdown. Before tee-off it counts down to the tee time; once playing it
+     * counts down the slack to the pace target, then goes negative (e.g. "-0:20")
+     * and keeps counting once behind.
      */
-    val pillText: String
+    val paceCountdown: String
         get() = when {
-            !hasStarted -> "${startsInMinutes}m"
-            isBehind -> "${minutesBehind}m"
-            else -> "${maxOf(0, bufferMinutes)}m"
+            !hasStarted -> formatPaceClock(secondsUntilStart, includeSeconds = true)
+            bufferSeconds < 0 -> "-" + formatPaceClock(-bufferSeconds, includeSeconds = true)
+            else -> formatPaceClock(bufferSeconds, includeSeconds = true)
         }
 
-    /** Running stopwatch since the booked tee time (H:MM:SS / M:SS). */
+    /**
+     * Compact minutes-only countdown for the pill — keeps it narrow. The
+     * seconds-precision version lives in the popover. Negative once behind.
+     */
+    val pillCountdown: String
+        get() = when {
+            !hasStarted -> "${startsInMinutes}m"
+            else -> {
+                val mins = (kotlin.math.abs(bufferSeconds) + 59) / 60
+                if (bufferSeconds < 0) "-${mins}m" else "${mins}m"
+            }
+        }
+
+    val pillText: String
+        get() = pillCountdown
+
+    /** Label under the popover hero, describing what the countdown is measuring. */
+    val paceLabel: String
+        get() = when {
+            !hasStarted -> "until tee-off"
+            isBehind -> "behind pace"
+            else -> "until behind pace"
+        }
+
+    /** Total time on the course since the booked tee time — counts UP (H:MM:SS). */
     val elapsedClock: String
         get() = formatPaceClock(if (hasStarted) actualElapsedSeconds else 0, includeSeconds = true)
 
     /** Total expected play time to the current hole (H:MM). */
     val targetClock: String
         get() = formatPaceClock(expectedElapsedMinutes * 60, includeSeconds = false)
-
-    /** One-line summary for the expanded view. */
-    val deltaText: String
-        get() = when {
-            !hasStarted -> if (startsInMinutes == 1) "Tees off in 1 min" else "Tees off in $startsInMinutes min"
-            isBehind -> if (minutesBehind == 1) "1 min behind pace" else "$minutesBehind min behind pace"
-            else -> when (val ahead = maxOf(0, bufferMinutes)) {
-                0 -> "On pace"
-                1 -> "1 min ahead of pace"
-                else -> "$ahead min ahead of pace"
-            }
-        }
 
     val teeTimeText: String
         get() = startMillis?.let { millis ->
@@ -265,11 +282,8 @@ private fun PaceOfPlayPopover(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val timerColor = when {
-        !status.hasStarted -> PacePopoverColors.mutedText
-        status.isBehind -> PacePopoverColors.behindRed
-        else -> PacePopoverColors.green
-    }
+    // Green through the pre-tee countdown and while on pace; red only behind.
+    val timerColor = if (status.isBehind) PacePopoverColors.behindRed else PacePopoverColors.green
 
     Box(modifier = modifier) {
         Canvas(
@@ -318,18 +332,18 @@ private fun PaceOfPlayPopover(
                 }
             }
 
-            // Running stopwatch from the booked tee time.
+            // Hero: the pace countdown (goes negative once behind).
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = status.elapsedClock,
+                    text = status.paceCountdown,
                     color = timerColor,
                     fontSize = 52.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = status.deltaText,
-                    color = timerColor,
-                    fontSize = 20.sp,
+                    text = status.paceLabel,
+                    color = PacePopoverColors.mutedText,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -341,8 +355,10 @@ private fun PaceOfPlayPopover(
                     .background(PacePopoverColors.mutedText.copy(alpha = 0.3f))
             )
 
-            PaceDetailRow(title = "Target to hole ${status.currentHoleNumber}", value = status.targetClock)
+            // Overall pace of play: total time on the course, counts up.
             PaceDetailRow(title = "Tee time", value = status.teeTimeText)
+            PaceDetailRow(title = "Total time since start", value = status.elapsedClock)
+            PaceDetailRow(title = "Target to hole ${status.currentHoleNumber}", value = status.targetClock)
         }
     }
 }
@@ -390,7 +406,10 @@ private fun calculatePaceStatus(
     round: com.sogo.golf.msl.domain.model.Round?,
     currentHoleNumber: Int,
     expectedMinutesByHole: Map<Int, Int>,
-    nowMillis: Long
+    nowMillis: Long,
+    // Wall-clock time this hole was completed. When set, the hole's pace is
+    // frozen at that instant instead of counting down from "now".
+    holeCompletionMillis: Long? = null
 ): PaceStatus {
     fun expectedMinutes(holeNumber: Int): Int {
         val minutes = expectedMinutesByHole[holeNumber] ?: 0
@@ -423,17 +442,27 @@ private fun calculatePaceStatus(
             actualElapsedSeconds = 0,
             minutesBehind = 0,
             startsInMinutes = 0,
+            secondsUntilStart = 0,
             startMillis = null
         )
     }
 
-    val startsInMinutes = if (nowMillis < startMillis) {
+    // A completed hole is frozen: its clock is measured to when it was left, not
+    // to "now", and it has started (no pre-tee countdown).
+    val frozen = holeCompletionMillis != null
+    val effectiveNow = holeCompletionMillis ?: nowMillis
+    val secondsUntilStart = if (!frozen && nowMillis < startMillis) {
+        ((startMillis - nowMillis) / 1_000L).toInt()
+    } else {
+        0
+    }
+    val startsInMinutes = if (!frozen && nowMillis < startMillis) {
         kotlin.math.ceil((startMillis - nowMillis) / 60_000.0).toInt()
     } else {
         0
     }
-    val actualElapsedSeconds = if (nowMillis > startMillis) {
-        ((nowMillis - startMillis) / 1_000L).toInt()
+    val actualElapsedSeconds = if (effectiveNow > startMillis) {
+        ((effectiveNow - startMillis) / 1_000L).toInt()
     } else {
         0
     }
@@ -448,6 +477,7 @@ private fun calculatePaceStatus(
         actualElapsedSeconds = actualElapsedSeconds,
         minutesBehind = minutesBehind,
         startsInMinutes = startsInMinutes,
+        secondsUntilStart = secondsUntilStart,
         startMillis = startMillis
     )
 }
@@ -522,6 +552,7 @@ private fun Screen4Portrait(
     val currentGolfer by playRoundViewModel.currentGolfer.collectAsState()
     val currentRound by playRoundViewModel.currentRound.collectAsState()
     val currentHoleNumber by playRoundViewModel.currentHoleNumber.collectAsState()
+    val holeCompletionMillis by playRoundViewModel.holeCompletionMillis.collectAsState()
     val showBackButton by playRoundViewModel.showBackButton.collectAsState()
     val showDialog by playRoundViewModel.showGoToHoleDialog.collectAsState()
     val isAbandoningRound by playRoundViewModel.isAbandoningRound.collectAsState()
@@ -539,7 +570,7 @@ private fun Screen4Portrait(
         }
     }
 
-    val paceStatus = remember(localGame, localCompetition, currentRound, currentHoleNumber, paceNowMillis) {
+    val paceStatus = remember(localGame, localCompetition, currentRound, currentHoleNumber, paceNowMillis, holeCompletionMillis) {
         val expectedMinutesByHole = localCompetition?.players?.firstOrNull()?.holes
             ?.associate { it.holeNumber to it.playTimeMinutes }
             ?: emptyMap()
@@ -548,7 +579,8 @@ private fun Screen4Portrait(
             round = currentRound,
             currentHoleNumber = currentHoleNumber,
             expectedMinutesByHole = expectedMinutesByHole,
-            nowMillis = paceNowMillis
+            nowMillis = paceNowMillis,
+            holeCompletionMillis = holeCompletionMillis[currentHoleNumber]
         )
     }
 
