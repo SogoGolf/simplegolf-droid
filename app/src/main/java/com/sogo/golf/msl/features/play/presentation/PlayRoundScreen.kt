@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -56,6 +57,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -185,13 +188,15 @@ private fun PacePill(
     status: PaceStatus,
     onClick: () -> Unit
 ) {
-    val pillColor = when {
-        !status.hasStarted -> Color(0xFF52564C)
-        status.isBehind -> MSLColors.mslRed
-        else -> MSLColors.mslGreen
-    }
+    // Green through the pre-tee countdown too: the golfer is still on time, so a
+    // green pill reads clearly as "all good". Only red when behind.
+    val pillColor = if (status.isBehind) MSLColors.mslRed else MSLColors.mslGreen
     Row(
         modifier = Modifier
+            // The pill lives in a weight-constrained header slot; let it grow to
+            // its content so a wide number (e.g. a long countdown) isn't squeezed
+            // into wrapping onto a second line.
+            .wrapContentWidth(unbounded = true)
             .offset(x = 5.dp)
             .height(30.dp)
             .clip(RoundedCornerShape(percent = 50))
@@ -210,7 +215,12 @@ private fun PacePill(
             text = status.pillText,
             color = Color.White,
             fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false,
+            // Drop the extra font padding so the number sits at the true vertical
+            // centre of the pill, matching the clock icon.
+            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
         )
     }
 }
@@ -279,7 +289,7 @@ private fun PaceOfPlayPopover(
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .shadow(4.dp, RoundedCornerShape(12.dp))
                 .clip(RoundedCornerShape(12.dp))
                 .background(PacePopoverColors.panel)
@@ -714,12 +724,6 @@ private fun Screen4Portrait(
                 (2 * density).dp
             }
             val topCardTop = 10.dp
-            val topCardHeight = ((maxHeight - topCardTop - cardSpacing - 5.dp) / 2)
-                .coerceAtLeast(300.dp)
-            val pacePopoverHeight = minOf(
-                maxHeight - topCardTop - 12.dp,
-                maxOf(topCardHeight + 45.dp, 395.dp)
-            )
 
             Column(
                 modifier = Modifier.fillMaxSize()
@@ -955,7 +959,6 @@ private fun Screen4Portrait(
                         .offset(y = topCardTop)
                         .padding(horizontal = 10.dp)
                         .fillMaxWidth()
-                        .height(pacePopoverHeight)
                         .zIndex(2f)
                 )
             }
