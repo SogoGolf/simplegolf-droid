@@ -137,8 +137,8 @@ class ReviewScoresViewModel @AssistedInject constructor(
             val startMillis = TimeFormatUtils.resolvePaceStartMillis(game, round)
                 ?: return null
             if (finalHoleMillis <= startMillis) return null
-            TimeFormatUtils.formatPaceClock(
-                ((finalHoleMillis - startMillis) / 1000L).toInt(), includeSeconds = true
+            TimeFormatUtils.formatFriendlyDuration(
+                ((finalHoleMillis - startMillis) / 1000L).toInt()
             )
         } catch (e: Exception) {
             android.util.Log.w(TAG, "Could not compute round time", e)
@@ -644,8 +644,9 @@ data class ReviewScoresUiState(
     val shouldResetAfterError: Boolean = false,
     val scoreSavedInSimpleGolf: Boolean = false,
     /** "Round Time" for the submit-success dialog: total time since the round's
-     * (booked) start as of the final hole's score entry, pre-formatted
-     * (H:MM:SS). null hides the line (never captured — e.g. legacy round). */
+     * (booked) start as of the final hole's score entry, human-friendly
+     * ("4 hr 53 min" / "7 min 53 sec"). null hides the line (never captured —
+     * e.g. legacy round). */
     val roundTimeText: String? = null
 )
 

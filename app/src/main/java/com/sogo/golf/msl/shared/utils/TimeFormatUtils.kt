@@ -30,6 +30,26 @@ object TimeFormatUtils {
     }
 
     /**
+     * Human-friendly duration for the submit-success dialog's Round Time:
+     * "4 hr 53 min" once into the hours (seconds dropped — noise at that
+     * precision), "7 min 53 sec" under an hour, zero secondary units omitted
+     * ("4 hr", "7 min"). The pace popover keeps the stopwatch-style
+     * formatPaceClock above. Must produce IDENTICAL strings to iOS
+     * (PaceStatus.friendlyDuration).
+     */
+    fun formatFriendlyDuration(seconds: Int): String {
+        val total = maxOf(0, seconds)
+        val hours = total / 3600
+        val minutes = (total % 3600) / 60
+        val secs = total % 60
+        return when {
+            hours > 0 -> if (minutes > 0) "$hours hr $minutes min" else "$hours hr"
+            minutes > 0 -> if (secs > 0) "$minutes min $secs sec" else "$minutes min"
+            else -> "$secs sec"
+        }
+    }
+
+    /**
      * The pace clock's start anchor. Runs from the BOOKED tee time — a late
      * start counts against pace; the "Let's Play" tap happens in the pro shop
      * before the tee time and must not pull the clock earlier. Falls back to

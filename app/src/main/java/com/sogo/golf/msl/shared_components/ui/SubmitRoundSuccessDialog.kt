@@ -33,7 +33,8 @@ import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 fun SubmitRoundSuccessDialog(
     playingPartnerName: String,
     /** Total time since round start as of the final hole's score entry,
-     * pre-formatted (H:MM:SS). null hides the line (value never captured). */
+     * pre-formatted ("4 hr 53 min" / "7 min 53 sec"). null hides the line
+     * (value never captured). */
     roundTime: String? = null,
     onDone: () -> Unit
 ) {
@@ -124,7 +125,7 @@ fun PreviewSubmitRoundSuccessDialogLight() {
     ) {
         SubmitRoundSuccessDialog(
             playingPartnerName = "Arnold Palmer",
-            roundTime = "3:41:07",
+            roundTime = "3 hr 41 min",
             onDone = { }
         )
     }
