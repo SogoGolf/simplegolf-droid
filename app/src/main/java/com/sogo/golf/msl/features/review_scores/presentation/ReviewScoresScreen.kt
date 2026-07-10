@@ -421,6 +421,7 @@ private fun ReviewScoresPortrait(
         android.util.Log.d("ReviewScores", "Showing success dialog")
         SubmitRoundSuccessDialog(
             playingPartnerName = uiState.round?.playingPartnerRound?.golferFirstName ?: "",
+            roundTime = uiState.roundTimeText,
             onDone = {
                 android.util.Log.d("ReviewScores", "Done button clicked - performing cleanup and navigating to home")
                 showSuccessDialog = false

@@ -79,4 +79,9 @@ class HoleStatePreferencesImpl @Inject constructor(
             if (hole != null && millis != null) hole to millis else null
         }.toMap()
     }
+
+    override suspend fun clearPaceSnapshots(roundId: String) {
+        prefs.edit().remove(KEY_PACE_SNAPSHOTS + roundId).apply()
+        android.util.Log.d("HoleStatePrefs", "🗑️ Cleared pace snapshots for round: $roundId")
+    }
 }

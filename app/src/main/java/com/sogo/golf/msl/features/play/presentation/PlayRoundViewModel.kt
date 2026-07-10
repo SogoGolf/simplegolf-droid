@@ -137,9 +137,9 @@ class PlayRoundViewModel @Inject constructor(
 
     // Wall-clock time (epoch millis) each hole was completed — score entered and
     // swiped forward. A completed hole's pace freezes at that instant, so
-    // reviewing it shows the pace as it was when the golfer left it. In-memory
-    // per round for now (a mid-round process death clears it; persistence is a
-    // follow-up). Reset when a different round loads.
+    // reviewing it shows the pace as it was when the golfer left it. Persisted
+    // per round via HoleStatePreferences (survives process death); reset when a
+    // different round loads.
     private val _holeCompletionMillis = MutableStateFlow<Map<Int, Long>>(emptyMap())
     val holeCompletionMillis: StateFlow<Map<Int, Long>> = _holeCompletionMillis.asStateFlow()
     private var paceSnapshotRoundId: String? = null
@@ -164,6 +164,22 @@ class PlayRoundViewModel @Inject constructor(
         val mainStrokes = round?.holeScores?.firstOrNull { it.holeNumber == holeNumber }?.strokes ?: 0
         val partnerStrokes = round?.playingPartnerRound?.holeScores?.firstOrNull { it.holeNumber == holeNumber }?.strokes ?: 0
         return mainStrokes > 0 && partnerStrokes > 0
+    }
+
+    /**
+     * "Round Time" support: every other hole freezes its pace on the forward
+     * swipe (navigateToNextHole), but the FINAL hole of the cycle has no forward
+     * swipe — so freeze it here the moment its second score lands (same
+     * both-scores rule). The frozen snapshot is what the Review screen's
+     * submit-success dialog shows as Round Time. recordPaceCompletion's
+     * first-write-wins guard makes repeat calls (score edits) harmless.
+     */
+    private fun recordFinalHolePaceIfComplete(holeNumber: Int) {
+        val game = localGame.value ?: return
+        val cycle = getCycleIndices(game.startingHoleNumber, game.numberOfHoles ?: 18)
+        if (holeNumber - 1 != cycle.lastOrNull()) return   // cycle is 0-based
+        if (!bothScoresEntered(_currentRound.value, holeNumber)) return
+        recordPaceCompletion(holeNumber)
     }
 
 
@@ -588,6 +604,11 @@ class PlayRoundViewModel @Inject constructor(
                 android.util.Log.d("PlayRoundVM", "On last hole of cycle - checking completion status")
                 if (areAllHolesCompleted()) {
                     android.util.Log.d("PlayRoundVM", "All holes completed - navigating to review screen")
+                    // Belt-and-braces: freeze the final hole's pace if score entry
+                    // didn't already (first-write-wins, so this never moves it).
+                    if (bothScoresEntered(_currentRound.value, currentHole)) {
+                        recordPaceCompletion(currentHole)
+                    }
                     val currentRoundId = currentRound.value?.id ?: ""
                     navController?.navigate("reviewscreen/$currentRoundId")
                 } else {
@@ -870,9 +891,12 @@ class PlayRoundViewModel @Inject constructor(
         try {
             updateHoleScoreUseCase(round, holeNumber, newStrokes, isMainGolfer)
             android.util.Log.d("PlayRoundVM", "✅ Hole score updated - Hole $holeNumber, Strokes: $newStrokes, Main golfer: $isMainGolfer")
-            
+
             loadCurrentRound()
-            
+            // The final hole never gets a forward swipe, so its pace (the round's
+            // total time) is captured here, when its second score lands.
+            recordFinalHolePaceIfComplete(holeNumber)
+
         } catch (e: Exception) {
             android.util.Log.e("PlayRoundVM", "❌ Error updating round strokes in database", e)
         }
@@ -1207,7 +1231,11 @@ class PlayRoundViewModel @Inject constructor(
                 
                 // Reload round to update UI immediately
                 loadCurrentRound()
-                
+
+                // A pickup writes non-zero strokes, so it can be the action that
+                // completes the final hole — capture Round Time here too.
+                recordFinalHolePaceIfComplete(currentHole)
+
                 // Sync to remote in background (don't block UI)
                 val updatedRound = currentRound.value
                 if (updatedRound != null) {

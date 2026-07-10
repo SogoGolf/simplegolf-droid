@@ -73,8 +73,8 @@ import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import com.sogo.golf.msl.ui.theme.MSLColors.mslGrey
 import kotlinx.coroutines.delay
 import org.threeten.bp.Instant
-import org.threeten.bp.LocalDate
-import org.threeten.bp.LocalDateTime
+import com.sogo.golf.msl.shared.utils.HoleCycleUtils
+import com.sogo.golf.msl.shared.utils.TimeFormatUtils
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
 
@@ -187,18 +187,10 @@ private data class PaceStatus(
         } ?: "—"
 }
 
-private fun formatPaceClock(seconds: Int, includeSeconds: Boolean): String {
-    val total = maxOf(0, seconds)
-    val hours = total / 3600
-    val minutes = (total % 3600) / 60
-    val secs = total % 60
-    return if (includeSeconds) {
-        if (hours > 0) "%d:%02d:%02d".format(hours, minutes, secs)
-        else "%d:%02d".format(minutes, secs)
-    } else {
-        "%d:%02d".format(hours, minutes)
-    }
-}
+// Hoisted to TimeFormatUtils so the Review screen's submit-success "Round Time"
+// uses the identical formatter; kept as a local alias to avoid call-site churn.
+private fun formatPaceClock(seconds: Int, includeSeconds: Boolean): String =
+    TimeFormatUtils.formatPaceClock(seconds, includeSeconds)
 
 @Composable
 private fun PacePill(
@@ -482,59 +474,17 @@ private fun calculatePaceStatus(
     )
 }
 
+// Hoisted to TimeFormatUtils (booked-tee-time anchor, actual-start fallback) so
+// the Review screen computes Round Time from the SAME start the popover showed.
 private fun resolvePaceStartMillis(
     game: MslGame?,
     round: com.sogo.golf.msl.domain.model.Round?
-): Long? {
-    val actualStartMillis = round?.startTime?.toEpochMillis()
-    val bookingTime = game?.bookingTime
-    val teeMillis = if (bookingTime != null) {
-        val roundDate = round?.roundDate?.toLocalDate() ?: LocalDate.now()
-        LocalDateTime.of(roundDate, bookingTime.toLocalTime()).toEpochMillis()
-    } else {
-        null
-    }
+): Long? = TimeFormatUtils.resolvePaceStartMillis(game, round)
 
-    // The pace clock runs from the booked tee time — the tester expects a
-    // stopwatch from the tee time, so a late start correctly counts against pace.
-    // (actualStart is the "Let's Play" tap in the pro shop, before the tee time,
-    // so it must NOT pull the clock earlier.) Fall back to the actual start only
-    // when there is no booked tee time.
-    return teeMillis ?: actualStartMillis
-}
-
-private fun LocalDateTime.toEpochMillis(): Long {
-    return atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-}
-
-private fun buildPaceHoleCycle(startingHole: Int, numberOfHoles: Int): List<Int> {
-    // Must match PlayRoundViewModel.getCycleIndices so the "expected time to this
-    // hole" is summed over the SAME hole order the golfer actually plays.
-    // getCycleIndices wraps a front-nine (1-9) 9-hole round at 9->1 and a
-    // back-nine (10-18) 9-hole round at 18->10; only 18-hole rounds wrap 18->1.
-    // A plain 18->1 wrap here diverged for 9-hole/shotgun starts and made the
-    // pill read wildly behind after the wrap.
-    val start = startingHole.coerceIn(1, 18)
-    val count = numberOfHoles.takeIf { it > 0 } ?: 18
-    val maxHole = when {
-        count == 18 -> 18
-        start >= 10 && count == 9 -> 18
-        start in 1..9 && count == 9 -> 9
-        else -> start + count - 1
-    }
-    val holes = mutableListOf<Int>()
-    var currentHole = start
-
-    repeat(count) {
-        holes.add(currentHole)
-        currentHole += 1
-        if (currentHole > maxHole) {
-            currentHole = if (start >= 10 && count == 9) 10 else 1
-        }
-    }
-
-    return holes
-}
+// Hoisted to HoleCycleUtils (shared with the Review screen's Round Time, which
+// needs "which hole is the final one"); kept as a local alias to avoid churn.
+private fun buildPaceHoleCycle(startingHole: Int, numberOfHoles: Int): List<Int> =
+    HoleCycleUtils.buildHoleCycle(startingHole, numberOfHoles)
 
 @Composable
 private fun Screen4Portrait(

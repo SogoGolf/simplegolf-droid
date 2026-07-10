@@ -32,6 +32,10 @@ import com.sogo.golf.msl.ui.theme.MSLColors.mslYellow
 @Composable
 fun SubmitRoundSuccessDialog(
     playingPartnerName: String,
+    /** Total time since round start as of the final hole's score entry,
+     * pre-formatted ("4 hr 53 min" / "7 min 53 sec"). null hides the line
+     * (value never captured). */
+    roundTime: String? = null,
     onDone: () -> Unit
 ) {
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
@@ -66,6 +70,20 @@ fun SubmitRoundSuccessDialog(
                         .fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
+                if (roundTime != null) {
+                    Text(
+                        text = "Round Time: $roundTime",
+                        color = textColor,
+                        fontWeight = FontWeight.Bold,
+                        style = TextStyle(
+                            fontSize = MaterialTheme.typography.headlineSmall.fontSize,
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(R.drawable.greentick)
@@ -107,6 +125,7 @@ fun PreviewSubmitRoundSuccessDialogLight() {
     ) {
         SubmitRoundSuccessDialog(
             playingPartnerName = "Arnold Palmer",
+            roundTime = "3 hr 41 min",
             onDone = { }
         )
     }

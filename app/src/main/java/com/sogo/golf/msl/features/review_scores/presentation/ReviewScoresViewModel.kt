@@ -16,6 +16,10 @@ import com.sogo.golf.msl.domain.usecase.round.SubmitRoundUseCase
 import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
+import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
+import com.sogo.golf.msl.shared.utils.HoleCycleUtils
+import com.sogo.golf.msl.shared.utils.TimeFormatUtils
+import kotlinx.coroutines.flow.firstOrNull
 import com.sogo.golf.msl.domain.repository.remote.SogoMongoRepository
 import com.sogo.golf.msl.analytics.AnalyticsManager
 import dagger.assisted.Assisted
@@ -40,6 +44,7 @@ class ReviewScoresViewModel @AssistedInject constructor(
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
     private val holeStatePreferences: HoleStatePreferences,
+    private val getLocalGameUseCase: GetLocalGameUseCase,
     private val sogoMongoRepository: SogoMongoRepository,
     private val analyticsManager: AnalyticsManager,
     @Assisted private val navController: NavController
@@ -86,7 +91,8 @@ class ReviewScoresViewModel @AssistedInject constructor(
                     _uiState.value = _uiState.value.copy(
                         round = round,
                         isLoading = false,
-                        errorMessage = null
+                        errorMessage = null,
+                        roundTimeText = computeRoundTimeText(roundId, round)
                     )
                     android.util.Log.d(TAG, "Round loaded successfully: ${round.golferFirstName} ${round.golferLastName}")
                 } else {
@@ -103,6 +109,40 @@ class ReviewScoresViewModel @AssistedInject constructor(
                     errorMessage = "Error loading round: ${e.message}"
                 )
             }
+        }
+    }
+
+    /**
+     * "Round Time" for the submit-success dialog: total time since the round's
+     * (booked) start as of entering the FINAL hole's score. The Play screen
+     * freezes each hole's completion into HoleStatePreferences the moment its
+     * second score lands, so review/sign/submit time never counts. The final
+     * CYCLE hole's snapshot is used (not the latest of any hole) so a skipped
+     * hole backfilled after the final one doesn't inflate the value — matching
+     * iOS exactly. Computed here at screen load because post-Done cleanup
+     * purges the local game (the booked tee time) — and null (row hidden)
+     * when never captured, e.g. a round played before this feature shipped.
+     */
+    private suspend fun computeRoundTimeText(roundId: String, round: Round): String? {
+        return try {
+            val snapshots = holeStatePreferences.getPaceSnapshots(roundId)
+            if (snapshots.isEmpty()) return null
+            val game = getLocalGameUseCase().firstOrNull()
+            val finalHole = game?.let {
+                HoleCycleUtils.buildHoleCycle(it.startingHoleNumber, it.numberOfHoles ?: 18).lastOrNull()
+            }
+            // Fallback (game unexpectedly gone): latest snapshot of any hole.
+            val finalHoleMillis = finalHole?.let { snapshots[it] } ?: snapshots.values.maxOrNull()
+                ?: return null
+            val startMillis = TimeFormatUtils.resolvePaceStartMillis(game, round)
+                ?: return null
+            if (finalHoleMillis <= startMillis) return null
+            TimeFormatUtils.formatFriendlyDuration(
+                ((finalHoleMillis - startMillis) / 1000L).toInt()
+            )
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "Could not compute round time", e)
+            null
         }
     }
 
@@ -572,7 +612,12 @@ class ReviewScoresViewModel @AssistedInject constructor(
                 
                 // Clear hole state and reset stale data
                 holeStatePreferences.clearCurrentHole(currentRound.id)
-                
+
+                // Pace snapshots are per-round and done with (Round Time is
+                // already in uiState) — clear them so they don't accumulate
+                // one prefs entry per submitted round.
+                holeStatePreferences.clearPaceSnapshots(currentRound.id)
+
                 resetStaleDataUseCase()
                 
                 android.util.Log.d(TAG, "Post-submission cleanup completed")
@@ -597,7 +642,12 @@ data class ReviewScoresUiState(
     val successMessage: String? = null,
     val showErrorDialog: Boolean = false,
     val shouldResetAfterError: Boolean = false,
-    val scoreSavedInSimpleGolf: Boolean = false
+    val scoreSavedInSimpleGolf: Boolean = false,
+    /** "Round Time" for the submit-success dialog: total time since the round's
+     * (booked) start as of the final hole's score entry, human-friendly
+     * ("4 hr 53 min" / "7 min 53 sec"). null hides the line (never captured —
+     * e.g. legacy round). */
+    val roundTimeText: String? = null
 )
 
 data class RoundSubmitState(
