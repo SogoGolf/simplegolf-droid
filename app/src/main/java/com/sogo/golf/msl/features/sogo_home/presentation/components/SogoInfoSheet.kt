@@ -53,9 +53,12 @@ fun SogoInfoSheet(onItemClicked: ((String) -> Unit)? = null) {
             onItemClicked?.invoke("terms")
             openWebPage(url) 
         }
-        TextButtonItem("SOGO Privacy", "http://sogo.golf/privacy-policy") { url -> 
+        // sogo.golf is offline (Squarespace site unpublished) — Google rejected the
+        // store submission over the dead link. Point at the MSL Solutions
+        // (SimpleGolf parent) privacy policy instead.
+        TextButtonItem("SOGO Privacy", "https://simplegolf.com.au/wp-content/uploads/2025/02/MSL-Privacy-Policy-to-replace.pdf") { url ->
             onItemClicked?.invoke("privacy")
-            openWebPage(url) 
+            openWebPage(url)
         }
         TextButtonItem("SOGO Rules of Play", "http://sogo.golf/rules-of-play") { url -> 
             onItemClicked?.invoke("rules")

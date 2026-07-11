@@ -170,15 +170,19 @@ fun SogoGolfHomeScreen(
                         }
                     }
                 )
-                Spacer(modifier = Modifier.width(16.dp))
-                SogoTopicButton(
-                    title = "SOGO T&C",
-                    subTitle = "",
-                    imageResId = R.drawable.info_icon,
-                    onClick = {
-                        showSogoInfoDialog = true
-                    }
-                )
+                // SOGO T&C button — HIDDEN (not deleted): it opens the SOGO
+                // Information sheet whose sogo.golf links are all dead (site
+                // offline; Google rejected the submission over the broken
+                // privacy link). Re-enable when sogo.golf is back.
+                // Spacer(modifier = Modifier.width(16.dp))
+                // SogoTopicButton(
+                //     title = "SOGO T&C",
+                //     subTitle = "",
+                //     imageResId = R.drawable.info_icon,
+                //     onClick = {
+                //         showSogoInfoDialog = true
+                //     }
+                // )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
