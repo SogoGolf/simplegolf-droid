@@ -53,10 +53,11 @@ fun SogoInfoSheet(onItemClicked: ((String) -> Unit)? = null) {
             onItemClicked?.invoke("terms")
             openWebPage(url) 
         }
-        // sogo.golf is offline (Squarespace site unpublished) — Google rejected the
-        // store submission over the dead link. Point at the MSL Solutions
-        // (SimpleGolf parent) privacy policy instead.
-        TextButtonItem("SOGO Privacy", "https://simplegolf.com.au/wp-content/uploads/2025/02/MSL-Privacy-Policy-to-replace.pdf") { url ->
+        // sogo.golf is offline (Squarespace site unpublished). Google also rejects
+        // PDF policies (content type must be text/html), so this is the MSL policy
+        // as an HTML page on our Firebase Hosting site (sogo-golf project,
+        // simplegolf-privacy site) — same URL as the store listings.
+        TextButtonItem("SOGO Privacy", "https://simplegolf-privacy.web.app/privacy-policy/") { url ->
             onItemClicked?.invoke("privacy")
             openWebPage(url)
         }
