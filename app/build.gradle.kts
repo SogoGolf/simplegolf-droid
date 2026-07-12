@@ -58,8 +58,6 @@ android {
         buildConfigField("String", "REALM_APP_ID", "\"${prodProps["REALM_APP_ID"] ?: "default-realm"}\"")
         buildConfigField("String", "MONGO_API_KEY", "\"${prodProps["MONGO_API_KEY"] ?: "default-mongo"}\"")
 
-        buildConfigField("String", "SOGO_MSL_AUTH_URL", "\"${prodProps["SOGO_MSL_AUTH_URL"] ?: "default-sogo-auth.com"}\"")
-        buildConfigField("String", "SOGO_OCP_SUBSCRIPTION_KEY", "\"${prodProps["SOGO_OCP_SUBSCRIPTION_KEY"] ?: "default-key"}\"")
         buildConfigField("String", "SOGO_AUTHORIZATION", "\"${prodProps["SOGO_AUTHORIZATION"] ?: "default-auth"}\"")
         buildConfigField("String", "SOGO_GCP_API", "\"${prodProps["SOGO_GCP_API"] ?: "default-gcp.com"}\"")
         buildConfigField("String", "SOGO_MONGO_API", "\"${prodProps["SOGO_MONGO_API"] ?: "default-gcp.com"}\"")
@@ -97,6 +95,16 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
+        }
+        debug {
+            // Point the Mongo API at the TEST instance for debug builds, so
+            // local/dev testing hits mongo-api-test (mirrors the iOS dev
+            // scheme). Release builds keep the prod value from prod.properties.
+            buildConfigField(
+                "String",
+                "SOGO_MONGO_API",
+                "\"mongo-api-test-613362712202.australia-southeast1.run.app\""
+            )
         }
     }
     compileOptions {

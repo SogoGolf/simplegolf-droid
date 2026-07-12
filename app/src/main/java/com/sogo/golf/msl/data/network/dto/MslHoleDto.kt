@@ -10,7 +10,8 @@ data class MslHoleDto(
     val holeNumber: Int,
     val holeName: String?,
     val holeAlias: String?,
-    val extraStrokes: Int
+    val extraStrokes: Int,
+    val playTimeMinutes: Int? = null
 )
 
 fun MslHoleDto.toDomainModel(): MslHole {
@@ -27,6 +28,7 @@ fun MslHoleDto.toDomainModel(): MslHole {
         holeNumber = holeNumber,
         holeName = holeName,
         holeAlias = holeAlias,
-        extraStrokes = extraStrokes
+        extraStrokes = extraStrokes,
+        playTimeMinutes = playTimeMinutes ?: 0
     )
 }

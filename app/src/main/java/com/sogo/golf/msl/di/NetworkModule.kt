@@ -5,12 +5,9 @@ import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.data.network.NetworkChecker
 import com.sogo.golf.msl.data.network.NetworkStateMonitor
 import com.sogo.golf.msl.data.network.api.GolfApiService
-import com.sogo.golf.msl.data.network.api.SogoApiService
 import com.sogo.golf.msl.data.network.api.MpsAuthApiService
 import com.sogo.golf.msl.data.network.api.SogoMongoApiService
-import com.sogo.golf.msl.data.network.api.SogoGeneralApi
 import com.sogo.golf.msl.data.network.interceptors.GolfApiAuthInterceptor
-import com.sogo.golf.msl.data.network.interceptors.SogoApiAuthInterceptor
 import com.sogo.golf.msl.data.network.interceptors.MpsAuthInterceptor
 import dagger.Module
 import dagger.Provides
@@ -32,10 +29,6 @@ annotation class SogoMongoApi
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class GolfApi
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class SogoApi
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -105,25 +98,6 @@ object NetworkModule {
             .build()
     }
 
-    // Sogo API - sogo-api.azure-api.net
-    @Provides
-    @Singleton
-    @SogoApi
-    fun provideSogoApiRetrofit(
-        baseOkHttpClient: OkHttpClient,
-        sogoApiAuthInterceptor: SogoApiAuthInterceptor
-    ): Retrofit {
-        val sogoApiClient = baseOkHttpClient.newBuilder()
-            .addInterceptor(sogoApiAuthInterceptor)
-            .build()
-
-        return Retrofit.Builder()
-            .baseUrl("https://${BuildConfig.SOGO_MSL_AUTH_URL}/")
-            .client(sogoApiClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-
     // MPS Auth API - mpsapi.micropower.com.au
     @Provides
     @Singleton
@@ -152,12 +126,6 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideSogoApiService(@SogoApi retrofit: Retrofit): SogoApiService {
-        return retrofit.create(SogoApiService::class.java)
-    }
-
-    @Provides
-    @Singleton
     fun provideMpsAuthApiService(@MpsAuthApi retrofit: Retrofit): MpsAuthApiService {
         return retrofit.create(MpsAuthApiService::class.java)
     }
@@ -179,16 +147,5 @@ object NetworkModule {
     @Singleton
     fun provideSogoMongoApiService(@SogoMongoApi retrofit: Retrofit): SogoMongoApiService {
         return retrofit.create(SogoMongoApiService::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun provideSogoGeneralApi(baseOkHttpClient: OkHttpClient): SogoGeneralApi {
-        return Retrofit.Builder()
-            .baseUrl("https://sogo-api.azure-api.net/sogo-general/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(baseOkHttpClient)
-            .build()
-            .create(SogoGeneralApi::class.java)
     }
 }

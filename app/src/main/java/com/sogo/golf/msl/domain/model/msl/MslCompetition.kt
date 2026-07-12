@@ -29,7 +29,10 @@ data class MslHole(
     val holeNumber: Int,
     val holeName: String?,
     val holeAlias: String?,
-    val extraStrokes: Int
+    val extraStrokes: Int,
+    /** Expected minutes to complete this hole (pace of play), from V3 golferinfo.
+     *  0 when the source doesn't provide it (e.g. legacy payloads). */
+    val playTimeMinutes: Int = 0
 )
 
 data class StrokeIndex(

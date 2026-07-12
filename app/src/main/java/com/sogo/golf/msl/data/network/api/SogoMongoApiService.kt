@@ -12,6 +12,8 @@ import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
 import com.sogo.golf.msl.data.network.dto.mongodb.TransactionDto
 import com.sogo.golf.msl.data.network.dto.mongodb.LeaderboardRequestDto
 import com.sogo.golf.msl.data.network.dto.mongodb.LeaderboardResponseDto
+import com.sogo.golf.msl.data.network.dto.PostPrelimTokenRequestDto
+import com.sogo.golf.msl.data.network.dto.PostPrelimTokenResponseDto
 import com.sogo.golf.msl.domain.model.MobileAppVersionPlatformConfig
 import retrofit2.Response
 import retrofit2.http.Body
@@ -24,6 +26,13 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface SogoMongoApiService {
+
+    // Mints the MSL preliminary token. RSA-encrypts the club credential
+    // server-side; needs only the JSON body, no extra auth header.
+    @POST("msl/token")
+    suspend fun getPreliminaryToken(
+        @Body request: PostPrelimTokenRequestDto
+    ): Response<PostPrelimTokenResponseDto>
 
     @GET("fees")
     suspend fun getFees(): Response<List<FeeDto>>

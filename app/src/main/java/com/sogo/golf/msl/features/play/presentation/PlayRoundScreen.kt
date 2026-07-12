@@ -1,24 +1,31 @@
 package com.sogo.golf.msl.features.play.presentation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,19 +46,37 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.sogo.golf.msl.domain.model.msl.MslGame
 import com.sogo.golf.msl.navigation.NavViewModel
 import com.sogo.golf.msl.ui.theme.MSLColors
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import com.sogo.golf.msl.ui.theme.MSLColors.mslGrey
+import kotlinx.coroutines.delay
+import org.threeten.bp.Instant
+import com.sogo.golf.msl.shared.utils.HoleCycleUtils
+import com.sogo.golf.msl.shared.utils.TimeFormatUtils
+import org.threeten.bp.ZoneId
+import org.threeten.bp.format.DateTimeFormatter
 
 @Composable
 fun PlayRoundScreen(
@@ -83,6 +108,384 @@ fun PlayRoundScreen(
     }
 }
 
+
+
+private data class PaceStatus(
+    val currentHoleNumber: Int,
+    val currentHoleExpectedMinutes: Int,
+    val expectedElapsedMinutes: Int,
+    val actualElapsedMinutes: Int,
+    val actualElapsedSeconds: Int,
+    val minutesBehind: Int,
+    val startsInMinutes: Int,
+    val secondsUntilStart: Int,
+    val startMillis: Long?
+) {
+    val hasStarted: Boolean
+        get() = startsInMinutes <= 0
+
+    /**
+     * Seconds of slack before falling behind the pace target at the current hole.
+     * Positive = time in hand (green); negative = seconds behind (red).
+     */
+    val bufferSeconds: Int
+        get() = expectedElapsedMinutes * 60 - actualElapsedSeconds
+
+    val isBehind: Boolean
+        get() = hasStarted && bufferSeconds < 0
+
+    /**
+     * The single live number shown on the pill and as the popover's hero: a
+     * countdown. Before tee-off it counts down to the tee time; once playing it
+     * counts down the slack to the pace target, then goes negative (e.g. "-0:20")
+     * and keeps counting once behind.
+     */
+    val paceCountdown: String
+        get() = when {
+            !hasStarted -> formatPaceClock(secondsUntilStart, includeSeconds = true)
+            bufferSeconds < 0 -> "-" + formatPaceClock(-bufferSeconds, includeSeconds = true)
+            else -> formatPaceClock(bufferSeconds, includeSeconds = true)
+        }
+
+    /**
+     * Compact minutes-only countdown for the pill — keeps it narrow. The
+     * seconds-precision version lives in the popover. Negative once behind.
+     */
+    val pillCountdown: String
+        get() = when {
+            !hasStarted -> "${startsInMinutes}m"
+            else -> {
+                val mins = (kotlin.math.abs(bufferSeconds) + 59) / 60
+                if (bufferSeconds < 0) "-${mins}m" else "${mins}m"
+            }
+        }
+
+    val pillText: String
+        get() = pillCountdown
+
+    /** Label under the popover hero, describing what the countdown is measuring. */
+    val paceLabel: String
+        get() = when {
+            !hasStarted -> "until tee-off"
+            isBehind -> "behind pace"
+            else -> "until behind pace"
+        }
+
+    /** Total time on the course since the booked tee time — counts UP (H:MM:SS). */
+    val elapsedClock: String
+        get() = formatPaceClock(if (hasStarted) actualElapsedSeconds else 0, includeSeconds = true)
+
+    /** Total expected play time to the current hole (H:MM). */
+    val targetClock: String
+        get() = formatPaceClock(expectedElapsedMinutes * 60, includeSeconds = false)
+
+    val teeTimeText: String
+        get() = startMillis?.let { millis ->
+            Instant.ofEpochMilli(millis)
+                .atZone(ZoneId.systemDefault())
+                .format(DateTimeFormatter.ofPattern("h:mm a"))
+        } ?: "—"
+}
+
+// Hoisted to TimeFormatUtils so the Review screen's submit-success "Round Time"
+// uses the identical formatter; kept as a local alias to avoid call-site churn.
+private fun formatPaceClock(seconds: Int, includeSeconds: Boolean): String =
+    TimeFormatUtils.formatPaceClock(seconds, includeSeconds)
+
+@Composable
+private fun PacePill(
+    status: PaceStatus,
+    onClick: () -> Unit
+) {
+    // Green through the pre-tee countdown too: the golfer is still on time, so a
+    // green pill reads clearly as "all good". Only red when behind.
+    val pillColor = if (status.isBehind) MSLColors.mslRed else MSLColors.mslGreen
+    Row(
+        modifier = Modifier
+            // The pill lives in a weight-constrained header slot; let it grow to
+            // its content so a wide number (e.g. a long countdown) isn't squeezed
+            // into wrapping onto a second line.
+            .wrapContentWidth(unbounded = true)
+            .offset(x = 5.dp)
+            .height(30.dp)
+            .clip(RoundedCornerShape(percent = 50))
+            .background(pillColor)
+            .clickable(onClick = onClick)
+            .padding(start = 10.dp, end = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PaceClockIcon(
+            tint = Color.White,
+            modifier = Modifier.size(14.dp)
+        )
+
+        Text(
+            text = status.pillText,
+            color = Color.White,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false,
+            // Drop the extra font padding so the number sits at the true vertical
+            // centre of the pill, matching the clock icon.
+            style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false))
+        )
+    }
+}
+
+@Composable
+private fun PaceClockIcon(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val strokeWidth = size.minDimension * 0.12f
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val radius = size.minDimension * 0.42f
+        val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+
+        drawCircle(
+            color = tint,
+            radius = radius,
+            center = center,
+            style = stroke
+        )
+        drawLine(
+            color = tint,
+            start = center,
+            end = Offset(center.x, center.y - radius * 0.48f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = center,
+            end = Offset(center.x + radius * 0.46f, center.y + radius * 0.30f),
+            strokeWidth = strokeWidth,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+@Composable
+private fun PaceOfPlayPopover(
+    status: PaceStatus,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Green through the pre-tee countdown and while on pace; red only behind.
+    val timerColor = if (status.isBehind) PacePopoverColors.behindRed else PacePopoverColors.green
+
+    Box(modifier = modifier) {
+        Canvas(
+            modifier = Modifier
+                .size(width = 34.dp, height = 20.dp)
+                .offset(x = 64.dp, y = (-16).dp)
+                .zIndex(1f)
+        ) {
+            val path = Path().apply {
+                moveTo(size.width / 2f, 0f)
+                lineTo(size.width, size.height)
+                lineTo(0f, size.height)
+                close()
+            }
+            drawPath(path = path, color = PacePopoverColors.panel)
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(4.dp, RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(12.dp))
+                .background(PacePopoverColors.panel)
+                .padding(start = 20.dp, end = 20.dp, top = 26.dp, bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.Top) {
+                Text(
+                    text = "Pace of play",
+                    color = Color.White,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Dismiss pace details",
+                        tint = PacePopoverColors.mutedText,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+
+            // Hero: the pace countdown (goes negative once behind).
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = status.paceCountdown,
+                    color = timerColor,
+                    fontSize = 52.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = status.paceLabel,
+                    color = PacePopoverColors.mutedText,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(PacePopoverColors.mutedText.copy(alpha = 0.3f))
+            )
+
+            // Overall pace of play: total time on the course, counts up.
+            PaceDetailRow(title = "Tee time", value = status.teeTimeText)
+            PaceDetailRow(title = "Total time since start", value = status.elapsedClock)
+            PaceDetailRow(title = "Target to hole ${status.currentHoleNumber}", value = status.targetClock)
+        }
+    }
+}
+
+@Composable
+private fun PaceDetailRow(
+    title: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            color = PacePopoverColors.mutedText,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value,
+            color = Color.White,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+private object PacePopoverColors {
+    val panel = Color(0xFF2B2E29)
+    val tile = Color(0xFF1F211C)
+    val mutedText = Color(0xFFB3B3A8)
+    val gold = Color(0xFFA87A05)
+    val green = Color(0xFF3D8F40)
+    val behindRed = Color(0xFFCC3833)
+    val notice = Color(0xFFFFEDB8)
+    val noticeText = Color(0xFF6B4705)
+}
+
+private const val DEFAULT_HOLE_MINUTES = 14
+
+private fun calculatePaceStatus(
+    game: MslGame?,
+    round: com.sogo.golf.msl.domain.model.Round?,
+    currentHoleNumber: Int,
+    expectedMinutesByHole: Map<Int, Int>,
+    nowMillis: Long,
+    // Wall-clock time this hole was completed. When set, the hole's pace is
+    // frozen at that instant instead of counting down from "now".
+    holeCompletionMillis: Long? = null
+): PaceStatus {
+    fun expectedMinutes(holeNumber: Int): Int {
+        val minutes = expectedMinutesByHole[holeNumber] ?: 0
+        return if (minutes > 0) minutes else DEFAULT_HOLE_MINUTES
+    }
+
+    val currentHoleExpected = expectedMinutes(currentHoleNumber)
+    val holeCycle = buildPaceHoleCycle(
+        startingHole = game?.startingHoleNumber ?: 1,
+        numberOfHoles = game?.numberOfHoles ?: 18
+    )
+    val currentIndex = holeCycle.indexOf(currentHoleNumber)
+    val holesThroughCurrent = if (currentIndex >= 0) {
+        holeCycle.take(currentIndex + 1)
+    } else {
+        listOf(currentHoleNumber)
+    }
+    val expectedElapsed = holesThroughCurrent.sumOf { holeNumber ->
+        expectedMinutes(holeNumber)
+    }
+
+    val startMillis = resolvePaceStartMillis(game, round)
+
+    if (startMillis == null) {
+        return PaceStatus(
+            currentHoleNumber = currentHoleNumber,
+            currentHoleExpectedMinutes = currentHoleExpected,
+            expectedElapsedMinutes = expectedElapsed,
+            actualElapsedMinutes = 0,
+            actualElapsedSeconds = 0,
+            minutesBehind = 0,
+            startsInMinutes = 0,
+            secondsUntilStart = 0,
+            startMillis = null
+        )
+    }
+
+    // A completed hole is frozen: its clock is measured to when it was left, not
+    // to "now", and it has started (no pre-tee countdown).
+    val frozen = holeCompletionMillis != null
+    val effectiveNow = holeCompletionMillis ?: nowMillis
+    val secondsUntilStart = if (!frozen && nowMillis < startMillis) {
+        ((startMillis - nowMillis) / 1_000L).toInt()
+    } else {
+        0
+    }
+    val startsInMinutes = if (!frozen && nowMillis < startMillis) {
+        kotlin.math.ceil((startMillis - nowMillis) / 60_000.0).toInt()
+    } else {
+        0
+    }
+    val actualElapsedSeconds = if (effectiveNow > startMillis) {
+        ((effectiveNow - startMillis) / 1_000L).toInt()
+    } else {
+        0
+    }
+    val actualElapsed = actualElapsedSeconds / 60
+    val minutesBehind = maxOf(0, actualElapsed - expectedElapsed)
+
+    return PaceStatus(
+        currentHoleNumber = currentHoleNumber,
+        currentHoleExpectedMinutes = currentHoleExpected,
+        expectedElapsedMinutes = expectedElapsed,
+        actualElapsedMinutes = actualElapsed,
+        actualElapsedSeconds = actualElapsedSeconds,
+        minutesBehind = minutesBehind,
+        startsInMinutes = startsInMinutes,
+        secondsUntilStart = secondsUntilStart,
+        startMillis = startMillis
+    )
+}
+
+// Hoisted to TimeFormatUtils (booked-tee-time anchor, actual-start fallback) so
+// the Review screen computes Round Time from the SAME start the popover showed.
+private fun resolvePaceStartMillis(
+    game: MslGame?,
+    round: com.sogo.golf.msl.domain.model.Round?
+): Long? = TimeFormatUtils.resolvePaceStartMillis(game, round)
+
+// Hoisted to HoleCycleUtils (shared with the Review screen's Round Time, which
+// needs "which hole is the final one"); kept as a local alias to avoid churn.
+private fun buildPaceHoleCycle(startingHole: Int, numberOfHoles: Int): List<Int> =
+    HoleCycleUtils.buildHoleCycle(startingHole, numberOfHoles)
+
 @Composable
 private fun Screen4Portrait(
     navController: NavController,
@@ -99,6 +502,7 @@ private fun Screen4Portrait(
     val currentGolfer by playRoundViewModel.currentGolfer.collectAsState()
     val currentRound by playRoundViewModel.currentRound.collectAsState()
     val currentHoleNumber by playRoundViewModel.currentHoleNumber.collectAsState()
+    val holeCompletionMillis by playRoundViewModel.holeCompletionMillis.collectAsState()
     val showBackButton by playRoundViewModel.showBackButton.collectAsState()
     val showDialog by playRoundViewModel.showGoToHoleDialog.collectAsState()
     val isAbandoningRound by playRoundViewModel.isAbandoningRound.collectAsState()
@@ -106,6 +510,29 @@ private fun Screen4Portrait(
 
     var showBackConfirmDialog by remember { mutableStateOf(false) }
     var showAbandonDialog by remember { mutableStateOf(false) }
+    var showPacePopover by remember { mutableStateOf(false) }
+    var paceNowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1_000)
+            paceNowMillis = System.currentTimeMillis()
+        }
+    }
+
+    val paceStatus = remember(localGame, localCompetition, currentRound, currentHoleNumber, paceNowMillis, holeCompletionMillis) {
+        val expectedMinutesByHole = localCompetition?.players?.firstOrNull()?.holes
+            ?.associate { it.holeNumber to it.playTimeMinutes }
+            ?: emptyMap()
+        calculatePaceStatus(
+            game = localGame,
+            round = currentRound,
+            currentHoleNumber = currentHoleNumber,
+            expectedMinutesByHole = expectedMinutesByHole,
+            nowMillis = paceNowMillis,
+            holeCompletionMillis = holeCompletionMillis[currentHoleNumber]
+        )
+    }
 
     BackHandler(enabled = true) {
         if (showBackButton) {
@@ -144,44 +571,54 @@ private fun Screen4Portrait(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     //LEFT ARROW SECTION
-                    Box(
+                    Row(
                         modifier = Modifier
                             .weight(2f)
-                            .fillMaxWidth(),
+                            .height(48.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
                     ) {
-                        if (showBackButton) {
-
-                            Box(
-                                modifier = Modifier
-                                    //.background(Color.Red)
-                                    .height(48.dp)
-                                    .fillMaxWidth()
-                                    .clickable(
-                                        // Let Compose manage its own InteractionSource for perf
-                                        interactionSource = null,
-                                        // Use new Material3 ripple; or set indication = null if you want no ripple
-                                        indication = ripple(bounded = true)
-                                    ) {
-                                                                            // Check if we're on the starting hole
-                                    val startingHoleNumber = localGame?.startingHoleNumber ?: 1
-                                    if (currentHoleNumber == startingHoleNumber) {
-                                        // On starting hole - show confirmation dialog
-                                        showBackConfirmDialog = true
-                                    } else {
-                                        // Not on starting hole - navigate normally
-                                        playRoundViewModel.navigateToPreviousHole()
-                                    }
-                                },
-                                contentAlignment = Alignment.CenterStart // keep icon anchored right
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                                    contentDescription = "Previous Hole",
-                                    tint = MSLColors.mslGunMetal,
-                                    modifier = Modifier.size(46.dp)
-                                )
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            if (showBackButton) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clickable(
+                                            // Let Compose manage its own InteractionSource for perf
+                                            interactionSource = null,
+                                            // Use new Material3 ripple; or set indication = null if you want no ripple
+                                            indication = ripple(bounded = true)
+                                        ) {
+                                            // Check if we're on the starting hole
+                                            val startingHoleNumber = localGame?.startingHoleNumber ?: 1
+                                            if (currentHoleNumber == startingHoleNumber) {
+                                                // On starting hole - show confirmation dialog
+                                                showBackConfirmDialog = true
+                                            } else {
+                                                // Not on starting hole - navigate normally
+                                                playRoundViewModel.navigateToPreviousHole()
+                                            }
+                                        },
+                                    contentAlignment = Alignment.CenterStart // keep icon anchored right
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                        contentDescription = "Previous Hole",
+                                        tint = MSLColors.mslGunMetal,
+                                        modifier = Modifier.size(46.dp)
+                                    )
+                                }
                             }
                         }
+
+                        PacePill(
+                            status = paceStatus,
+                            onClick = { showPacePopover = !showPacePopover }
+                        )
                     }
 
                     //HOLE SECTION
@@ -253,17 +690,26 @@ private fun Screen4Portrait(
                         }
                     }
                 }
+
             }
         }
         // No bottomBar parameter = no bottom bar
     ) { paddingValues ->
         // Your screen content
 
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)  // This properly respects the Scaffold's content padding
         ) {
+            val cardSpacing = with(LocalDensity.current) {
+                (2 * density).dp
+            }
+            val topCardTop = 10.dp
+
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
             // Add spacing between nav bar and first card
             Spacer(modifier = Modifier.height(10.dp))
             
@@ -436,10 +882,7 @@ private fun Screen4Portrait(
 
             // Gap between cards
             //Spacer(modifier = Modifier.height(10.dp))
-            with(LocalDensity.current) {
-                val spacingDp = (2 * density).dp
-                Spacer(modifier = Modifier.height(spacingDp))
-            }
+            Spacer(modifier = Modifier.height(cardSpacing))
 
             // Bottom card - Main Golfer
             HoleCardTest(
@@ -475,6 +918,32 @@ private fun Screen4Portrait(
 
             Spacer(Modifier.height(5.dp))
         }
+
+            if (showPacePopover) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.34f))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) {
+                            showPacePopover = false
+                        }
+                        .zIndex(1f)
+                )
+
+                PaceOfPlayPopover(
+                    status = paceStatus,
+                    onDismiss = { showPacePopover = false },
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = topCardTop)
+                        .padding(horizontal = 10.dp)
+                        .fillMaxWidth()
+                        .zIndex(2f)
+                )
+            }
 
         // Back confirmation dialog
         if (showBackConfirmDialog) {
@@ -642,4 +1111,6 @@ private fun Screen4Portrait(
             }
         }
     }
+}
+
 }

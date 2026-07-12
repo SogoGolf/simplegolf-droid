@@ -1,20 +1,18 @@
 package com.sogo.golf.msl.domain.usecase.leaderboard
 
 import android.util.Log
-import com.sogo.golf.msl.BuildConfig
-import com.sogo.golf.msl.data.network.api.SogoGeneralApi
-import com.sogo.golf.msl.data.network.dto.mongodb.SogoLeaderboardRequestDto
+import com.sogo.golf.msl.data.network.api.SogoMongoApiService
+import com.sogo.golf.msl.data.network.dto.mongodb.LeaderboardRequestDto
 import com.sogo.golf.msl.data.network.dto.mongodb.toDomain
 import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.mongodb.LeaderboardEntry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.EOFException
 import javax.inject.Inject
 
 class GetLeaderboardUseCase @Inject constructor(
-    private val sogoGeneralApi: SogoGeneralApi
+    private val sogoMongoApiService: SogoMongoApiService
 ) {
     companion object {
         private const val TAG = "GetLeaderboardUseCase"
@@ -29,26 +27,26 @@ class GetLeaderboardUseCase @Inject constructor(
     ): NetworkResult<List<LeaderboardEntry>> = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Fetching leaderboard: from=$from, to=$to, topX=$topX, holes=$numberHoles, identifier=$leaderboardIdentifier")
-            
-            val request = SogoLeaderboardRequestDto(
+
+            // Leaderboard comes from our Mongo API (POST /leaderboard).
+            // An empty board returns [] (200), not an error.
+            val request = LeaderboardRequestDto(
                 from = from,
                 to = to,
                 topX = topX,
                 numberHoles = numberHoles,
                 leaderboardIdentifier = leaderboardIdentifier
             )
-            
-            val leaderboardEntries = sogoGeneralApi.getSogoLeaderboard(
-                apiKey = BuildConfig.SOGO_OCP_SUBSCRIPTION_KEY,
-                request = request
-            ).map { it.toDomain() }
-            
-            Log.d(TAG, "Successfully fetched ${leaderboardEntries.size} leaderboard entries")
-            NetworkResult.Success(leaderboardEntries)
-        } catch (e: EOFException) {
-            // Server returned empty response instead of empty array - treat as empty leaderboard
-            Log.i(TAG, "Empty response from server, treating as empty leaderboard")
-            NetworkResult.Success(emptyList())
+
+            val response = sogoMongoApiService.getLeaderboard(request)
+            if (response.isSuccessful) {
+                val leaderboardEntries = response.body()?.map { it.toDomain() } ?: emptyList()
+                Log.d(TAG, "Successfully fetched ${leaderboardEntries.size} leaderboard entries")
+                NetworkResult.Success(leaderboardEntries)
+            } else {
+                Log.e(TAG, "Leaderboard request failed: ${response.code()} - ${response.message()}")
+                NetworkResult.Error(NetworkError.Unknown("Leaderboard request failed: ${response.code()}"))
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching leaderboard", e)
             NetworkResult.Error(NetworkError.Unknown(e.message ?: "Unknown error"))
