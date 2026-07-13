@@ -36,6 +36,13 @@ class ReviewPromptPreferences @Inject constructor(
     }
 
     fun shouldRequestReview(): Boolean {
+        // DEV-ONLY: prompt after EVERY submission so the flow can be exercised
+        // without playing three rounds. Note: sideloaded debug builds won't
+        // RENDER the Play sheet (Play-installed builds only) — watch the
+        // "ReviewPrompt" logs to confirm the trigger fires. Release builds use
+        // the real threshold below.
+        if (com.sogo.golf.msl.BuildConfig.DEBUG) return true
+
         val count = prefs.getInt(KEY_COUNT, 0)
         if (count < MIN_SUBMISSIONS) return false
         val last = prefs.getLong(KEY_LAST_REQUEST, 0L)
