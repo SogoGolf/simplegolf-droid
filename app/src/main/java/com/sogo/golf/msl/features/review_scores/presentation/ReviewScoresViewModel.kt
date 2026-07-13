@@ -15,6 +15,7 @@ import com.sogo.golf.msl.domain.usecase.round.GetRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.SubmitRoundUseCase
 import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
+import com.sogo.golf.msl.data.local.preferences.ReviewPromptPreferences
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
 import com.sogo.golf.msl.domain.usecase.game.GetLocalGameUseCase
 import com.sogo.golf.msl.shared.utils.HoleCycleUtils
@@ -44,6 +45,7 @@ class ReviewScoresViewModel @AssistedInject constructor(
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
     private val holeStatePreferences: HoleStatePreferences,
+    private val reviewPromptPreferences: ReviewPromptPreferences,
     private val getLocalGameUseCase: GetLocalGameUseCase,
     private val sogoMongoRepository: SogoMongoRepository,
     private val analyticsManager: AnalyticsManager,
@@ -279,6 +281,10 @@ class ReviewScoresViewModel @AssistedInject constructor(
                                         successMessage = "Round submitted successfully!",
                                         scoreSavedInSimpleGolf = true
                                     )
+
+                                    // Rating prompt bookkeeping: only CLEAN successes
+                                    // count toward the ask-after-3rd-submission threshold.
+                                    reviewPromptPreferences.recordSuccessfulSubmission()
 
                                     trackRoundSubmitted(currentRound)
                                 }
@@ -598,6 +604,10 @@ class ReviewScoresViewModel @AssistedInject constructor(
         )
     }
 
+
+    /** Play Store rating prompt: ask from the 3rd clean submission onward. */
+    fun shouldRequestReview(): Boolean = reviewPromptPreferences.shouldRequestReview()
+    fun recordReviewRequested() = reviewPromptPreferences.recordReviewRequested()
 
     fun performPostSubmissionCleanup() {
         viewModelScope.launch {

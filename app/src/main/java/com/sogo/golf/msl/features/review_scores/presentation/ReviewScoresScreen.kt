@@ -24,7 +24,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import android.app.Activity
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import com.google.android.play.core.review.ReviewManagerFactory
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
@@ -100,6 +103,7 @@ private fun ReviewScoresPortrait(
     val viewModel: ReviewScoresViewModel = hiltViewModel<ReviewScoresViewModel, ReviewScoresViewModel.Factory> { factory ->
         factory.create(navController)
     }
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val playerSignatures by viewModel.playerSignatures.collectAsState()
     val roundSubmitState by viewModel.roundSubmitState.collectAsState()
@@ -425,7 +429,21 @@ private fun ReviewScoresPortrait(
             onDone = {
                 android.util.Log.d("ReviewScores", "Done button clicked - performing cleanup and navigating to home")
                 showSuccessDialog = false
-                
+
+                // Play Store rating: from the 3rd clean submission on, ask at
+                // the app's best moment — round done, nothing interrupted. The
+                // sheet overlays this (single) activity while we navigate home;
+                // Play decides whether it actually appears, so fire-and-forget.
+                if (viewModel.shouldRequestReview()) {
+                    viewModel.recordReviewRequested()
+                    (context as? Activity)?.let { activity ->
+                        val manager = ReviewManagerFactory.create(activity)
+                        manager.requestReviewFlow().addOnSuccessListener { reviewInfo ->
+                            manager.launchReviewFlow(activity, reviewInfo)
+                        }
+                    }
+                }
+
                 // Perform post-submission cleanup operations
                 viewModel.performPostSubmissionCleanup()
                 

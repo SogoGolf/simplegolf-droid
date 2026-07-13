@@ -154,6 +154,10 @@ dependencies {
     implementation(libs.app.update)
     implementation(libs.app.update.ktx)
 
+    //Play in-app review (app store rating prompt)
+    implementation(libs.play.review)
+    implementation(libs.play.review.ktx)
+
     //RevenueCat
     implementation(libs.purchases)
     implementation(libs.purchases.ui)

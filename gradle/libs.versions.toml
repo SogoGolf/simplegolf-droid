@@ -2,6 +2,7 @@
 agp = "8.8.2"
 analyticsAndroid = "1.21.3"
 appUpdate = "2.1.0"
+playReview = "2.0.2"
 coilCompose = "2.7.0"
 converterGson = "2.11.0"
 coreSplashscreenVersion = "1.0.1"
@@ -42,6 +43,8 @@ androidx-material-icons-extended = { module = "androidx.compose.material:materia
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "securityCrypto" }
 app-update = { module = "com.google.android.play:app-update", version.ref = "appUpdate" }
 app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "appUpdate" }
+play-review = { module = "com.google.android.play:review", version.ref = "playReview" }
+play-review-ktx = { module = "com.google.android.play:review-ktx", version.ref = "playReview" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreenVersion" }
