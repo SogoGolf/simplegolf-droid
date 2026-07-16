@@ -100,7 +100,21 @@ data class HoleScore(
     val startLocation: Location? = null,
     val finishTime: String? = null,
     val finishLocation: Location? = null,
-    val strokeIndexes: List<StrokeIndexEntry>? = null
+    val strokeIndexes: List<StrokeIndexEntry>? = null,
+    val stats: HoleStats? = null
+)
+
+// Per-hole SOGO stats written by the Track tab. All optional; SOGO-only (never sent to MSL).
+data class HoleStats(
+    val teeClub: String? = null,
+    val fairwayHit: Boolean? = null,
+    val fairwayMiss: String? = null,      // "left" | "right"
+    val approachClub: String? = null,
+    val greenHit: Boolean? = null,
+    val approachMiss: String? = null,     // "left" | "right" | "short" | "long"
+    val putts: Int? = null,
+    val bunkerShots: Int? = null,
+    val penalties: Int? = null
 )
 
 data class StrokeIndexEntry(

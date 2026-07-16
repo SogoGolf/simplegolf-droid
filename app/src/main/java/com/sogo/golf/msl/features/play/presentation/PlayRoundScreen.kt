@@ -30,10 +30,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -43,6 +46,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +76,7 @@ import com.sogo.golf.msl.ui.theme.MSLColors
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import com.sogo.golf.msl.ui.theme.MSLColors.mslGrey
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.threeten.bp.Instant
 import com.sogo.golf.msl.shared.utils.HoleCycleUtils
 import com.sogo.golf.msl.shared.utils.TimeFormatUtils
@@ -486,6 +491,7 @@ private fun resolvePaceStartMillis(
 private fun buildPaceHoleCycle(startingHole: Int, numberOfHoles: Int): List<Int> =
     HoleCycleUtils.buildHoleCycle(startingHole, numberOfHoles)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Screen4Portrait(
     navController: NavController,
@@ -512,6 +518,11 @@ private fun Screen4Portrait(
     var showAbandonDialog by remember { mutableStateOf(false) }
     var showPacePopover by remember { mutableStateOf(false) }
     var paceNowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+
+    var showHoleStats by remember { mutableStateOf(false) }
+    val holeStatsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val holeStatsViewModel: HoleStatsViewModel = hiltViewModel()
+    val holeStatsScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -910,6 +921,8 @@ private fun Screen4Portrait(
                 isBallPickedUp = mainGolferPickedUp,
                 isDQ = isMainGolferDQ,
                 onPickupButtonClick = { playRoundViewModel.onMainGolferPickupButtonClick() },
+                showHoleStatsButton = true,
+                onHoleStatsButtonClick = { showHoleStats = true },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up the other half
@@ -918,6 +931,31 @@ private fun Screen4Portrait(
 
             Spacer(Modifier.height(5.dp))
         }
+
+            if (showHoleStats) {
+                val statsHole = currentHoleNumber
+                val statsPar = currentRound?.holeScores?.find { it.holeNumber == statsHole }?.par ?: 0
+                ModalBottomSheet(
+                    onDismissRequest = { showHoleStats = false },
+                    sheetState = holeStatsSheetState,
+                    containerColor = Color(0xFFF2F2F5)
+                ) {
+                    HoleStatsSheet(
+                        holeNumber = statsHole,
+                        par = statsPar,
+                        existingStats = playRoundViewModel.getHoleStats(statsHole),
+                        golfLinkNo = currentGolfer?.golfLinkNo ?: "",
+                        dailyHandicap = localGame?.dailyHandicap ?: 0,
+                        entityId = currentRound?.entityId ?: "",
+                        viewModel = holeStatsViewModel,
+                        onSaveStats = { stats -> playRoundViewModel.saveHoleStats(statsHole, stats) },
+                        onClose = {
+                            holeStatsScope.launch { holeStatsSheetState.hide() }
+                                .invokeOnCompletion { showHoleStats = false }
+                        }
+                    )
+                }
+            }
 
             if (showPacePopover) {
                 Box(

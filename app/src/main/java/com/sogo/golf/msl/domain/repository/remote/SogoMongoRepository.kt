@@ -2,9 +2,12 @@ package com.sogo.golf.msl.domain.repository.remote
 
 import com.sogo.golf.msl.data.network.api.CreateGolferRequestDto
 import com.sogo.golf.msl.data.network.api.UpdateGolferRequestDto
+import com.sogo.golf.msl.domain.model.HoleStats
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.Round
+import com.sogo.golf.msl.domain.model.mongodb.ClubType
 import com.sogo.golf.msl.domain.model.mongodb.Competition
+import com.sogo.golf.msl.domain.model.mongodb.HoleInsights
 import com.sogo.golf.msl.domain.model.mongodb.Fee
 import com.sogo.golf.msl.domain.model.mongodb.RoundDetail
 import com.sogo.golf.msl.domain.model.mongodb.RoundSummary
@@ -29,6 +32,23 @@ interface SogoMongoRepository {
         roundId: String,
         round: Round
     ): NetworkResult<Unit>
+
+    suspend fun updateHoleStats(
+        roundId: String,
+        holeNumber: Int,
+        stats: HoleStats
+    ): NetworkResult<Unit>
+
+    suspend fun getClubTypes(): NetworkResult<List<ClubType>>
+
+    suspend fun getHoleInsights(
+        golfLinkNo: String,
+        entityId: String,
+        holeNumber: Int,
+        dailyHandicap: Double,
+        fromDate: String,
+        toDate: String
+    ): NetworkResult<HoleInsights>
     
     suspend fun updateRound(roundId: String, round: Round): NetworkResult<Unit>
     
