@@ -140,20 +140,20 @@ fun HoleCardTest(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(top = (8 * scaleFactor).dp, bottom = (12 * scaleFactor).dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    // Rows distribute evenly over the full card height (space-between) so nothing
+                    // clusters at the top with a dead gap before the bottom stats.
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Header with name
+                    // Name
                     Text(
                         text = golferName,
                         fontSize = (36 * scaleFactor).sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color.White,
-                        modifier = Modifier.padding(top = (4 * scaleFactor).dp)
+                        color = Color.White
                     )
 
-                    Spacer(modifier = Modifier.height((6 * scaleFactor).dp))
-
-                    // Tee type and handicap row
+                    // Tee type / shots / handicap row (3 columns)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -172,6 +172,21 @@ fun HoleCardTest(
                                 fontSize = (18 * scaleFactor).sp
                             )
                         }
+                        // Shots received on this hole (handicap-derived) — plain 3rd column.
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = shotsReceived.toString(),
+                                color = Color.White,
+                                fontSize = (24 * scaleFactor).sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = if (abs(shotsReceived) == 1) "Shot" else "Shots",
+                                color = Color.White,
+                                fontSize = (18 * scaleFactor).sp,
+                                maxLines = 1
+                            )
+                        }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = dailyHandicap.toString(),
@@ -187,24 +202,9 @@ fun HoleCardTest(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
-
-                    // Temporarily hide shots received UI for a separate update.
-                    /*
-                    Text(
-                        text = "Shots: $shotsReceived",
-                        color = Color.White.copy(alpha = if (isBallPickedUp) 0.7f else 0.95f),
-                        fontSize = (16 * scaleFactor).sp,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
-                    */
-
-                    // Score adjustment controls
+                    // Score adjustment controls — centred row with a gap around the big circle.
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        horizontalArrangement = Arrangement.spacedBy((20 * scaleFactor).dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(
@@ -268,8 +268,6 @@ fun HoleCardTest(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height((5 * scaleFactor).dp))
-
                     // Pickup button
                     Button(
                         onClick = onPickupButtonClick,
@@ -287,8 +285,6 @@ fun HoleCardTest(
                             modifier = Modifier.padding(horizontal = (16 * scaleFactor).dp)
                         )
                     }
-
-                    Spacer(modifier = Modifier.weight(1f, fill = true))
 
                     // Bottom stats row
                     Row(
