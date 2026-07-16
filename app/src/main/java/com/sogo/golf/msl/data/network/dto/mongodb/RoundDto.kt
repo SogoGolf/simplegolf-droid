@@ -255,7 +255,22 @@ data class HoleScoreDto(
     val isBallPickedUp: Boolean? = false,
 
     @SerializedName("strokeIndexes")
-    val strokeIndexes: List<StrokeIndexEntryDto>? = null
+    val strokeIndexes: List<StrokeIndexEntryDto>? = null,
+
+    @SerializedName("stats")
+    val stats: HoleStatsDto? = null
+)
+
+data class HoleStatsDto(
+    @SerializedName("teeClub") val teeClub: String? = null,
+    @SerializedName("fairwayHit") val fairwayHit: Boolean? = null,
+    @SerializedName("fairwayMiss") val fairwayMiss: String? = null,
+    @SerializedName("approachClub") val approachClub: String? = null,
+    @SerializedName("greenHit") val greenHit: Boolean? = null,
+    @SerializedName("approachMiss") val approachMiss: String? = null,
+    @SerializedName("putts") val putts: Int? = null,
+    @SerializedName("bunkerShots") val bunkerShots: Int? = null,
+    @SerializedName("penalties") val penalties: Int? = null
 )
 
 data class PlayingPartnerRoundDto(
@@ -429,9 +444,34 @@ fun HoleScore.toDto(): HoleScoreDto {
         isBallPickedUp = isBallPickedUp,
         strokeIndexes = strokeIndexes?.map {
             StrokeIndexEntryDto(from = it.from, to = it.to, stroke = it.stroke)
-        }
+        },
+        stats = stats?.toDto()
     )
 }
+
+fun com.sogo.golf.msl.domain.model.HoleStats.toDto(): HoleStatsDto = HoleStatsDto(
+    teeClub = teeClub,
+    fairwayHit = fairwayHit,
+    fairwayMiss = fairwayMiss,
+    approachClub = approachClub,
+    greenHit = greenHit,
+    approachMiss = approachMiss,
+    putts = putts,
+    bunkerShots = bunkerShots,
+    penalties = penalties
+)
+
+fun HoleStatsDto.toDomain(): com.sogo.golf.msl.domain.model.HoleStats = com.sogo.golf.msl.domain.model.HoleStats(
+    teeClub = teeClub,
+    fairwayHit = fairwayHit,
+    fairwayMiss = fairwayMiss,
+    approachClub = approachClub,
+    greenHit = greenHit,
+    approachMiss = approachMiss,
+    putts = putts,
+    bunkerShots = bunkerShots,
+    penalties = penalties
+)
 
 fun PlayingPartnerRound.toDto(): PlayingPartnerRoundDto {
     return PlayingPartnerRoundDto(

@@ -7,6 +7,9 @@ import com.sogo.golf.msl.data.network.dto.mongodb.RoundDto
 import com.sogo.golf.msl.data.network.dto.mongodb.RoundDetailDto
 import com.sogo.golf.msl.data.network.dto.mongodb.RoundSummaryDto
 import com.sogo.golf.msl.data.network.dto.mongodb.HoleScoreDto
+import com.sogo.golf.msl.data.network.dto.mongodb.HoleStatsDto
+import com.sogo.golf.msl.data.network.dto.mongodb.ClubTypeDto
+import com.sogo.golf.msl.data.network.dto.mongodb.HoleInsightsResponseDto
 import com.sogo.golf.msl.data.network.dto.mongodb.PlayingPartnerRoundDto
 import com.sogo.golf.msl.data.network.dto.mongodb.SogoGolferDto
 import com.sogo.golf.msl.data.network.dto.mongodb.TransactionDto
@@ -68,6 +71,28 @@ interface SogoMongoApiService {
         @Path("holeNumber") holeNumber: Int,
         @Body payload: HoleScoreUpdatePayload
     ): Response<Unit>
+
+    // Same path/handler as updateHoleScore, but a stats-only body — the server updates each
+    // field independently, so this never touches strokes/score.
+    @PATCH("rounds/{roundId}/holes/{holeNumber}")
+    suspend fun updateHoleStats(
+        @Path("roundId") roundId: String,
+        @Path("holeNumber") holeNumber: Int,
+        @Body payload: HoleStatsUpdatePayload
+    ): Response<Unit>
+
+    @GET("clubTypes")
+    suspend fun getClubTypes(): Response<List<ClubTypeDto>>
+
+    @GET("holeInsights")
+    suspend fun getHoleInsights(
+        @Query("golflinkNo") golfLinkNo: String,
+        @Query("entityId") entityId: String,
+        @Query("holeNumber") holeNumber: Int,
+        @Query("dailyHandicap") dailyHandicap: Double,
+        @Query("fromDate") fromDate: String,
+        @Query("toDate") toDate: String
+    ): Response<HoleInsightsResponseDto>
 
     @PATCH("updateAllHoleScores/{roundId}")
     suspend fun updateAllHoleScores(
@@ -153,6 +178,12 @@ data class HoleScoreUpdatePayload(
     val playingPartnerScore: Int
 )
 
+// Stats-only per-hole update. Serializes to { "stats": { ... } } — the server overwrites the
+// whole stats object (client owns the merge).
+data class HoleStatsUpdatePayload(
+    val stats: HoleStatsDto
+)
+
 data class BulkHoleScoreUpdatePayload(
     val golfer: List<HoleScoreData>,
     val playingPartner: List<HoleScoreData>
@@ -161,7 +192,8 @@ data class BulkHoleScoreUpdatePayload(
 data class HoleScoreData(
     val holeNumber: Int,
     val strokes: Int,
-    val score: Int
+    val score: Int,
+    val stats: HoleStatsDto? = null
 )
 
 data class RoundUpdatePayload(

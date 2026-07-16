@@ -23,6 +23,8 @@ import com.sogo.golf.msl.domain.usecase.msl_golfer.GetMslGolferUseCase
 import com.sogo.golf.msl.domain.usecase.round.GetActiveTodayRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.DeleteLocalAndRemoteRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.UpdateHoleScoreUseCase
+import com.sogo.golf.msl.domain.usecase.round.UpdateHoleStatsUseCase
+import com.sogo.golf.msl.domain.model.HoleStats
 import com.sogo.golf.msl.domain.usecase.round.BulkSyncRoundUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcStablefordUseCase
 import com.sogo.golf.msl.domain.usecase.scoring.CalcParUseCase
@@ -57,6 +59,7 @@ class PlayRoundViewModel @Inject constructor(
     private val getActiveTodayRoundUseCase: GetActiveTodayRoundUseCase,
     private val deleteLocalAndRemoteRoundUseCase: DeleteLocalAndRemoteRoundUseCase,
     private val updateHoleScoreUseCase: UpdateHoleScoreUseCase,
+    private val updateHoleStatsUseCase: UpdateHoleStatsUseCase,
     private val bulkSyncRoundUseCase: BulkSyncRoundUseCase,
     private val calcStablefordUseCase: CalcStablefordUseCase,
     private val calcParUseCase: CalcParUseCase,
@@ -899,6 +902,36 @@ class PlayRoundViewModel @Inject constructor(
 
         } catch (e: Exception) {
             android.util.Log.e("PlayRoundVM", "❌ Error updating round strokes in database", e)
+        }
+    }
+
+    /** Current hole's saved SOGO stats for the main golfer (for seeding the sheet). */
+    fun getHoleStats(holeNumber: Int): HoleStats? =
+        _currentRound.value?.holeScores?.firstOrNull { it.holeNumber == holeNumber }?.stats
+
+    /**
+     * Persist the Track-tab stats for [holeNumber] (main golfer's card): local-first then remote,
+     * then reload the round so a re-opened sheet reflects the saved values. Fire-and-forget from
+     * the sheet's dismiss.
+     */
+    fun saveHoleStats(holeNumber: Int, stats: HoleStats) {
+        val round = _currentRound.value ?: return
+        // Optimistically reflect the save in memory so an immediate re-open of the same hole
+        // seeds from fresh data, not the pre-edit round (closes the reseed-vs-save race while
+        // the async persist + reload runs).
+        _currentRound.value = round.copy(
+            holeScores = round.holeScores.map {
+                if (it.holeNumber == holeNumber) it.copy(stats = stats) else it
+            }
+        )
+        viewModelScope.launch {
+            try {
+                updateHoleStatsUseCase(round, holeNumber, stats)
+                loadCurrentRound()
+                android.util.Log.d("PlayRoundVM", "✅ Hole stats saved - Hole $holeNumber")
+            } catch (e: Exception) {
+                android.util.Log.e("PlayRoundVM", "❌ Error saving hole stats", e)
+            }
         }
     }
 

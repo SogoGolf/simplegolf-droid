@@ -7,6 +7,7 @@ import com.sogo.golf.msl.data.network.api.UpdateGolferRequestDto
 import com.sogo.golf.msl.data.network.api.SogoMongoApiService
 import com.sogo.golf.msl.data.network.api.HoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.api.HoleScoreData
+import com.sogo.golf.msl.data.network.api.HoleStatsUpdatePayload
 import com.sogo.golf.msl.data.network.api.BulkHoleScoreUpdatePayload
 import com.sogo.golf.msl.data.network.api.RoundUpdatePayload
 import com.sogo.golf.msl.data.network.api.RoundSubmissionUpdatePayload
@@ -19,6 +20,9 @@ import com.sogo.golf.msl.data.repository.BaseRepository
 import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.NetworkError
 import com.sogo.golf.msl.domain.model.Round
+import com.sogo.golf.msl.domain.model.HoleStats
+import com.sogo.golf.msl.domain.model.mongodb.ClubType
+import com.sogo.golf.msl.domain.model.mongodb.HoleInsights
 import com.sogo.golf.msl.domain.model.mongodb.Fee
 import com.sogo.golf.msl.domain.model.mongodb.RoundSummary
 import com.sogo.golf.msl.domain.model.mongodb.SogoGolfer
@@ -175,15 +179,17 @@ class SogoMongoRepositoryImpl @Inject constructor(
                 HoleScoreData(
                     holeNumber = holeScore.holeNumber,
                     strokes = holeScore.strokes,
-                    score = holeScore.score.toInt()
+                    score = holeScore.score.toInt(),
+                    stats = holeScore.stats?.toDto()
                 )
             }
-            
+
             val partnerHoleScores = round.playingPartnerRound?.holeScores?.map { holeScore ->
                 HoleScoreData(
                     holeNumber = holeScore.holeNumber,
                     strokes = holeScore.strokes,
-                    score = holeScore.score.toInt()
+                    score = holeScore.score.toInt(),
+                    stats = holeScore.stats?.toDto()
                 )
             } ?: emptyList()
             
@@ -203,7 +209,62 @@ class SogoMongoRepositoryImpl @Inject constructor(
             }
         }
     }
-    
+
+    override suspend fun updateHoleStats(
+        roundId: String,
+        holeNumber: Int,
+        stats: HoleStats
+    ): NetworkResult<Unit> {
+        return safeNetworkCall {
+            Log.d(TAG, "Updating hole stats for round $roundId, hole $holeNumber")
+            val payload = HoleStatsUpdatePayload(stats.toDto())
+            val response = sogoMongoApiService.updateHoleStats(roundId, holeNumber, payload)
+            if (response.isSuccessful) {
+                Log.d(TAG, "Successfully updated hole stats")
+                Unit
+            } else {
+                Log.e(TAG, "Failed to update hole stats: ${response.code()} - ${response.message()}")
+                throw Exception("Failed to update hole stats: ${response.message()}")
+            }
+        }
+    }
+
+    override suspend fun getClubTypes(): NetworkResult<List<ClubType>> {
+        return safeNetworkCall {
+            Log.d(TAG, "Getting club types from SOGO Mongo API")
+            val response = sogoMongoApiService.getClubTypes()
+            if (response.isSuccessful) {
+                response.body()?.map { it.toDomain() } ?: emptyList()
+            } else {
+                Log.e(TAG, "Failed to get club types: ${response.code()} - ${response.message()}")
+                throw Exception("Failed to get club types: ${response.message()}")
+            }
+        }
+    }
+
+    override suspend fun getHoleInsights(
+        golfLinkNo: String,
+        entityId: String,
+        holeNumber: Int,
+        dailyHandicap: Double,
+        fromDate: String,
+        toDate: String
+    ): NetworkResult<HoleInsights> {
+        return safeNetworkCall {
+            Log.d(TAG, "Getting hole insights: hole $holeNumber @ entity $entityId")
+            val response = sogoMongoApiService.getHoleInsights(
+                golfLinkNo, entityId, holeNumber, dailyHandicap, fromDate, toDate
+            )
+            if (response.isSuccessful) {
+                response.body()?.toDomain()
+                    ?: throw Exception("Empty hole insights response")
+            } else {
+                Log.e(TAG, "Failed to get hole insights: ${response.code()} - ${response.message()}")
+                throw Exception("Failed to get hole insights: ${response.message()}")
+            }
+        }
+    }
+
     override suspend fun updateRound(roundId: String, round: Round): NetworkResult<Unit> {
         return safeNetworkCall {
             Log.d(TAG, "Updating round in SOGO Mongo API: $roundId")

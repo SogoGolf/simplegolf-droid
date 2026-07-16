@@ -1,7 +1,9 @@
 package com.sogo.golf.msl.features.play.presentation
 
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -52,6 +54,8 @@ fun HoleCardTest(
     isBallPickedUp: Boolean = false,
     isDQ: Boolean = false,
     onPickupButtonClick: () -> Unit = {},
+    showHoleStatsButton: Boolean = false,
+    onHoleStatsButtonClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -268,22 +272,39 @@ fun HoleCardTest(
                         }
                     }
 
-                    // Pickup button
-                    Button(
-                        onClick = onPickupButtonClick,
-                        shape = RoundedCornerShape(50),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isBallPickedUp) Color.Red else MSLColors.mslYellow,
-                            contentColor = Color.Black
-                        )
+                    // Hole Stats (ghost pill) + Pickup, wrapped in ONE Row so the card's
+                    // SpaceBetween layout treats them as a single centred, equal-height pair.
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy((12 * scaleFactor).dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.height(IntrinsicSize.Min)
                     ) {
-                        Text(
-                            text = "Pickup",
-                            color = if (isBallPickedUp) Color.White else Color.Black,
-                            fontSize = (18 * scaleFactor).sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = (16 * scaleFactor).dp)
-                        )
+                        if (showHoleStatsButton) {
+                            HoleStatsPill(
+                                scaleFactor = scaleFactor,
+                                onClick = onHoleStatsButtonClick,
+                                modifier = Modifier.fillMaxHeight()
+                            )
+                        }
+
+                        // Pickup button — fills the row height so it matches the stats pill.
+                        Button(
+                            onClick = onPickupButtonClick,
+                            modifier = Modifier.fillMaxHeight(),
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isBallPickedUp) Color.Red else MSLColors.mslYellow,
+                                contentColor = Color.Black
+                            )
+                        ) {
+                            Text(
+                                text = "Pickup",
+                                color = if (isBallPickedUp) Color.White else Color.Black,
+                                fontSize = (18 * scaleFactor).sp,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = (16 * scaleFactor).dp)
+                            )
+                        }
                     }
 
                     // Bottom stats row
@@ -349,6 +370,53 @@ fun HoleCardTest(
         }
 
     }
+}
+
+// Ghost pill matching the iOS HOLE STATS button: translucent white capsule with a white
+// border, a 3-bar chart glyph (tallest bar yellow) and white "HOLE STATS" text.
+@Composable
+private fun HoleStatsPill(
+    scaleFactor: Float,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(Color.White.copy(alpha = 0.16f))
+            .border(BorderStroke(1.5.dp, Color.White.copy(alpha = 0.55f)), RoundedCornerShape(50))
+            .clickable { onClick() }
+            .padding(horizontal = (16 * scaleFactor).dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy((7 * scaleFactor).dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy((2.9f * scaleFactor).dp)
+        ) {
+            StatBar(6f, scaleFactor, Color.White)
+            StatBar(10f, scaleFactor, Color.White)
+            StatBar(14f, scaleFactor, MSLColors.mslYellow)
+        }
+        Text(
+            text = "HOLE STATS",
+            color = Color.White,
+            fontSize = (11 * scaleFactor).sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.06.em
+        )
+    }
+}
+
+@Composable
+private fun StatBar(h: Float, scaleFactor: Float, color: Color) {
+    Box(
+        modifier = Modifier
+            .width((3.4f * scaleFactor).dp)
+            .height((h * scaleFactor).dp)
+            .clip(RoundedCornerShape((1 * scaleFactor).dp))
+            .background(color)
+    )
 }
 
 @Preview(showBackground = true)
