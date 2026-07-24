@@ -603,8 +603,13 @@ class PlayingPartnerViewModel @Inject constructor(
                 Log.d("PlayingPartnerVM", "🔄 Step 4: Checking for duplicate transactions and handling fees...")
                 val includeRoundValue = _includeRound.value
                 val currentTokenCost = tokenCost.value
-                
-                if (includeRoundValue && currentTokenCost > 0) {
+
+                // Tokens are being retired (2026-07-24): round inclusion is free, so no
+                // debit transaction is created regardless of the configured fee. Flip
+                // this back (or delete the flag) if a charge ever returns before the
+                // subscription model lands.
+                val chargeForRoundInclusion = false
+                if (chargeForRoundInclusion && includeRoundValue && currentTokenCost > 0) {
                     Log.d("PlayingPartnerVM", "💰 Fee required: $currentTokenCost tokens")
                     
                     // Get mainCompetitionId from game data
