@@ -165,20 +165,21 @@ fun SogoGolfHomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                SogoTopicButton(
-                    title = "PURCHASE TOKENS",
-                    subTitle = sogoGolfer?.let { "Balance: ${it.tokenBalance} Tokens" } ?: "--",
-                    imageResId = R.drawable.token_icon,
-                    enabled = currentGolfer != null && sogoGolfer != null,
-                    onClick = {
-                        if (currentGolfer != null && sogoGolfer != null) {
-                            viewModel.setPurchaseTokensState(isInProgress = true)
-                        }
-                    }
-                )
+                // Purchase Tokens button — HIDDEN (not deleted) per product
+                // direction 2026-07-24; the PaywallDialog plumbing remains.
+                // SogoTopicButton(
+                //     title = "PURCHASE TOKENS",
+                //     subTitle = sogoGolfer?.let { "Balance: ${it.tokenBalance} Tokens" } ?: "--",
+                //     imageResId = R.drawable.token_icon,
+                //     enabled = currentGolfer != null && sogoGolfer != null,
+                //     onClick = {
+                //         if (currentGolfer != null && sogoGolfer != null) {
+                //             viewModel.setPurchaseTokensState(isInProgress = true)
+                //         }
+                //     }
+                // )
                 // My Stats — slide-up panel with the golfer stats web dashboard
                 if (showStatsButton) {
-                    Spacer(modifier = Modifier.width(16.dp))
                     SogoTopicButton(
                         title = "MY STATS",
                         subTitle = "",

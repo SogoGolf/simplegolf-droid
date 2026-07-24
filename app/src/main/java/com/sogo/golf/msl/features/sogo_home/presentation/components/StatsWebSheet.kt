@@ -93,6 +93,13 @@ fun StatsWebSheet(
                             @SuppressLint("SetJavaScriptEnabled")
                             settings.javaScriptEnabled = true
                             settings.domStorageEnabled = true
+                            // The bottom sheet otherwise intercepts vertical drags for
+                            // drag-to-dismiss, so the page can never scroll. Keep touches
+                            // on the WebView; the close button dismisses the sheet.
+                            setOnTouchListener { v, _ ->
+                                v.parent.requestDisallowInterceptTouchEvent(true)
+                                false
+                            }
                             webViewClient = object : WebViewClient() {
                                 override fun shouldOverrideUrlLoading(
                                     view: WebView?,
