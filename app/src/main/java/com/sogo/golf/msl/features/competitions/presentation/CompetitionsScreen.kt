@@ -404,17 +404,17 @@ fun FooterContent(
             )
         }
 
-        Text(
-            text = "Token cost: $tokenCost",
-            fontSize = MaterialTheme.typography.titleMedium.fontSize,
-        )
-
-        // Token balance display
-        Text(
-            text = "Your Token Balance: ${sogoGolfer?.tokenBalance ?: 0}",
-            fontSize = MaterialTheme.typography.titleMedium.fontSize,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+        // Token cost / balance — HIDDEN (not deleted): tokens are being retired
+        // in favour of subscriptions (2026-07-24).
+        // Text(
+        //     text = "Token cost: $tokenCost",
+        //     fontSize = MaterialTheme.typography.titleMedium.fontSize,
+        // )
+        // Text(
+        //     text = "Your Token Balance: ${sogoGolfer?.tokenBalance ?: 0}",
+        //     fontSize = MaterialTheme.typography.titleMedium.fontSize,
+        //     modifier = Modifier.align(Alignment.CenterHorizontally)
+        // )
 
         Spacer(modifier = Modifier.height(6.dp))
 
