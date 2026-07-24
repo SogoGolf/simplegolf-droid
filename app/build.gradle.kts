@@ -69,6 +69,10 @@ android {
 
         buildConfigField("String", "SENTRY_DSN", "\"${prodProps["SENTRY_DSN"] ?: "default-sentry"}\"")
 
+        // Golfer stats web panel (sogo-golfer-stats). Empty hides the My Stats button;
+        // debug overrides this with the dev machine's LAN IP below.
+        buildConfigField("String", "STATS_WEB_URL", "\"\"")
+
 
         // Add Room schema export directory
         kapt {
@@ -104,6 +108,13 @@ android {
                 "String",
                 "SOGO_MONGO_API",
                 "\"mongo-api-test-613362712202.australia-southeast1.run.app\""
+            )
+            // Local Vite dev server for the stats web panel (physical device needs
+            // the Mac's LAN IP; cleartext allowed via the debug manifest).
+            buildConfigField(
+                "String",
+                "STATS_WEB_URL",
+                "\"http://192.168.0.148:5173\""
             )
         }
     }

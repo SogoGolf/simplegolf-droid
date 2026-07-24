@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SportsGolf
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -53,9 +54,11 @@ import com.revenuecat.purchases.ui.revenuecatui.PaywallDialog
 import com.revenuecat.purchases.ui.revenuecatui.PaywallDialogOptions
 import com.revenuecat.purchases.ui.revenuecatui.PaywallListener
 import com.sogo.golf.msl.R
+import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.features.sogo_home.presentation.components.LeaderboardsButton
 import com.sogo.golf.msl.features.sogo_home.presentation.components.SogoInfoSheet
 import com.sogo.golf.msl.features.sogo_home.presentation.components.SogoTopicButton
+import com.sogo.golf.msl.features.sogo_home.presentation.components.StatsWebSheet
 import com.sogo.golf.msl.ui.theme.MSLColors.mslBlue
 import kotlinx.coroutines.launch
 
@@ -74,6 +77,9 @@ fun SogoGolfHomeScreen(
     val purchaseTokensState by viewModel.purchaseTokenState.collectAsState()
 
     var showSogoInfoDialog by remember { mutableStateOf(false) }
+    var showStatsSheet by remember { mutableStateOf(false) }
+    // Hidden entirely in builds without a stats web host (empty STATS_WEB_URL).
+    val showStatsButton = BuildConfig.STATS_WEB_URL.isNotBlank()
     val bottomSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     
@@ -170,6 +176,21 @@ fun SogoGolfHomeScreen(
                         }
                     }
                 )
+                // My Stats — slide-up panel with the golfer stats web dashboard
+                if (showStatsButton) {
+                    Spacer(modifier = Modifier.width(16.dp))
+                    SogoTopicButton(
+                        title = "MY STATS",
+                        subTitle = "",
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
+                        enabled = currentGolfer != null,
+                        onClick = {
+                            if (currentGolfer != null) {
+                                showStatsSheet = true
+                            }
+                        }
+                    )
+                }
                 // SOGO T&C button — HIDDEN (not deleted): it opens the SOGO
                 // Information sheet whose sogo.golf links are all dead (site
                 // offline; Google rejected the submission over the broken
@@ -228,6 +249,15 @@ fun SogoGolfHomeScreen(
                 }
                 .build()
         )
+    }
+
+    if (showStatsSheet) {
+        currentGolfer?.golfLinkNo?.let { golfLinkNo ->
+            StatsWebSheet(
+                golfLinkNo = golfLinkNo,
+                onDismiss = { showStatsSheet = false }
+            )
+        }
     }
 
     if (showSogoInfoDialog) {
