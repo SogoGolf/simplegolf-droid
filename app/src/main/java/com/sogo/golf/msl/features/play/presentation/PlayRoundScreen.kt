@@ -922,6 +922,11 @@ private fun Screen4Portrait(
                 isDQ = isMainGolferDQ,
                 onPickupButtonClick = { playRoundViewModel.onMainGolferPickupButtonClick() },
                 showHoleStatsButton = true,
+                hasHoleStats = currentRound?.holeScores
+                    ?.firstOrNull { it.holeNumber == currentHoleNumber }?.stats?.let { s ->
+                        s.teeClub != null || s.approachClub != null || s.fairwayHit != null || s.greenHit != null ||
+                            !s.approachMiss.isNullOrEmpty() || (s.putts ?: 0) > 0 || (s.bunkerShots ?: 0) > 0 || (s.penalties ?: 0) > 0
+                    } ?: false,
                 onHoleStatsButtonClick = { showHoleStats = true },
                 modifier = Modifier
                     .fillMaxSize()

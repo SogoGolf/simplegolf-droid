@@ -55,6 +55,7 @@ fun HoleCardTest(
     isDQ: Boolean = false,
     onPickupButtonClick: () -> Unit = {},
     showHoleStatsButton: Boolean = false,
+    hasHoleStats: Boolean = false,
     onHoleStatsButtonClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -282,6 +283,7 @@ fun HoleCardTest(
                         if (showHoleStatsButton) {
                             HoleStatsPill(
                                 scaleFactor = scaleFactor,
+                                hasStats = hasHoleStats,
                                 onClick = onHoleStatsButtonClick,
                                 modifier = Modifier.fillMaxHeight()
                             )
@@ -377,14 +379,15 @@ fun HoleCardTest(
 @Composable
 private fun HoleStatsPill(
     scaleFactor: Float,
+    hasStats: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(50))
-            .background(Color.White.copy(alpha = 0.16f))
-            .border(BorderStroke(1.5.dp, Color.White.copy(alpha = 0.55f)), RoundedCornerShape(50))
+            .background(if (hasStats) MSLColors.mslGreen else Color.White.copy(alpha = 0.16f))
+            .then(if (hasStats) Modifier else Modifier.border(BorderStroke(1.5.dp, Color.White.copy(alpha = 0.55f)), RoundedCornerShape(50)))
             .clickable { onClick() }
             .padding(horizontal = (16 * scaleFactor).dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -405,6 +408,15 @@ private fun HoleStatsPill(
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.06.em
         )
+        // Tick once this hole has stats entered.
+        if (hasStats) {
+            Text(
+                text = "✓",
+                color = Color.White,
+                fontSize = (13 * scaleFactor).sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 

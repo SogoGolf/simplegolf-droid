@@ -203,8 +203,8 @@ private fun TrackTab(
     // Fairway
     StatCard(title = "FAIRWAY", clubLabel = "Tee", selectedClub = teeClub, clubs = clubs, onSelectClub = onTeeClub) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ChoiceButton("Hit", fairwayHit == true, MSLColors.mslGreen, Modifier.weight(1f)) { onFairwayHit(true) }
-            ChoiceButton("Miss", fairwayHit == false, MSLColors.mslRed, Modifier.weight(1f)) { onFairwayHit(false) }
+            ChoiceButton("Hit", fairwayHit == true, MSLColors.mslGreen, Modifier.weight(1f)) { onFairwayHit(if (fairwayHit == true) null else true) }
+            ChoiceButton("Miss", fairwayHit == false, MSLColors.mslRed, Modifier.weight(1f)) { onFairwayHit(if (fairwayHit == false) null else false) }
         }
     }
 
@@ -213,8 +213,8 @@ private fun TrackTab(
     // Approach to green
     StatCard(title = "APPROACH TO GREEN", clubLabel = "Club", selectedClub = approachClub, clubs = clubs, onSelectClub = onApproachClub) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ChoiceButton("Green", greenHit == true, MSLColors.mslGreen, Modifier.weight(1f)) { onGreenHit(true) }
-            ChoiceButton("Miss", greenHit == false, MSLColors.mslRed, Modifier.weight(1f)) { onGreenHit(false) }
+            ChoiceButton("Green", greenHit == true, MSLColors.mslGreen, Modifier.weight(1f)) { onGreenHit(if (greenHit == true) null else true) }
+            ChoiceButton("Miss", greenHit == false, MSLColors.mslRed, Modifier.weight(1f)) { onGreenHit(if (greenHit == false) null else false) }
         }
         if (greenHit == false) {
             Spacer(Modifier.height(10.dp))
