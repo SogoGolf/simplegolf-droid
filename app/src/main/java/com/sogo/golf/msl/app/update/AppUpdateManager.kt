@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import com.sogo.golf.msl.BuildConfig
 import com.sogo.golf.msl.data.network.api.SogoMongoApiService
+import com.sogo.golf.msl.domain.model.MobileAppVersionFeature
 import com.sogo.golf.msl.domain.model.MobileAppVersionPlatformConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +20,11 @@ data class UpdateState(
     val isUpdateRequired: Boolean = false,
     val isOptionalUpdateAvailable: Boolean = false,
     val updateMessage: String = "",
-    val minimumRequiredVersion: String = ""
+    val minimumRequiredVersion: String = "",
+    val releaseFeatures: List<MobileAppVersionFeature> = emptyList(),
+    val releaseFixRows: List<String> = emptyList(),
+    val releaseFixes: List<String> = emptyList(),
+    val releaseFootnote: String = ""
 )
 
 @Singleton
@@ -98,7 +103,11 @@ class AppUpdateManager @Inject constructor(
                 isUpdateRequired = true,
                 isOptionalUpdateAvailable = false,
                 updateMessage = resolvedMessage,
-                minimumRequiredVersion = config.minimumRequiredVersion
+                minimumRequiredVersion = config.minimumRequiredVersion,
+                releaseFeatures = config.features.orEmpty(),
+                releaseFixRows = config.fixRows.orEmpty(),
+                releaseFixes = config.fixes.orEmpty(),
+                releaseFootnote = config.footnote.orEmpty()
             )
         } else {
             // Dismissible prompt — user can tap "Later"
@@ -112,7 +121,11 @@ class AppUpdateManager @Inject constructor(
                 isUpdateRequired = false,
                 isOptionalUpdateAvailable = true,
                 updateMessage = resolvedMessage,
-                minimumRequiredVersion = config.minimumRequiredVersion
+                minimumRequiredVersion = config.minimumRequiredVersion,
+                releaseFeatures = config.features.orEmpty(),
+                releaseFixRows = config.fixRows.orEmpty(),
+                releaseFixes = config.fixes.orEmpty(),
+                releaseFootnote = config.footnote.orEmpty()
             )
         }
     }
@@ -139,7 +152,11 @@ class AppUpdateManager @Inject constructor(
             isUpdateRequired = false,
             isOptionalUpdateAvailable = false,
             updateMessage = "",
-            minimumRequiredVersion = ""
+            minimumRequiredVersion = "",
+            releaseFeatures = emptyList(),
+            releaseFixRows = emptyList(),
+            releaseFixes = emptyList(),
+            releaseFootnote = ""
         )
     }
 

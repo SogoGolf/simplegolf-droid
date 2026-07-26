@@ -228,8 +228,11 @@ class MainActivity : ComponentActivity() {
                         ForceUpdateOverlay(
                             message = updateState.updateMessage,
                             newVersion = updateState.minimumRequiredVersion,
-                            currentVersion = BuildConfig.VERSION_NAME,
                             isRequired = updateState.isUpdateRequired,
+                            features = updateState.releaseFeatures,
+                            fixRows = updateState.releaseFixRows,
+                            fixes = updateState.releaseFixes,
+                            footnote = updateState.releaseFootnote,
                             onUpdate = { appUpdateManager.openPlayStore() },
                             onDismiss = if (updateState.isOptionalUpdateAvailable) {
                                 { appUpdateManager.dismissOptionalUpdate() }
