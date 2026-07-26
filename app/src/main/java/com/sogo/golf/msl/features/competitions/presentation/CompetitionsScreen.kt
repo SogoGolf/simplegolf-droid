@@ -241,15 +241,19 @@ fun CompetitionsScreen(
                     competitionViewModel.setIncludeRound(newValue)
                 },
                 onNextClick = {
-                    val hasInsufficientTokens = includeRound && 
-                        tokenCost > 0 && 
-                        (sogoGolfer?.tokenBalance ?: 0) < tokenCost
-                    
-                    if (hasInsufficientTokens) {
-                        competitionViewModel.purchaseTokens()
-                    } else {
-                        navController.navigate(nextRoute)
-                    }
+                    // Token balance check — DISABLED (not deleted): tokens are being
+                    // retired (2026-07-24); round inclusion is free so Next never
+                    // needs the token paywall.
+                    // val hasInsufficientTokens = includeRound &&
+                    //     tokenCost > 0 &&
+                    //     (sogoGolfer?.tokenBalance ?: 0) < tokenCost
+                    //
+                    // if (hasInsufficientTokens) {
+                    //     competitionViewModel.purchaseTokens()
+                    // } else {
+                    //     navController.navigate(nextRoute)
+                    // }
+                    navController.navigate(nextRoute)
                 }
             )
         }
@@ -382,39 +386,43 @@ fun FooterContent(
             .background(Color.LightGray),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    onIncludeRoundChanged(!includeRound)
-                },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Checkbox(
-                checked = includeRound,
-                onCheckedChange = onIncludeRoundChanged,
-            )
-            Text(
-                text = "Include this round on SOGO Golf",
-                fontSize = MaterialTheme.typography.titleMedium.fontSize,
-            )
-        }
+        // Include-round checkbox — HIDDEN (not deleted): tokens are being retired
+        // (2026-07-24); rounds are now always included on SOGO for free (see
+        // CompetitionViewModel/PlayingPartnerViewModel).
+        // Row(
+        //     modifier = Modifier
+        //         .fillMaxWidth()
+        //         .clickable(
+        //             indication = null,
+        //             interactionSource = remember { MutableInteractionSource() }
+        //         ) {
+        //             onIncludeRoundChanged(!includeRound)
+        //         },
+        //     verticalAlignment = Alignment.CenterVertically,
+        //     horizontalArrangement = Arrangement.Center
+        // ) {
+        //     Checkbox(
+        //         checked = includeRound,
+        //         onCheckedChange = onIncludeRoundChanged,
+        //     )
+        //     Text(
+        //         text = "Include this round on SOGO Golf",
+        //         fontSize = MaterialTheme.typography.titleMedium.fontSize,
+        //     )
+        // }
+        Spacer(modifier = Modifier.height(10.dp))
 
-        Text(
-            text = "Token cost: $tokenCost",
-            fontSize = MaterialTheme.typography.titleMedium.fontSize,
-        )
-
-        // Token balance display
-        Text(
-            text = "Your Token Balance: ${sogoGolfer?.tokenBalance ?: 0}",
-            fontSize = MaterialTheme.typography.titleMedium.fontSize,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+        // Token cost / balance — HIDDEN (not deleted): tokens are being retired
+        // in favour of subscriptions (2026-07-24).
+        // Text(
+        //     text = "Token cost: $tokenCost",
+        //     fontSize = MaterialTheme.typography.titleMedium.fontSize,
+        // )
+        // Text(
+        //     text = "Your Token Balance: ${sogoGolfer?.tokenBalance ?: 0}",
+        //     fontSize = MaterialTheme.typography.titleMedium.fontSize,
+        //     modifier = Modifier.align(Alignment.CenterHorizontally)
+        // )
 
         Spacer(modifier = Modifier.height(6.dp))
 

@@ -167,7 +167,9 @@ class CompetitionViewModel @Inject constructor(
         
         // Load include round preference and update token cost based on calculated fee
         viewModelScope.launch {
-            _includeRound.value = includeRoundPreferences.getIncludeRound()
+            // Tokens are being retired (2026-07-24): the include-round checkbox is
+            // hidden and every round is included on SOGO automatically, free of charge.
+            _includeRound.value = true
             
             // Observe calculated fee and update token cost accordingly
             combine(

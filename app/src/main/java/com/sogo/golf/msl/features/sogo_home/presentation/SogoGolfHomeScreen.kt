@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.SportsGolf
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -159,17 +160,19 @@ fun SogoGolfHomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                SogoTopicButton(
-                    title = "PURCHASE TOKENS",
-                    subTitle = sogoGolfer?.let { "Balance: ${it.tokenBalance} Tokens" } ?: "--",
-                    imageResId = R.drawable.token_icon,
-                    enabled = currentGolfer != null && sogoGolfer != null,
-                    onClick = {
-                        if (currentGolfer != null && sogoGolfer != null) {
-                            viewModel.setPurchaseTokensState(isInProgress = true)
-                        }
-                    }
-                )
+                // Purchase Tokens button — HIDDEN (not deleted) per product
+                // direction 2026-07-24; the PaywallDialog plumbing remains.
+                // SogoTopicButton(
+                //     title = "PURCHASE TOKENS",
+                //     subTitle = sogoGolfer?.let { "Balance: ${it.tokenBalance} Tokens" } ?: "--",
+                //     imageResId = R.drawable.token_icon,
+                //     enabled = currentGolfer != null && sogoGolfer != null,
+                //     onClick = {
+                //         if (currentGolfer != null && sogoGolfer != null) {
+                //             viewModel.setPurchaseTokensState(isInProgress = true)
+                //         }
+                //     }
+                // )
                 // SOGO T&C button — HIDDEN (not deleted): it opens the SOGO
                 // Information sheet whose sogo.golf links are all dead (site
                 // offline; Google rejected the submission over the broken
