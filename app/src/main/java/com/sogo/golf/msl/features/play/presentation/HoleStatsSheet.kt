@@ -90,7 +90,7 @@ fun HoleStatsSheet(
     var fairwayHit by remember { mutableStateOf(existingStats?.fairwayHit) }
     var approachClub by remember { mutableStateOf(existingStats?.approachClub) }
     var greenHit by remember { mutableStateOf(existingStats?.greenHit) }
-    var missDir by remember { mutableStateOf(existingStats?.approachMiss) }
+    var missDirs by remember { mutableStateOf(existingStats?.approachMiss?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()) }
     var putts by remember { mutableStateOf(existingStats?.putts ?: 0) }
     var bunker by remember { mutableStateOf(existingStats?.bunkerShots ?: 0) }
     var penalties by remember { mutableStateOf(existingStats?.penalties ?: 0) }
@@ -102,7 +102,7 @@ fun HoleStatsSheet(
         fairwayMiss = existingStats?.fairwayMiss,
         approachClub = approachClub,
         greenHit = greenHit,
-        approachMiss = if (greenHit == false) missDir else null,
+        approachMiss = if (greenHit == false && missDirs.isNotEmpty()) missDirs.sorted().joinToString(",") else null,
         putts = putts,
         bunkerShots = bunker,
         penalties = penalties
@@ -167,7 +167,12 @@ fun HoleStatsSheet(
                     fairwayHit = fairwayHit, onFairwayHit = { fairwayHit = it },
                     approachClub = approachClub, onApproachClub = { approachClub = it },
                     greenHit = greenHit, onGreenHit = { greenHit = it },
-                    missDir = missDir, onMissDir = { missDir = it },
+                    missDirs = missDirs, onToggleMissDir = { id ->
+                        // Two either/or axes: at most one of left/right AND one of short/long.
+                        val axis = if (id == "left" || id == "right") setOf("left", "right") else setOf("short", "long")
+                        val cleared = missDirs - axis
+                        missDirs = if (missDirs.contains(id)) cleared else cleared + id
+                    },
                     putts = putts, onPutts = { putts = it },
                     bunker = bunker, onBunker = { bunker = it },
                     penalties = penalties, onPenalties = { penalties = it }
@@ -190,7 +195,7 @@ private fun TrackTab(
     fairwayHit: Boolean?, onFairwayHit: (Boolean?) -> Unit,
     approachClub: String?, onApproachClub: (String?) -> Unit,
     greenHit: Boolean?, onGreenHit: (Boolean?) -> Unit,
-    missDir: String?, onMissDir: (String?) -> Unit,
+    missDirs: Set<String>, onToggleMissDir: (String) -> Unit,
     putts: Int, onPutts: (Int) -> Unit,
     bunker: Int, onBunker: (Int) -> Unit,
     penalties: Int, onPenalties: (Int) -> Unit
@@ -217,7 +222,7 @@ private fun TrackTab(
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("left" to "Left", "right" to "Right", "short" to "Short", "long" to "Long").forEach { (id, label) ->
-                    DirectionChip(label, missDir == id, Modifier.weight(1f)) { onMissDir(id) }
+                    DirectionChip(label, missDirs.contains(id), Modifier.weight(1f)) { onToggleMissDir(id) }
                 }
             }
         }
