@@ -1,15 +1,26 @@
 package com.sogo.golf.msl.features.sogo_home.presentation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.SportsGolf
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -17,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.sogo.golf.msl.domain.model.HoleStats
 import com.sogo.golf.msl.domain.model.mongodb.RoundDetail
 import com.sogo.golf.msl.domain.model.mongodb.RoundDetailHoleScore
 import com.sogo.golf.msl.ui.theme.MSLColors
@@ -257,7 +269,95 @@ private fun RoundSummaryHeader(roundDetail: RoundDetail) {
                     color = Color.Gray
                 )
             }
+
+            // Hole-stats summary — only when the golfer tracked stats this round.
+            val summary = remember(roundDetail) { RoundStatSummary(roundDetail.holeScores) }
+            if (summary.anyTracked) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Divider(color = Color.Black.copy(alpha = 0.08f))
+                Spacer(modifier = Modifier.height(10.dp))
+                RoundStatsBand(summary)
+            }
         }
+    }
+}
+
+// Aggregate of the hole stats entered across the round.
+private class RoundStatSummary(holes: List<RoundDetailHoleScore>) {
+    var fairwaysHit = 0
+    var fairwaysTracked = 0
+    var greensHit = 0
+    var greensTracked = 0
+    var putts = 0
+    var puttsTracked = false
+    var bunker = 0
+    var penalties = 0
+    var anyTracked = false
+
+    init {
+        for (h in holes) {
+            val s = h.stats ?: continue
+            if (!s.hasAnyEntry()) continue
+            anyTracked = true
+            s.fairwayHit?.let { fairwaysTracked++; if (it) fairwaysHit++ }
+            s.greenHit?.let { greensTracked++; if (it) greensHit++ }
+            s.putts?.let { putts += it; puttsTracked = true }
+            s.bunkerShots?.let { bunker += it }
+            s.penalties?.let { penalties += it }
+        }
+    }
+}
+
+private fun HoleStats.hasAnyEntry(): Boolean =
+    teeClub != null || approachClub != null ||
+    fairwayHit != null || greenHit != null ||
+    !fairwayMiss.isNullOrEmpty() || !approachMiss.isNullOrEmpty() ||
+    putts != null || bunkerShots != null || penalties != null
+
+@Composable
+private fun RoundStatsBand(summary: RoundStatSummary) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            if (summary.fairwaysTracked > 0) {
+                BandStat(Icons.Default.Flag, "FW", "${summary.fairwaysHit}/${summary.fairwaysTracked}")
+            }
+            if (summary.greensTracked > 0) {
+                BandStat(Icons.Default.Adjust, "GIR", "${summary.greensHit}/${summary.greensTracked}")
+            }
+            if (summary.puttsTracked) {
+                BandStat(Icons.Default.SportsGolf, "Putts", "${summary.putts}")
+            }
+        }
+        if (summary.bunker > 0 || summary.penalties > 0) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (summary.bunker > 0) {
+                    Text("${summary.bunker} bunker", fontSize = 12.sp, color = Color.Gray)
+                }
+                if (summary.penalties > 0) {
+                    val word = if (summary.penalties == 1) "penalty" else "penalties"
+                    Text("${summary.penalties} $word", fontSize = 12.sp, color = Color.Gray)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BandStat(icon: ImageVector, label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MSLColors.mslBlue,
+            modifier = Modifier.size(14.dp)
+        )
+        Spacer(modifier = Modifier.width(5.dp))
+        Text(label, fontSize = 12.sp, color = Color.Gray)
+        Spacer(modifier = Modifier.width(5.dp))
+        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MSLColors.mslBlue)
     }
 }
 
@@ -296,18 +396,156 @@ private fun HeaderCell(text: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun HoleScoreRow(hole: RoundDetailHoleScore) {
-    Row(
+    val hasStats = hole.stats?.hasAnyEntry() == true
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .then(if (hasStats) Modifier.clickable { expanded = !expanded } else Modifier)
+                .padding(vertical = 12.dp, horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Hole cell carries a green dot + chevron when stats exist.
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Text(
+                    text = hole.holeNumber.toString(),
+                    fontSize = 14.sp,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+                if (hasStats) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 4.dp, end = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(MSLColors.mslGreen)
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Icon(
+                            imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                            contentDescription = if (expanded) "Hide stats" else "Show stats",
+                            tint = MSLColors.mslGreen,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+            DataCell(hole.par.toString(), Modifier.weight(1f))
+            DataCell(hole.strokes.toString(), Modifier.weight(1f))
+            DataCell(hole.score.toString(), Modifier.weight(1f))
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            hole.stats?.let { HoleStatsDetail(it) }
+        }
+    }
+}
+
+@Composable
+private fun HoleStatsDetail(stats: HoleStats) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
-            .padding(vertical = 12.dp, horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
+            .background(MSLColors.mslBlue.copy(alpha = 0.04f))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        DataCell(hole.holeNumber.toString(), Modifier.weight(1f))
-        DataCell(hole.par.toString(), Modifier.weight(1f))
-        DataCell(hole.strokes.toString(), Modifier.weight(1f))
-        DataCell(hole.score.toString(), Modifier.weight(1f))
+        StatDetailRow(
+            label = "FAIRWAY (FROM TEE)",
+            result = stats.fairwayHit,
+            direction = directionText(stats.fairwayMiss),
+            club = stats.teeClub
+        )
+        StatDetailRow(
+            label = "GREEN",
+            result = stats.greenHit,
+            direction = directionText(stats.approachMiss),
+            club = stats.approachClub
+        )
+
+        val chips = countChips(stats)
+        if (chips.isNotEmpty()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                chips.forEach { chip ->
+                    Text(
+                        text = chip,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MSLColors.mslBlue,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(MSLColors.mslBlue.copy(alpha = 0.08f))
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    )
+                }
+            }
+        }
     }
+}
+
+@Composable
+private fun StatDetailRow(label: String, result: Boolean?, direction: String?, club: String?) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.Black.copy(alpha = 0.5f)
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        if (result != null) {
+            Text(
+                text = if (result) "Hit" else "Miss",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (result) MSLColors.mslGreen else MSLColors.mslRed
+            )
+            if (!result && direction != null) {
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = direction,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MSLColors.mslRed
+                )
+            }
+        }
+        if (!club.isNullOrEmpty()) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "· $club", fontSize = 13.sp, color = Color.Black)
+        }
+        if (result == null && club.isNullOrEmpty()) {
+            Text(text = "—", fontSize = 13.sp, color = Color.Black.copy(alpha = 0.4f))
+        }
+    }
+}
+
+private fun countChips(stats: HoleStats): List<String> {
+    val out = mutableListOf<String>()
+    stats.putts?.let { out.add("$it ${if (it == 1) "putt" else "putts"}") }
+    stats.bunkerShots?.let { if (it > 0) out.add("$it ${if (it == 1) "bunker shot" else "bunker shots"}") }
+    stats.penalties?.let { if (it > 0) out.add("$it ${if (it == 1) "penalty" else "penalties"}") }
+    return out
+}
+
+private fun directionText(raw: String?): String? {
+    if (raw.isNullOrEmpty()) return null
+    val map = mapOf("left" to "←", "right" to "→", "short" to "↓", "long" to "↑")
+    val arrows = raw.split(",").mapNotNull { map[it.trim()] }
+    return if (arrows.isEmpty()) null else arrows.joinToString(" ")
 }
 
 @Composable
