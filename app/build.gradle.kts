@@ -30,12 +30,12 @@ plugins {
 
 android {
     namespace = "com.sogo.golf.msl"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.sogo.golf.msl"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = versionBuild
         versionName = "$versionMajor.$versionMinor.$versionPatch"
 
