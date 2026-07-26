@@ -92,9 +92,12 @@ data class RoundDetailHoleScoreDto(
     
     @SerializedName("finishTime")
     val finishTime: String? = null,
-    
+
     @SerializedName("finishLocation")
-    val finishLocation: String? = null
+    val finishLocation: String? = null,
+
+    @SerializedName("stats")
+    val stats: HoleStatsDto? = null
 )
 
 fun RoundDetailDto.toDomain(): RoundDetail {
@@ -174,6 +177,7 @@ fun RoundDetailHoleScoreDto.toDomain(): RoundDetailHoleScore {
         startTime = startTime,
         startLocation = startLocation,
         finishTime = finishTime,
-        finishLocation = finishLocation
+        finishLocation = finishLocation,
+        stats = stats?.toDomain()
     )
 }

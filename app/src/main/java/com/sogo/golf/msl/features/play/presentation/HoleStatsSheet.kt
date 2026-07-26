@@ -201,7 +201,7 @@ private fun TrackTab(
     penalties: Int, onPenalties: (Int) -> Unit
 ) {
     // Fairway
-    StatCard(title = "FAIRWAY", clubLabel = "Tee", selectedClub = teeClub, clubs = clubs, onSelectClub = onTeeClub) {
+    StatCard(title = "FAIRWAY (FROM TEE)", clubLabel = "Tee", selectedClub = teeClub, clubs = clubs, onSelectClub = onTeeClub) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             ChoiceButton("Hit", fairwayHit == true, MSLColors.mslGreen, Modifier.weight(1f)) { onFairwayHit(if (fairwayHit == true) null else true) }
             ChoiceButton("Miss", fairwayHit == false, MSLColors.mslRed, Modifier.weight(1f)) { onFairwayHit(if (fairwayHit == false) null else false) }

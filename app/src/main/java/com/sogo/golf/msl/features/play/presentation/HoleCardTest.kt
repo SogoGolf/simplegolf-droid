@@ -408,15 +408,8 @@ private fun HoleStatsPill(
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.06.em
         )
-        // Tick once this hole has stats entered.
-        if (hasStats) {
-            Text(
-                text = "✓",
-                color = Color.White,
-                fontSize = (13 * scaleFactor).sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        // Stats-entered state is shown by the green fill only — no tick,
+        // so the pill keeps a constant width in either state.
     }
 }
 

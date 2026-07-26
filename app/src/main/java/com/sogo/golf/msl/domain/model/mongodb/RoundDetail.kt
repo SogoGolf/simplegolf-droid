@@ -1,5 +1,6 @@
 package com.sogo.golf.msl.domain.model.mongodb
 
+import com.sogo.golf.msl.domain.model.HoleStats
 import org.threeten.bp.LocalDateTime
 
 data class RoundDetail(
@@ -34,5 +35,6 @@ data class RoundDetailHoleScore(
     val startTime: String? = null,
     val startLocation: String? = null,
     val finishTime: String? = null,
-    val finishLocation: String? = null
+    val finishLocation: String? = null,
+    val stats: HoleStats? = null
 )
