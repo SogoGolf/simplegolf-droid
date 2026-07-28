@@ -276,7 +276,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
-                    .clickable {
+                    .clickable(enabled = !homeUiState.isLoading) {
                         // Add navigation to SOGO home screen if needed
                         navController.navigate("sogogolfhomescreen")
                     },
