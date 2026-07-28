@@ -36,6 +36,8 @@ class AnalyticsManager @Inject constructor(
         const val EVENT_PICKUP_TAPPED = "pickup_tapped"
         const val EVENT_SIGNATURE_CAPTURED = "signature_captured"
         const val EVENT_ROUND_SUBMITTED = "round_submitted"
+        const val EVENT_SHARE_SCORECARD_TAPPED = "share_scorecard_tapped"
+        const val EVENT_SHARE_SCORECARD_SENT = "share_scorecard_sent"
     }
     
     fun setUserId(userId: String?) {
