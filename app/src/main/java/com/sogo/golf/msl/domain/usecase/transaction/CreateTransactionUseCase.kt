@@ -26,8 +26,8 @@ class CreateTransactionUseCase @Inject constructor(
                 golferId = sogoGolfer.id,
                 golferEmail = sogoGolfer.email,
                 amount = tokens,
-                transactionType = transactionTypeVal,
-                debitCreditType = debitCreditTypeVal,
+                transactionType = transactionTypeVal.lowercase(),
+                debitCreditType = debitCreditTypeVal.lowercase(),
                 comment = commentVal,
                 status = statusVal,
                 mainCompetitionId = mainCompetitionId
