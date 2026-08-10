@@ -78,8 +78,8 @@ fun SogoGolfHomeScreen(
 
     var showSogoInfoDialog by remember { mutableStateOf(false) }
     var showStatsSheet by remember { mutableStateOf(false) }
-    // Hidden entirely in builds without a stats web host (empty STATS_WEB_URL).
-    val showStatsButton = BuildConfig.STATS_WEB_URL.isNotBlank()
+    // Temporarily hide the entry point while retaining the stats sheet for future re-enable.
+    val showStatsButton = false && BuildConfig.STATS_WEB_URL.isNotBlank()
     val bottomSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     
