@@ -1,9 +1,7 @@
 package com.sogo.golf.msl.features.play.presentation
 
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -24,11 +22,11 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.min
-import androidx.compose.ui.unit.em
 import com.sogo.golf.msl.ui.theme.MSLColors
 import kotlin.math.abs
 
@@ -285,14 +283,22 @@ fun HoleCardTest(
                                 scaleFactor = scaleFactor,
                                 hasStats = hasHoleStats,
                                 onClick = onHoleStatsButtonClick,
-                                modifier = Modifier.fillMaxHeight()
+                                modifier = Modifier
+                                    .width((150 * scaleFactor).dp)
+                                    .fillMaxHeight()
                             )
                         }
 
                         // Pickup button — fills the row height so it matches the stats pill.
                         Button(
                             onClick = onPickupButtonClick,
-                            modifier = Modifier.fillMaxHeight(),
+                            modifier = if (showHoleStatsButton) {
+                                Modifier
+                                    .width((150 * scaleFactor).dp)
+                                    .fillMaxHeight()
+                            } else {
+                                Modifier.fillMaxHeight()
+                            },
                             shape = RoundedCornerShape(50),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = if (isBallPickedUp) Color.Red else MSLColors.mslYellow,
@@ -374,8 +380,7 @@ fun HoleCardTest(
     }
 }
 
-// Ghost pill matching the iOS HOLE STATS button: translucent white capsule with a white
-// border, a 3-bar chart glyph (tallest bar yellow) and white "HOLE STATS" text.
+// Pill matching Pickup's default yellow treatment; completed stats retain the green state.
 @Composable
 private fun HoleStatsPill(
     scaleFactor: Float,
@@ -386,42 +391,24 @@ private fun HoleStatsPill(
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(50))
-            .background(if (hasStats) MSLColors.mslGreen else Color.White.copy(alpha = 0.16f))
-            .then(if (hasStats) Modifier else Modifier.border(BorderStroke(1.5.dp, Color.White.copy(alpha = 0.55f)), RoundedCornerShape(50)))
+            .background(if (hasStats) MSLColors.mslGreen else MSLColors.mslYellow)
             .clickable { onClick() }
             .padding(horizontal = (16 * scaleFactor).dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy((7 * scaleFactor).dp)
+        horizontalArrangement = Arrangement.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy((2.9f * scaleFactor).dp)
-        ) {
-            StatBar(6f, scaleFactor, Color.White)
-            StatBar(10f, scaleFactor, Color.White)
-            StatBar(14f, scaleFactor, MSLColors.mslYellow)
-        }
         Text(
-            text = "HOLE STATS",
-            color = Color.White,
-            fontSize = (11 * scaleFactor).sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.06.em
+            text = "Hole Stats",
+            color = if (hasStats) Color.White else MSLColors.mslGunMetal,
+            fontSize = (18 * scaleFactor).sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            softWrap = false,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
         )
-        // Stats-entered state is shown by the green fill only — no tick,
-        // so the pill keeps a constant width in either state.
+        // Stats-entered state is shown by the green fill.
     }
-}
-
-@Composable
-private fun StatBar(h: Float, scaleFactor: Float, color: Color) {
-    Box(
-        modifier = Modifier
-            .width((3.4f * scaleFactor).dp)
-            .height((h * scaleFactor).dp)
-            .clip(RoundedCornerShape((1 * scaleFactor).dp))
-            .background(color)
-    )
 }
 
 @Preview(showBackground = true)

@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.google.gson.Gson
 import com.sogo.golf.msl.common.Resource
+import com.sogo.golf.msl.domain.model.NetworkResult
 import com.sogo.golf.msl.domain.model.Round
+import com.sogo.golf.msl.domain.model.HoleStats
 import com.sogo.golf.msl.domain.model.msl.v2.HolePayload
 import com.sogo.golf.msl.domain.model.msl.v2.ScoresContainer
 import com.sogo.golf.msl.domain.model.msl.v2.ScoresPayload
@@ -13,6 +15,10 @@ import com.sogo.golf.msl.domain.repository.RoundLocalDbRepository
 import com.sogo.golf.msl.domain.repository.MslCompetitionLocalDbRepository
 import com.sogo.golf.msl.domain.usecase.round.GetRoundUseCase
 import com.sogo.golf.msl.domain.usecase.round.SubmitRoundUseCase
+import com.sogo.golf.msl.domain.usecase.round.HoleStatsRemoteSync
+import com.sogo.golf.msl.domain.usecase.round.RequiredHoleStatsSyncException
+import com.sogo.golf.msl.domain.usecase.round.RoundSyncCoordinator
+import com.sogo.golf.msl.domain.usecase.round.UpdateHoleStatsUseCase
 import com.sogo.golf.msl.domain.usecase.date.ResetStaleDataUseCase
 import com.sogo.golf.msl.data.local.preferences.HoleStatePreferences
 import com.sogo.golf.msl.domain.usecase.club.GetMslClubAndTenantIdsUseCase
@@ -30,10 +36,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @HiltViewModel(assistedFactory = ReviewScoresViewModel.Factory::class)
 class ReviewScoresViewModel @AssistedInject constructor(
@@ -41,11 +49,13 @@ class ReviewScoresViewModel @AssistedInject constructor(
     private val roundRepository: RoundLocalDbRepository,
     private val competitionRepository: MslCompetitionLocalDbRepository,
     private val submitRoundUseCase: SubmitRoundUseCase,
+    private val updateHoleStatsUseCase: UpdateHoleStatsUseCase,
     private val getMslClubAndTenantIdsUseCase: GetMslClubAndTenantIdsUseCase,
     private val resetStaleDataUseCase: ResetStaleDataUseCase,
     private val holeStatePreferences: HoleStatePreferences,
     private val getLocalGameUseCase: GetLocalGameUseCase,
     private val sogoMongoRepository: SogoMongoRepository,
+    private val roundSyncCoordinator: RoundSyncCoordinator,
     private val analyticsManager: AnalyticsManager,
     @Assisted private val navController: NavController
 ) : ViewModel() {
@@ -65,6 +75,16 @@ class ReviewScoresViewModel @AssistedInject constructor(
     private val _roundSubmitState = MutableStateFlow(RoundSubmitState())
     val roundSubmitState: StateFlow<RoundSubmitState> = _roundSubmitState.asStateFlow()
 
+    // Review edits are serialized so whole-Round Room rows cannot overwrite one another. The
+    // map retains each latest edit until its targeted Mongo PATCH has definitely succeeded.
+    private val statsSaveMutex = Mutex()
+    private val pendingStatsByHole = mutableMapOf<Int, HoleStats>()
+    private val statsEditVersionByHole = mutableMapOf<Int, Long>()
+    private val statsSaveFailureByHole = mutableMapOf<Int, Throwable>()
+    private var latestStatsSaveJob: Job? = null
+    private var activeStatsSaveCount = 0
+    private var roundLoadGeneration = 0L
+
     val currentRound = _currentRoundId
         .stateIn(
             scope = viewModelScope,
@@ -82,20 +102,62 @@ class ReviewScoresViewModel @AssistedInject constructor(
 
     fun loadRound(roundId: String) {
         android.util.Log.d(TAG, "Loading round: $roundId")
+        val generation = ++roundLoadGeneration
         _currentRoundId.value = roundId
         
         viewModelScope.launch {
             try {
-                val round = getRoundUseCase.getRoundById(roundId)
-                if (round != null) {
+                val initialRound = getRoundUseCase.getRoundById(roundId)
+                if (initialRound != null) {
+                    val roundTimeText = computeRoundTimeText(roundId, initialRound)
+
+                    // Orientation changes can start overlapping loads. Re-read Room after the
+                    // slower pace calculation, then allow only the newest request to publish.
+                    val authoritativeRound = roundRepository.getRoundById(roundId)
+                    if (!canPublishReviewRoundLoad(
+                            requestGeneration = generation,
+                            latestGeneration = roundLoadGeneration,
+                            requestedRoundId = roundId,
+                            activeRoundId = _currentRoundId.value
+                        )
+                    ) {
+                        return@launch
+                    }
+                    if (authoritativeRound == null) {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = "Round not found"
+                        )
+                        return@launch
+                    }
+
+                    if (_uiState.value.round?.id != authoritativeRound.id) {
+                        pendingStatsByHole.clear()
+                        statsEditVersionByHole.clear()
+                        statsSaveFailureByHole.clear()
+                    }
+
+                    // If this screen was recreated with a dirty round, in-memory provenance is
+                    // gone. Target-flush every populated stats object before allowing submit.
+                    // putIfAbsent preserves edits made while an older load was still running.
+                    if (!authoritativeRound.isSynced) {
+                        authoritativeRound.holeScores.forEach { hole ->
+                            hole.stats?.let { pendingStatsByHole.putIfAbsent(hole.holeNumber, it) }
+                        }
+                    }
+
+                    val visibleRound = authoritativeRound.withPendingReviewStats(pendingStatsByHole)
                     _uiState.value = _uiState.value.copy(
-                        round = round,
+                        round = visibleRound,
                         isLoading = false,
                         errorMessage = null,
-                        roundTimeText = computeRoundTimeText(roundId, round)
+                        roundTimeText = roundTimeText
                     )
-                    android.util.Log.d(TAG, "Round loaded successfully: ${round.golferFirstName} ${round.golferLastName}")
+                    android.util.Log.d(TAG, "Round loaded successfully: ${visibleRound.golferFirstName} ${visibleRound.golferLastName}")
                 } else {
+                    if (!canPublishReviewRoundLoad(generation, roundLoadGeneration, roundId, _currentRoundId.value)) {
+                        return@launch
+                    }
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         errorMessage = "Round not found"
@@ -103,6 +165,9 @@ class ReviewScoresViewModel @AssistedInject constructor(
                     android.util.Log.w(TAG, "Round not found: $roundId")
                 }
             } catch (e: Exception) {
+                if (!canPublishReviewRoundLoad(generation, roundLoadGeneration, roundId, _currentRoundId.value)) {
+                    return@launch
+                }
                 android.util.Log.e(TAG, "Error loading round", e)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -193,8 +258,10 @@ class ReviewScoresViewModel @AssistedInject constructor(
         if (shouldReset) {
             // Reset and navigate to home
             viewModelScope.launch {
-                resetStaleDataUseCase()
-                holeStatePreferences.clearAllHoleStates()
+                roundSyncCoordinator.withRoundSync {
+                    resetStaleDataUseCase()
+                    holeStatePreferences.clearAllHoleStates()
+                }
                 navController.navigate("homescreen") {
                     popUpTo("homescreen") { inclusive = true }
                     launchSingleTop = true
@@ -205,8 +272,7 @@ class ReviewScoresViewModel @AssistedInject constructor(
 
     fun submitRound() {
         viewModelScope.launch {
-            val currentRound = _uiState.value.round
-            if (currentRound == null) {
+            if (_uiState.value.round == null) {
                 android.util.Log.w(TAG, "Cannot submit - no round loaded")
                 _uiState.value = _uiState.value.copy(
                     errorMessage = "No round to submit"
@@ -220,8 +286,10 @@ class ReviewScoresViewModel @AssistedInject constructor(
                     errorMessage = null
                 )
 
-                val scoresContainer = createScoresContainer(currentRound)
-                
+                // These jobs acquire RoundSyncCoordinator themselves, so drain them before the
+                // finalization critical section (the coordinator's Mutex is non-reentrant).
+                awaitStatsSaveJobs()
+
                 val selectedClub = getMslClubAndTenantIdsUseCase()
                 val clubId = selectedClub?.clubId?.toString()
                 
@@ -233,8 +301,31 @@ class ReviewScoresViewModel @AssistedInject constructor(
                     return@launch
                 }
 
-                submitRoundUseCase(clubId, scoresContainer).onEach { result ->
-                    when (result) {
+                // Finalization is atomic relative to every score/stats/pickup/bulk writer. Re-read
+                // Room only after acquiring, PATCH all authoritative stats directly, and retain
+                // the gate through the terminal score-submission response.
+                roundSyncCoordinator.withRoundSync {
+                    val roundId = _uiState.value.round?.id ?: error("No round to submit")
+                    var currentRound = roundRepository.getRoundById(roundId)
+                        ?: error("Round $roundId is no longer available")
+
+                    // A prior Review save may have failed locally. Retry its latest in-memory
+                    // edit now, while the finalization gate is held, and make that persisted row
+                    // the authoritative source for the direct PATCH pass below.
+                    if (pendingStatsByHole.isNotEmpty()) {
+                        currentRound = currentRound.withPendingReviewStats(pendingStatsByHole).copy(
+                            isSynced = false,
+                            lastUpdated = System.currentTimeMillis()
+                        )
+                        roundRepository.saveRound(currentRound)
+                        statsSaveFailureByHole.clear()
+                    }
+                    syncAuthoritativeStatsBeforeSubmit(currentRound)
+                    _uiState.value = _uiState.value.copy(round = currentRound)
+
+                    val scoresContainer = createScoresContainer(currentRound)
+                    submitRoundUseCase(clubId, scoresContainer).collect { result ->
+                        when (result) {
                         is Resource.Success -> {
                             val response = result.data
 
@@ -381,14 +472,17 @@ class ReviewScoresViewModel @AssistedInject constructor(
                                 error = null
                             )
                         }
+                        }
                     }
-                }.launchIn(viewModelScope)
+                }
                 
             } catch (e: Exception) {
                 android.util.Log.e(TAG, "Error submitting round", e)
                 _uiState.value = _uiState.value.copy(
                     isSubmitting = false,
-                    errorMessage = "Error submitting round: ${e.message}"
+                    showErrorDialog = true,
+                    shouldResetAfterError = false,
+                    errorMessage = e.message ?: "Could not sync round stats. Please try again."
                 )
                 _roundSubmitState.value = _roundSubmitState.value.copy(
                     isSending = false,
@@ -397,6 +491,91 @@ class ReviewScoresViewModel @AssistedInject constructor(
                 )
             }
         }
+    }
+
+    /** Optimistic UI update followed by a serialized, local-first targeted stats save. */
+    fun saveHoleStats(holeNumber: Int, stats: HoleStats) {
+        val visibleRound = _uiState.value.round ?: return
+        val nextVersion = (statsEditVersionByHole[holeNumber] ?: 0L) + 1L
+        statsEditVersionByHole[holeNumber] = nextVersion
+        pendingStatsByHole[holeNumber] = stats
+        statsSaveFailureByHole.remove(holeNumber)
+        activeStatsSaveCount += 1
+
+        _uiState.value = _uiState.value.copy(
+            round = visibleRound.copy(
+                holeScores = visibleRound.holeScores.map { hole ->
+                    if (hole.holeNumber == holeNumber) hole.copy(stats = stats) else hole
+                },
+                isSynced = false,
+                lastUpdated = System.currentTimeMillis()
+            ),
+            isSavingStats = true
+        )
+
+        latestStatsSaveJob = viewModelScope.launch {
+            try {
+                val result = statsSaveMutex.withLock {
+                    val latestRound = roundRepository.getRoundById(visibleRound.id)
+                        ?: _uiState.value.round
+                        ?: error("Round ${visibleRound.id} is no longer available")
+                    updateHoleStatsUseCase(latestRound, holeNumber, stats)
+                }
+
+                if (statsEditVersionByHole[holeNumber] == nextVersion) {
+                    statsSaveFailureByHole.remove(holeNumber)
+                    if (result.remoteSync == HoleStatsRemoteSync.Synced &&
+                        pendingStatsByHole[holeNumber] == stats
+                    ) {
+                        pendingStatsByHole.remove(holeNumber)
+                    }
+                }
+                android.util.Log.d(TAG, "Hole $holeNumber stats persisted (${result.remoteSync})")
+            } catch (e: Exception) {
+                if (statsEditVersionByHole[holeNumber] == nextVersion) {
+                    statsSaveFailureByHole[holeNumber] = e
+                }
+                android.util.Log.e(TAG, "Could not persist hole $holeNumber stats", e)
+                _uiState.value = _uiState.value.copy(
+                    showErrorDialog = true,
+                    shouldResetAfterError = false,
+                    errorMessage = "Could not save Hole $holeNumber stats. ${e.message ?: "Please try again."}"
+                )
+            } finally {
+                activeStatsSaveCount = (activeStatsSaveCount - 1).coerceAtLeast(0)
+                _uiState.value = _uiState.value.copy(isSavingStats = activeStatsSaveCount > 0)
+            }
+        }
+    }
+
+    /** Wait outside [RoundSyncCoordinator] because each in-flight save acquires that same gate. */
+    private suspend fun awaitStatsSaveJobs() {
+        while (true) {
+            val job = latestStatsSaveJob ?: break
+            job.join()
+            if (job === latestStatsSaveJob) break
+        }
+
+    }
+
+    /**
+     * Called only while [RoundSyncCoordinator] is already held. This deliberately bypasses the
+     * gated UpdateHoleStatsUseCase (the mutex is non-reentrant) and proves every authoritative,
+     * non-null stats object is on Mongo before score submission proceeds.
+     */
+    private suspend fun syncAuthoritativeStatsBeforeSubmit(round: Round) {
+        round.holeScores.sortedBy { it.holeNumber }.forEach { hole ->
+            val stats = hole.stats ?: return@forEach
+            when (val result = sogoMongoRepository.updateHoleStats(round.id, hole.holeNumber, stats)) {
+                is NetworkResult.Success -> Unit
+                is NetworkResult.Error -> throw RequiredHoleStatsSyncException(result.error.toUserMessage())
+                is NetworkResult.Loading -> throw RequiredHoleStatsSyncException(
+                    "Stats sync did not complete. Please try again."
+                )
+            }
+        }
+
+        pendingStatsByHole.clear()
     }
 
     private fun createScoresContainer(round: Round): ScoresContainer {
@@ -599,13 +778,13 @@ class ReviewScoresViewModel @AssistedInject constructor(
     }
 
 
-    fun performPostSubmissionCleanup() {
-        viewModelScope.launch {
-            try {
+    suspend fun performPostSubmissionCleanup() {
+        try {
+            roundSyncCoordinator.withRoundSync {
                 val currentRound = _uiState.value.round
                 if (currentRound == null) {
                     android.util.Log.w(TAG, "No round available for cleanup")
-                    return@launch
+                    return@withRoundSync
                 }
                 
                 android.util.Log.d(TAG, "Starting post-submission cleanup after user dismissed dialog")
@@ -621,9 +800,9 @@ class ReviewScoresViewModel @AssistedInject constructor(
                 resetStaleDataUseCase()
                 
                 android.util.Log.d(TAG, "Post-submission cleanup completed")
-            } catch (e: Exception) {
-                android.util.Log.e(TAG, "Error during post-submission cleanup", e)
             }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Error during post-submission cleanup", e)
         }
     }
 
@@ -637,6 +816,7 @@ data class ReviewScoresUiState(
     val round: Round? = null,
     val isLoading: Boolean = true,
     val isSubmitting: Boolean = false,
+    val isSavingStats: Boolean = false,
     val isSubmitted: Boolean = false,
     val errorMessage: String? = null,
     val successMessage: String? = null,
@@ -655,3 +835,22 @@ data class RoundSubmitState(
     val isSuccess: Boolean = false,
     val error: String? = null
 )
+
+/** Merge only pending stats into the newest Room row; never restore a whole stale UI snapshot. */
+internal fun Round.withPendingReviewStats(pendingStatsByHole: Map<Int, HoleStats>): Round {
+    if (pendingStatsByHole.isEmpty()) return this
+
+    return copy(
+        holeScores = holeScores.map { hole ->
+            pendingStatsByHole[hole.holeNumber]?.let { hole.copy(stats = it) } ?: hole
+        },
+        isSynced = false
+    )
+}
+
+internal fun canPublishReviewRoundLoad(
+    requestGeneration: Long,
+    latestGeneration: Long,
+    requestedRoundId: String,
+    activeRoundId: String?
+): Boolean = requestGeneration == latestGeneration && requestedRoundId == activeRoundId

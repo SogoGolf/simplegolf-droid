@@ -12,9 +12,14 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,7 +49,8 @@ fun PostRoundCard(
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.White,
     signerName: String = playerName,
-    isDQ: Boolean = false
+    isDQ: Boolean = false,
+    onRoundStatsClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = modifier
@@ -89,6 +95,42 @@ fun PostRoundCard(
             )
             
             Spacer(modifier = Modifier.height(18.dp))
+
+            if (onRoundStatsClick != null) {
+                Button(
+                    onClick = onRoundStatsClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .heightIn(min = 42.dp),
+                    shape = RoundedCornerShape(11.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MSLColors.mslYellow,
+                        contentColor = MSLColors.mslGunMetal
+                    ),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.BarChart,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Round Stats",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+            }
             
             Row(
                 modifier = Modifier.fillMaxWidth(),

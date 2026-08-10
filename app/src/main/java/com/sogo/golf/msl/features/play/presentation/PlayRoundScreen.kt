@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -520,7 +521,14 @@ private fun Screen4Portrait(
     var paceNowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
 
     var showHoleStats by remember { mutableStateOf(false) }
-    val holeStatsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var holeStatsHasUnsavedChanges by remember { mutableStateOf(false) }
+    var holeStatsIsSaving by remember { mutableStateOf(false) }
+    val holeStatsSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { target ->
+            target != SheetValue.Hidden || (!holeStatsHasUnsavedChanges && !holeStatsIsSaving)
+        }
+    )
     val holeStatsViewModel: HoleStatsViewModel = hiltViewModel()
     val holeStatsScope = rememberCoroutineScope()
 
@@ -546,7 +554,18 @@ private fun Screen4Portrait(
     }
 
     BackHandler(enabled = true) {
-        if (showBackButton) {
+        if (showHoleStats) {
+            if (!holeStatsHasUnsavedChanges && !holeStatsIsSaving) {
+                holeStatsHasUnsavedChanges = false
+                holeStatsIsSaving = false
+                holeStatsScope.launch { holeStatsSheetState.hide() }
+                    .invokeOnCompletion {
+                        showHoleStats = false
+                        holeStatsHasUnsavedChanges = false
+                        holeStatsIsSaving = false
+                    }
+            }
+        } else if (showBackButton) {
             // Check if we're on the starting hole (same logic as header back button)
             val startingHoleNumber = localGame?.startingHoleNumber ?: 1
             if (currentHoleNumber == startingHoleNumber) {
@@ -925,9 +944,14 @@ private fun Screen4Portrait(
                 hasHoleStats = currentRound?.holeScores
                     ?.firstOrNull { it.holeNumber == currentHoleNumber }?.stats?.let { s ->
                         s.teeClub != null || s.approachClub != null || s.fairwayHit != null || s.greenHit != null ||
-                            !s.approachMiss.isNullOrEmpty() || (s.putts ?: 0) > 0 || (s.bunkerShots ?: 0) > 0 || (s.penalties ?: 0) > 0
+                            !s.fairwayMiss.isNullOrEmpty() || !s.approachMiss.isNullOrEmpty() ||
+                            s.putts != null || s.bunkerShots != null || s.penalties != null
                     } ?: false,
-                onHoleStatsButtonClick = { showHoleStats = true },
+                onHoleStatsButtonClick = {
+                    holeStatsHasUnsavedChanges = false
+                    holeStatsIsSaving = false
+                    showHoleStats = true
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f)  // This makes it take up the other half
@@ -941,7 +965,11 @@ private fun Screen4Portrait(
                 val statsHole = currentHoleNumber
                 val statsPar = currentRound?.holeScores?.find { it.holeNumber == statsHole }?.par ?: 0
                 ModalBottomSheet(
-                    onDismissRequest = { showHoleStats = false },
+                    onDismissRequest = {
+                        if (!holeStatsHasUnsavedChanges && !holeStatsIsSaving) {
+                            showHoleStats = false
+                        }
+                    },
                     sheetState = holeStatsSheetState,
                     containerColor = Color(0xFFF2F2F5)
                 ) {
@@ -954,9 +982,20 @@ private fun Screen4Portrait(
                         entityId = currentRound?.entityId ?: "",
                         viewModel = holeStatsViewModel,
                         onSaveStats = { stats -> playRoundViewModel.saveHoleStats(statsHole, stats) },
+                        onEditingStateChange = { hasUnsavedChanges, isSaving ->
+                            holeStatsHasUnsavedChanges = hasUnsavedChanges
+                            holeStatsIsSaving = isSaving
+                        },
                         onClose = {
+                            // Allow this explicit Done/no-change close through confirmValueChange.
+                            holeStatsHasUnsavedChanges = false
+                            holeStatsIsSaving = false
                             holeStatsScope.launch { holeStatsSheetState.hide() }
-                                .invokeOnCompletion { showHoleStats = false }
+                                .invokeOnCompletion {
+                                    showHoleStats = false
+                                    holeStatsHasUnsavedChanges = false
+                                    holeStatsIsSaving = false
+                                }
                         }
                     )
                 }

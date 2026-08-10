@@ -108,7 +108,7 @@ data class HoleScore(
 data class HoleStats(
     val teeClub: String? = null,
     val fairwayHit: Boolean? = null,
-    val fairwayMiss: String? = null,      // "left" | "right"
+    val fairwayMiss: String? = null,      // "left" | "right" | "short"
     val approachClub: String? = null,
     val greenHit: Boolean? = null,
     val approachMiss: String? = null,     // "left" | "right" | "short" | "long"

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,9 +22,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -31,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +51,7 @@ import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.sogo.golf.msl.features.play.presentation.ScorecardScreen
+import com.sogo.golf.msl.features.play.presentation.HoleStatsViewModel
 import com.sogo.golf.msl.navigation.NavViewModel
 import com.sogo.golf.msl.shared_components.ui.PostRoundCard
 import com.sogo.golf.msl.shared_components.ui.PostRoundHeader
@@ -53,7 +59,9 @@ import com.sogo.golf.msl.shared_components.ui.SignatureDialog
 import com.sogo.golf.msl.shared_components.ui.SubmitRoundErrorDialog
 import com.sogo.golf.msl.shared_components.ui.SubmitRoundSuccessDialog
 import com.sogo.golf.msl.ui.theme.MSLColors
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReviewScoresScreen(
     navController: NavController, 
@@ -70,18 +78,53 @@ fun ReviewScoresScreen(
         }
         val uiState by viewModel.uiState.collectAsState()
         val currentCompetition by viewModel.currentCompetition.collectAsState()
+        val holeStatsViewModel: HoleStatsViewModel = hiltViewModel()
+        val clubs by holeStatsViewModel.clubs.collectAsState()
+        var showRoundStats by remember { mutableStateOf(false) }
+        val roundStatsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         
         // Load the round data
         LaunchedEffect(roundId) {
             if (roundId.isNotEmpty()) {
                 viewModel.loadRound(roundId)
             }
+            holeStatsViewModel.loadClubs()
         }
-        
-        ScorecardScreen(
-            round = uiState.round,
-            mslCompetition = currentCompetition
-        )
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            ScorecardScreen(
+                round = uiState.round,
+                mslCompetition = currentCompetition
+            )
+            if (uiState.round != null) {
+                RoundStatsAction(
+                    enabled = !uiState.isSubmitting && !uiState.isSubmitted,
+                    onClick = { showRoundStats = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 12.dp)
+                        .width(180.dp)
+                )
+            }
+        }
+
+        if (showRoundStats && uiState.round != null) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    if (!uiState.isSavingStats) showRoundStats = false
+                },
+                sheetState = roundStatsSheetState,
+                containerColor = Color(0xFFF2F2F5)
+            ) {
+                RoundStatsSheet(
+                    round = uiState.round!!,
+                    clubs = clubs,
+                    isSaving = uiState.isSavingStats,
+                    onSaveHole = viewModel::saveHoleStats,
+                    onClose = { showRoundStats = false }
+                )
+            }
+        }
     } else {
         ReviewScoresPortrait(
             navController = navController,
@@ -91,6 +134,7 @@ fun ReviewScoresScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ReviewScoresPortrait(
     navController: NavController,
@@ -103,6 +147,8 @@ private fun ReviewScoresPortrait(
     val uiState by viewModel.uiState.collectAsState()
     val playerSignatures by viewModel.playerSignatures.collectAsState()
     val roundSubmitState by viewModel.roundSubmitState.collectAsState()
+    val holeStatsViewModel: HoleStatsViewModel = hiltViewModel()
+    val clubs by holeStatsViewModel.clubs.collectAsState()
     
     var showSignatureDialog by remember { mutableStateOf(false) }
     var currentSignaturePlayerId by remember { mutableStateOf("") }
@@ -112,11 +158,15 @@ private fun ReviewScoresPortrait(
     var showSuccessDialog by remember { mutableStateOf(false) }
     var hasTriggeredSuccess by remember { mutableStateOf(false) }
     var showSignatureErrorDialog by remember { mutableStateOf(false) }
+    var showRoundStats by remember { mutableStateOf(false) }
+    val roundStatsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val cleanupScope = rememberCoroutineScope()
 
     LaunchedEffect(roundId) {
         if (roundId.isNotEmpty()) {
             viewModel.loadRound(roundId)
         }
+        holeStatsViewModel.loadClubs()
     }
 
     LaunchedEffect(uiState.isSubmitted, uiState.showErrorDialog) {
@@ -254,8 +304,15 @@ private fun ReviewScoresPortrait(
                                 } else {
                                     "${uiState.round!!.golferFirstName ?: ""} ${uiState.round!!.golferLastName ?: ""}".trim()
                                 },
-                                modifier = Modifier.weight(1f),
-                                isDQ = isMainGolferDQ
+                                modifier = Modifier.weight(
+                                    if (uiState.round!!.playingPartnerRound != null) 1.16f else 1f
+                                ),
+                                isDQ = isMainGolferDQ,
+                                onRoundStatsClick = {
+                                    if (!uiState.isSubmitting && !uiState.isSubmitted) {
+                                        showRoundStats = true
+                                    }
+                                }
                             )
                         }
                         
@@ -386,11 +443,34 @@ private fun ReviewScoresPortrait(
         )
     }
 
+    if (showRoundStats && uiState.round != null && !uiState.isSubmitting) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                if (!uiState.isSavingStats) showRoundStats = false
+            },
+            sheetState = roundStatsSheetState,
+            containerColor = Color(0xFFF2F2F5)
+        ) {
+            RoundStatsSheet(
+                round = uiState.round!!,
+                clubs = clubs,
+                isSaving = uiState.isSavingStats,
+                onSaveHole = viewModel::saveHoleStats,
+                onClose = { showRoundStats = false }
+            )
+        }
+    }
+
     if (showSubmitDialog && !uiState.isSubmitting) {
         AlertDialog(
             onDismissRequest = { showSubmitDialog = false },
             title = { Text("Submit Scores") },
-            text = { Text("Are you sure you want to submit ${uiState.round!!.playingPartnerRound!!.golferFirstName ?: ""}'s score?") },
+            text = {
+                val playerName = uiState.round?.playingPartnerRound?.golferFirstName
+                    ?: uiState.round?.golferFirstName
+                    ?: "this player"
+                Text("Are you sure you want to submit $playerName's score?")
+            },
             confirmButton = {
                 Button(
                     onClick = {
@@ -425,35 +505,37 @@ private fun ReviewScoresPortrait(
             onDone = {
                 android.util.Log.d("ReviewScores", "Done button clicked - performing cleanup and navigating to home")
                 showSuccessDialog = false
-                
-                // Perform post-submission cleanup operations
-                viewModel.performPostSubmissionCleanup()
-                
-                // Bulletproof navigation with multiple fallback strategies
-                try {
-                    // Strategy 1: Try normal navigation first
-                    navController.navigate("homescreen?skipDataFetch=true") {
-                        popUpTo(0) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.e("ReviewScores", "Primary navigation failed: ${e.message}")
+
+                cleanupScope.launch {
+                    // Await coordinated cleanup before leaving this ViewModel behind.
+                    viewModel.performPostSubmissionCleanup()
+
+                    // Bulletproof navigation with multiple fallback strategies
                     try {
-                        // Strategy 2: Try popping to home screen
-                        navController.popBackStack("homescreen", inclusive = false)
-                    } catch (e2: Exception) {
-                        android.util.Log.e("ReviewScores", "Secondary navigation failed: ${e2.message}")
+                        // Strategy 1: Try normal navigation first
+                        navController.navigate("homescreen?skipDataFetch=true") {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("ReviewScores", "Primary navigation failed: ${e.message}")
                         try {
-                            // Strategy 3: Clear entire backstack and navigate
-                            navController.popBackStack(navController.graph.startDestinationId, inclusive = false)
-                        } catch (e3: Exception) {
-                            android.util.Log.e("ReviewScores", "All navigation attempts failed", e3)
+                            // Strategy 2: Try popping to home screen
+                            navController.popBackStack("homescreen", inclusive = false)
+                        } catch (e2: Exception) {
+                            android.util.Log.e("ReviewScores", "Secondary navigation failed: ${e2.message}")
+                            try {
+                                // Strategy 3: Clear entire backstack and navigate
+                                navController.popBackStack(navController.graph.startDestinationId, inclusive = false)
+                            } catch (e3: Exception) {
+                                android.util.Log.e("ReviewScores", "All navigation attempts failed", e3)
+                            }
                         }
                     }
+
+                    // Clean up ViewModel state
+                    viewModel.clearNavigationState()
                 }
-                
-                // Clean up ViewModel state
-                viewModel.clearNavigationState()
             }
         )
     }
@@ -478,6 +560,31 @@ private fun ReviewScoresPortrait(
         SubmitRoundErrorDialog(
             errorMessage = uiState.errorMessage ?: "An error occurred while submitting your score.",
             onDismiss = { viewModel.onErrorDialogDismissed() }
+        )
+    }
+}
+
+@Composable
+private fun RoundStatsAction(
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .background(
+                color = if (enabled) MSLColors.mslYellow else Color.LightGray,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+            )
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Round Stats",
+            color = if (enabled) MSLColors.mslGunMetal else Color.DarkGray,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold
         )
     }
 }
