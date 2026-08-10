@@ -24,7 +24,8 @@ class UpdatePickupUseCase @Inject constructor(
     private val calcStrokeUseCase: CalcStrokeUseCase,
     private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
     private val getLocalGameUseCase: GetLocalGameUseCase,
-    private val getMslGolferUseCase: GetMslGolferUseCase
+    private val getMslGolferUseCase: GetMslGolferUseCase,
+    private val roundSyncCoordinator: RoundSyncCoordinator
 ) {
     suspend operator fun invoke(
         round: Round,
@@ -37,36 +38,51 @@ class UpdatePickupUseCase @Inject constructor(
         index3: Int?
     ) {
         try {
-            // Look up extraStrokes from the CORRECT player's competition data
-            val competition = getLocalCompetitionUseCase().first()
-            val playerGolfLinkNumber = if (isMainGolfer) {
-                round.golflinkNo ?: round.golferGLNumber
-            } else {
-                round.playingPartnerRound?.golflinkNo ?: round.playingPartnerRound?.golferGLNumber
-            }
-            val competitionPlayer = competition?.players?.find { player ->
-                player.golfLinkNumber == playerGolfLinkNumber
-            }
-            val extraStrokes = competitionPlayer?.holes
-                ?.find { it.holeNumber == holeNumber }
-                ?.extraStrokes
+            roundSyncCoordinator.withRoundSync {
+                val authoritativeRound = roundLocalDbRepository.getRoundById(round.id)
+                    ?: error("Round ${round.id} is no longer available")
 
-            val sanitizedIndex2 = if (index2 > 0) index2 else index1 + 18
-            val sanitizedIndex3 = index3?.takeIf { it > 0 } ?: (sanitizedIndex2 + 18)
-            val holeScoreForCalcs = HoleScoreForCalcs(
-                par = par,
-                index1 = index1,
-                index2 = sanitizedIndex2,
-                index3 = sanitizedIndex3
-            )
-            val netPar = calcHoleNetParUseCase(holeScoreForCalcs, dailyHandicap, extraStrokes)
-            val newStrokes = netPar.toInt() + 2
-            
-            Log.d("UpdatePickup", "Setting pickup for hole $holeNumber, netPar: $netPar, strokes: $newStrokes")
-            
-            val updatedRound = updateRoundPickupState(round, holeNumber, isMainGolfer, newStrokes)
-            roundLocalDbRepository.saveRound(updatedRound)
-            Log.d("UpdatePickup", "✅ Pickup state updated in Room database")
+                // Look up extraStrokes from the CORRECT player's competition data.
+                val competition = getLocalCompetitionUseCase().first()
+                val playerGolfLinkNumber = if (isMainGolfer) {
+                    authoritativeRound.golflinkNo ?: authoritativeRound.golferGLNumber
+                } else {
+                    authoritativeRound.playingPartnerRound?.golflinkNo
+                        ?: authoritativeRound.playingPartnerRound?.golferGLNumber
+                }
+                val competitionPlayer = competition?.players?.find { player ->
+                    player.golfLinkNumber == playerGolfLinkNumber
+                }
+                val extraStrokes = competitionPlayer?.holes
+                    ?.find { it.holeNumber == holeNumber }
+                    ?.extraStrokes
+
+                val sanitizedIndex2 = if (index2 > 0) index2 else index1 + 18
+                val sanitizedIndex3 = index3?.takeIf { it > 0 } ?: (sanitizedIndex2 + 18)
+                val holeScoreForCalcs = HoleScoreForCalcs(
+                    par = par,
+                    index1 = index1,
+                    index2 = sanitizedIndex2,
+                    index3 = sanitizedIndex3
+                )
+                val netPar = calcHoleNetParUseCase(holeScoreForCalcs, dailyHandicap, extraStrokes)
+                val newStrokes = netPar.toInt() + 2
+
+                Log.d("UpdatePickup", "Setting pickup for hole $holeNumber, netPar: $netPar, strokes: $newStrokes")
+
+                val updatedRound = updateRoundPickupState(
+                    authoritativeRound,
+                    holeNumber,
+                    isMainGolfer,
+                    newStrokes
+                )
+                roundLocalDbRepository.saveRound(updatedRound)
+                Log.d("UpdatePickup", "✅ Pickup state updated in Room database")
+
+                // Keep the local pickup mutation and its full-round remote representation in
+                // one critical section so Review cannot finalize between the two phases.
+                syncAuthoritativeRoundToRemote(updatedRound)
+            }
             
         } catch (e: Exception) {
             Log.e("UpdatePickup", "❌ Error updating pickup state", e)
@@ -76,13 +92,34 @@ class UpdatePickupUseCase @Inject constructor(
     
     suspend fun syncToRemote(round: Round) {
         try {
-            Log.d("UpdatePickup", "Syncing pickup state to remote API for round: ${round.id}")
-            Log.d("UpdatePickup", "Hole scores count: ${round.holeScores.size}")
-            Log.d("UpdatePickup", "Partner hole scores count: ${round.playingPartnerRound?.holeScores?.size ?: 0}")
-            sogoMongoRepository.updateRound(round.id, round)
-            Log.d("UpdatePickup", "✅ Pickup state synced to remote successfully")
+            roundSyncCoordinator.withRoundSync {
+                val authoritativeRound = roundLocalDbRepository.getRoundById(round.id)
+                if (authoritativeRound == null) {
+                    Log.d("UpdatePickup", "Round ${round.id} was removed before remote sync; skipping stale payload")
+                    return@withRoundSync
+                }
+                Log.d("UpdatePickup", "Syncing pickup state to remote API for round: ${authoritativeRound.id}")
+                Log.d("UpdatePickup", "Hole scores count: ${authoritativeRound.holeScores.size}")
+                Log.d("UpdatePickup", "Partner hole scores count: ${authoritativeRound.playingPartnerRound?.holeScores?.size ?: 0}")
+                syncAuthoritativeRoundToRemote(authoritativeRound)
+            }
         } catch (e: Exception) {
             Log.e("UpdatePickup", "❌ Failed to sync pickup state to remote: ${e.message}", e)
+        }
+    }
+
+    /** Caller must already hold [RoundSyncCoordinator]. */
+    private suspend fun syncAuthoritativeRoundToRemote(round: Round) {
+        when (val result = sogoMongoRepository.updateRound(round.id, round)) {
+            is com.sogo.golf.msl.domain.model.NetworkResult.Success -> {
+                Log.d("UpdatePickup", "✅ Pickup state synced to remote successfully")
+            }
+            is com.sogo.golf.msl.domain.model.NetworkResult.Error -> {
+                Log.w("UpdatePickup", "⚠️ Pickup remote sync failed: ${result.error}")
+            }
+            is com.sogo.golf.msl.domain.model.NetworkResult.Loading -> {
+                Log.w("UpdatePickup", "⚠️ Pickup remote sync did not complete")
+            }
         }
     }
     
@@ -92,7 +129,7 @@ class UpdatePickupUseCase @Inject constructor(
         isMainGolfer: Boolean,
         newStrokes: Int
     ): Round {
-        return if (isMainGolfer) {
+        val updatedRound = if (isMainGolfer) {
             val updatedHoleScores = round.holeScores.map { holeScore ->
                 if (holeScore.holeNumber == holeNumber) {
                     val newPickupState = !(holeScore.isBallPickedUp ?: false)
@@ -136,6 +173,11 @@ class UpdatePickupUseCase @Inject constructor(
                 )
             } else round
         }
+
+        return updatedRound.copy(
+            lastUpdated = System.currentTimeMillis(),
+            isSynced = false
+        )
     }
     
     private suspend fun calculateScore(

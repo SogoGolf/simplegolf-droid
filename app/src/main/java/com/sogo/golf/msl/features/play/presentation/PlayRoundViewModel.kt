@@ -812,17 +812,15 @@ class PlayRoundViewModel @Inject constructor(
                     return@launch
                 }
                 
-                // Get current strokes for this hole using correct hole lookup
-                val currentHoleScore = round.holeScores.find { it.holeNumber == currentHole }
-                val currentStrokes = currentHoleScore?.strokes ?: 0
+                android.util.Log.d("PlayRoundVM", "Queueing main golfer stroke update for hole $currentHole (par: $par)")
 
-                // Calculate new strokes using the provided logic
-                val newStrokes = updateLogic(currentStrokes, par)
-                
-                android.util.Log.d("PlayRoundVM", "Main golfer hole $currentHole: $currentStrokes -> $newStrokes (par: $par)")
-                
-                // Update the round data and persist to database
-                updateRoundStrokesInDatabase(round, currentHole, newStrokes, isMainGolfer = true)
+                // Derive the next value from Room only after the shared writer gate is acquired.
+                updateRoundStrokesInDatabase(
+                    round,
+                    currentHole,
+                    isMainGolfer = true,
+                    updateLogic = updateLogic
+                )
                 
             } catch (e: Exception) {
                 android.util.Log.e("PlayRoundVM", "Error updating main golfer strokes", e)
@@ -849,17 +847,15 @@ class PlayRoundViewModel @Inject constructor(
                     return@launch
                 }
                 
-                // Get current strokes for this hole using correct hole lookup
-                val currentHoleScore = round.playingPartnerRound?.holeScores?.find { it.holeNumber == currentHole }
-                val currentStrokes = currentHoleScore?.strokes ?: 0
+                android.util.Log.d("PlayRoundVM", "Queueing partner stroke update for hole $currentHole (par: $par)")
 
-                // Calculate new strokes using the provided logic
-                val newStrokes = updateLogic(currentStrokes, par)
-                
-                android.util.Log.d("PlayRoundVM", "Partner hole $currentHole: $currentStrokes -> $newStrokes (par: $par)")
-                
-                // Update the round data and persist to database
-                updateRoundStrokesInDatabase(round, currentHole, newStrokes, isMainGolfer = false)
+                // Derive the next value from Room only after the shared writer gate is acquired.
+                updateRoundStrokesInDatabase(
+                    round,
+                    currentHole,
+                    isMainGolfer = false,
+                    updateLogic = updateLogic
+                )
                 
             } catch (e: Exception) {
                 android.util.Log.e("PlayRoundVM", "Error updating partner strokes", e)
@@ -888,13 +884,19 @@ class PlayRoundViewModel @Inject constructor(
     private suspend fun updateRoundStrokesInDatabase(
         round: com.sogo.golf.msl.domain.model.Round,
         holeNumber: Int,
-        newStrokes: Int,
-        isMainGolfer: Boolean
+        isMainGolfer: Boolean,
+        updateLogic: (currentStrokes: Int, par: Int) -> Int
     ) {
         try {
-            updateHoleScoreUseCase(round, holeNumber, newStrokes, isMainGolfer)
-            android.util.Log.d("PlayRoundVM", "✅ Hole score updated - Hole $holeNumber, Strokes: $newStrokes, Main golfer: $isMainGolfer")
+            val updatedRound = updateHoleScoreUseCase.updateFromCurrent(
+                round,
+                holeNumber,
+                isMainGolfer,
+                updateLogic
+            )
+            android.util.Log.d("PlayRoundVM", "✅ Hole score updated - Hole $holeNumber, Main golfer: $isMainGolfer")
 
+            _currentRound.value = updatedRound
             loadCurrentRound()
             // The final hole never gets a forward swipe, so its pace (the round's
             // total time) is captured here, when its second score lands.
@@ -911,28 +913,23 @@ class PlayRoundViewModel @Inject constructor(
 
     /**
      * Persist the Track-tab stats for [holeNumber] (main golfer's card): local-first then remote,
-     * then reload the round so a re-opened sheet reflects the saved values. Fire-and-forget from
-     * the sheet's dismiss.
+     * then reload the round so a re-opened sheet reflects the saved values. The sheet awaits this
+     * function before dismissing, so Review cannot open ahead of the durable Room save.
      */
-    fun saveHoleStats(holeNumber: Int, stats: HoleStats) {
-        val round = _currentRound.value ?: return
+    suspend fun saveHoleStats(holeNumber: Int, stats: HoleStats) {
+        val round = _currentRound.value ?: error("No active round to save")
         // Optimistically reflect the save in memory so an immediate re-open of the same hole
-        // seeds from fresh data, not the pre-edit round (closes the reseed-vs-save race while
-        // the async persist + reload runs).
+        // seeds from fresh data, not the pre-edit round.
         _currentRound.value = round.copy(
             holeScores = round.holeScores.map {
                 if (it.holeNumber == holeNumber) it.copy(stats = stats) else it
-            }
+            },
+            isSynced = false,
+            lastUpdated = System.currentTimeMillis()
         )
-        viewModelScope.launch {
-            try {
-                updateHoleStatsUseCase(round, holeNumber, stats)
-                loadCurrentRound()
-                android.util.Log.d("PlayRoundVM", "✅ Hole stats saved - Hole $holeNumber")
-            } catch (e: Exception) {
-                android.util.Log.e("PlayRoundVM", "❌ Error saving hole stats", e)
-            }
-        }
+        updateHoleStatsUseCase(round, holeNumber, stats)
+        loadCurrentRound()
+        android.util.Log.d("PlayRoundVM", "✅ Hole stats saved - Hole $holeNumber")
     }
 
     private fun triggerHoleNavigationUpdate() {
@@ -946,10 +943,10 @@ class PlayRoundViewModel @Inject constructor(
                     val partnerStrokes = round.playingPartnerRound?.holeScores?.find { it.holeNumber == currentHole }?.strokes ?: 0
                     
                     if (mainGolferStrokes > 0) {
-                        updateHoleScoreUseCase(round, currentHole, mainGolferStrokes, true)
+                        updateHoleScoreUseCase.updateFromCurrent(round, currentHole, true) { current, _ -> current }
                     }
                     if (partnerStrokes > 0) {
-                        updateHoleScoreUseCase(round, currentHole, partnerStrokes, false)
+                        updateHoleScoreUseCase.updateFromCurrent(round, currentHole, false) { current, _ -> current }
                     }
                 }
             } catch (e: Exception) {
@@ -1269,12 +1266,6 @@ class PlayRoundViewModel @Inject constructor(
                 // completes the final hole — capture Round Time here too.
                 recordFinalHolePaceIfComplete(currentHole)
 
-                // Sync to remote in background (don't block UI)
-                val updatedRound = currentRound.value
-                if (updatedRound != null) {
-                    updatePickupUseCase.syncToRemote(updatedRound)
-                }
-                
             } catch (e: Exception) {
                 android.util.Log.e("PlayRoundVM", "Error handling pickup button click", e)
             }

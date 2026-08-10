@@ -3,11 +3,13 @@ package com.sogo.golf.msl.features.play.presentation
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,15 +31,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +51,7 @@ import com.sogo.golf.msl.domain.model.mongodb.ClubType
 import com.sogo.golf.msl.domain.model.mongodb.HoleInsights
 import com.sogo.golf.msl.domain.model.mongodb.HoleInsightsItem
 import com.sogo.golf.msl.ui.theme.MSLColors
+import kotlinx.coroutines.launch
 import org.threeten.bp.Instant
 import org.threeten.bp.ZoneId
 import org.threeten.bp.format.DateTimeFormatter
@@ -69,7 +70,7 @@ private val cDoublePlus = Color(0xFFE53935)
 
 /**
  * Full-height Hole Stats sheet with Track (entry) + Insights (analytics) tabs. Track state is
- * seeded once from [existingStats] and saved on dismiss (any path) via [onSaveStats].
+ * seeded once from [existingStats]. Done awaits a durable save before the sheet can close.
  */
 @Composable
 fun HoleStatsSheet(
@@ -80,106 +81,161 @@ fun HoleStatsSheet(
     dailyHandicap: Int,
     entityId: String,
     viewModel: HoleStatsViewModel,
-    onSaveStats: (HoleStats) -> Unit,
+    onSaveStats: suspend (HoleStats) -> Unit,
+    onEditingStateChange: (hasUnsavedChanges: Boolean, isSaving: Boolean) -> Unit,
     onClose: () -> Unit
 ) {
     var tab by remember { mutableStateOf(0) } // 0 = Track, 1 = Insights
+    val scope = rememberCoroutineScope()
+    var isSaving by remember(holeNumber) { mutableStateOf(false) }
+    var saveError by remember(holeNumber) { mutableStateOf<String?>(null) }
 
-    // Track state (seeded once).
-    var teeClub by remember { mutableStateOf(existingStats?.teeClub) }
-    var fairwayHit by remember { mutableStateOf(existingStats?.fairwayHit) }
-    var approachClub by remember { mutableStateOf(existingStats?.approachClub) }
-    var greenHit by remember { mutableStateOf(existingStats?.greenHit) }
-    var missDirs by remember { mutableStateOf(existingStats?.approachMiss?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()) }
-    var putts by remember { mutableStateOf(existingStats?.putts ?: 0) }
-    var bunker by remember { mutableStateOf(existingStats?.bunkerShots ?: 0) }
-    var penalties by remember { mutableStateOf(existingStats?.penalties ?: 0) }
-
-    fun currentStats() = HoleStats(
-        teeClub = teeClub,
-        fairwayHit = fairwayHit,
-        // Not modelled in the Track UI (iOS-authored) — carry it through so we never wipe it.
-        fairwayMiss = existingStats?.fairwayMiss,
-        approachClub = approachClub,
-        greenHit = greenHit,
-        approachMiss = if (greenHit == false && missDirs.isNotEmpty()) missDirs.sorted().joinToString(",") else null,
-        putts = putts,
-        bunkerShots = bunker,
-        penalties = penalties
-    )
+    // Track state (seeded once). Nullable counters preserve "not tracked" versus tracked zero.
+    var editorState by remember(holeNumber) {
+        mutableStateOf(HoleStatsEditorState.from(existingStats))
+    }
 
     LaunchedEffect(holeNumber) {
         viewModel.loadClubs()
         viewModel.loadInsights(golfLinkNo, entityId, holeNumber, dailyHandicap.toDouble())
     }
 
-    // Snapshot of the seeded state; we only persist on dismiss if the user actually changed
-    // something. Prevents a pure Insights view (or open→close) from re-writing / clobbering
-    // stats and firing a needless PATCH.
-    val baseline = remember { currentStats() }
-    val save = rememberUpdatedState(onSaveStats)
-    DisposableEffect(Unit) {
-        onDispose {
-            val now = currentStats()
-            if (now != baseline) save.value(now)
-        }
+    // A pure Insights view (or open→Done) remains a no-op.
+    var savedStats by remember(holeNumber) { mutableStateOf(editorState.toHoleStats()) }
+    val currentStats = editorState.toHoleStats()
+    val hasUnsavedChanges = currentStats != savedStats
+
+    LaunchedEffect(hasUnsavedChanges, isSaving) {
+        onEditingStateChange(hasUnsavedChanges, isSaving)
     }
 
     val clubs by viewModel.clubs.collectAsState()
     val insightsState by viewModel.insights.collectAsState()
+    val onDoneClick: () -> Unit = {
+        if (!hasUnsavedChanges) {
+            onClose()
+        } else {
+            val statsToSave = currentStats
+            scope.launch {
+                onEditingStateChange(hasUnsavedChanges, true)
+                isSaving = true
+                saveError = null
+                try {
+                    onSaveStats(statsToSave)
+                    savedStats = statsToSave
+                    onEditingStateChange(false, true)
+                    onClose()
+                } catch (e: Exception) {
+                    saveError = e.message ?: "Could not save stats. Please try again."
+                } finally {
+                    isSaving = false
+                }
+            }
+        }
+    }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.92f)
             .background(SheetBg)
-            .padding(horizontal = 16.dp)
-            .padding(top = 6.dp, bottom = 16.dp)
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .padding(top = 4.dp, bottom = 10.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            // Header
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                    .padding(bottom = 12.dp)
+            ) {
                 Text("HOLE $holeNumber", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = DarkText)
-                Text("Par $par", fontSize = 14.sp, color = LabelGrey)
+                Text("Par $par", fontSize = 13.sp, color = LabelGrey)
             }
-            TextButton(onClick = onClose) {
-                Text("Done", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MSLColors.mslBlue)
+
+            saveError?.let { message ->
+                Text(
+                    text = message,
+                    color = MSLColors.mslRed,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+
+            // Segmented control
+            SegmentedControl(
+                options = listOf("Track", "Insights"),
+                selectedIndex = tab,
+                onSelected = { tab = it }
+            )
+            Spacer(Modifier.height(16.dp))
+
+            val scroll = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(scroll)
+            ) {
+                if (tab == 0) {
+                    HoleStatsTrackEditor(
+                        clubs = clubs,
+                        state = editorState,
+                        onStateChange = { newState ->
+                            editorState = newState
+                            onEditingStateChange(
+                                newState.toHoleStats() != savedStats,
+                                isSaving
+                            )
+                        }
+                    )
+                } else {
+                    InsightsTab(par = par, state = insightsState)
+                }
+            }
+
+            Button(
+                enabled = !isSaving,
+                onClick = onDoneClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MSLColors.mslYellow,
+                    contentColor = MSLColors.mslGunMetal,
+                    disabledContainerColor = Color.LightGray,
+                    disabledContentColor = Color.DarkGray
+                )
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.DarkGray
+                    )
+                } else {
+                    Text("Done", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
 
-        // Segmented control
-        SegmentedControl(
-            options = listOf("Track", "Insights"),
-            selectedIndex = tab,
-            onSelected = { tab = it }
-        )
-        Spacer(Modifier.height(16.dp))
-
-        val scroll = rememberScrollState()
-        Column(modifier = Modifier.fillMaxWidth().verticalScroll(scroll)) {
-            if (tab == 0) {
-                TrackTab(
-                    clubs = clubs,
-                    teeClub = teeClub, onTeeClub = { teeClub = it },
-                    fairwayHit = fairwayHit, onFairwayHit = { fairwayHit = it },
-                    approachClub = approachClub, onApproachClub = { approachClub = it },
-                    greenHit = greenHit, onGreenHit = { greenHit = it },
-                    missDirs = missDirs, onToggleMissDir = { id ->
-                        // Two either/or axes: at most one of left/right AND one of short/long.
-                        val axis = if (id == "left" || id == "right") setOf("left", "right") else setOf("short", "long")
-                        val cleared = missDirs - axis
-                        missDirs = if (missDirs.contains(id)) cleared else cleared + id
-                    },
-                    putts = putts, onPutts = { putts = it },
-                    bunker = bunker, onBunker = { bunker = it },
-                    penalties = penalties, onPenalties = { penalties = it }
-                )
-            } else {
-                InsightsTab(par = par, state = insightsState)
-            }
+        // Prevent edits while the captured stats snapshot is being durably saved.
+        if (isSaving) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {}
+                    )
+            )
         }
     }
 }
@@ -189,40 +245,67 @@ fun HoleStatsSheet(
 // ---------------------------------------------------------------------------
 
 @Composable
-private fun TrackTab(
+internal fun HoleStatsTrackEditor(
     clubs: List<ClubType>,
-    teeClub: String?, onTeeClub: (String?) -> Unit,
-    fairwayHit: Boolean?, onFairwayHit: (Boolean?) -> Unit,
-    approachClub: String?, onApproachClub: (String?) -> Unit,
-    greenHit: Boolean?, onGreenHit: (Boolean?) -> Unit,
-    missDirs: Set<String>, onToggleMissDir: (String) -> Unit,
-    putts: Int, onPutts: (Int) -> Unit,
-    bunker: Int, onBunker: (Int) -> Unit,
-    penalties: Int, onPenalties: (Int) -> Unit
+    state: HoleStatsEditorState,
+    onStateChange: (HoleStatsEditorState) -> Unit
 ) {
-    // Fairway
-    StatCard(title = "FAIRWAY (FROM TEE)", clubLabel = "Tee", selectedClub = teeClub, clubs = clubs, onSelectClub = onTeeClub) {
+    StatCard(
+        title = "FAIRWAY (FROM TEE)",
+        clubLabel = "Tee",
+        selectedClub = state.teeClub,
+        clubs = clubs,
+        onSelectClub = { onStateChange(state.copy(teeClub = it)) }
+    ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ChoiceButton("Hit", fairwayHit == true, MSLColors.mslGreen, Modifier.weight(1f)) { onFairwayHit(if (fairwayHit == true) null else true) }
-            ChoiceButton("Miss", fairwayHit == false, MSLColors.mslRed, Modifier.weight(1f)) { onFairwayHit(if (fairwayHit == false) null else false) }
+            ChoiceButton("Hit", state.fairwayHit == true, MSLColors.mslGreen, Modifier.weight(1f)) {
+                onStateChange(state.toggleFairwayHit(true))
+            }
+            ChoiceButton("Miss", state.fairwayHit == false, MSLColors.mslRed, Modifier.weight(1f)) {
+                onStateChange(state.toggleFairwayHit(false))
+            }
+        }
+        if (state.fairwayHit == false) {
+            Spacer(Modifier.height(10.dp))
+            Text("Missed…", fontSize = 14.sp, color = LabelGrey)
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("left" to "Left", "right" to "Right", "short" to "Short").forEach { (id, label) ->
+                    DirectionChip(label, state.fairwayMiss == id, Modifier.weight(1f)) {
+                        onStateChange(state.toggleFairwayMiss(id))
+                    }
+                }
+            }
         }
     }
 
     Spacer(Modifier.height(12.dp))
 
     // Approach to green
-    StatCard(title = "APPROACH TO GREEN", clubLabel = "Club", selectedClub = approachClub, clubs = clubs, onSelectClub = onApproachClub) {
+    StatCard(
+        title = "APPROACH TO GREEN",
+        clubLabel = "Club",
+        selectedClub = state.approachClub,
+        clubs = clubs,
+        onSelectClub = { onStateChange(state.copy(approachClub = it)) }
+    ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ChoiceButton("Green", greenHit == true, MSLColors.mslGreen, Modifier.weight(1f)) { onGreenHit(if (greenHit == true) null else true) }
-            ChoiceButton("Miss", greenHit == false, MSLColors.mslRed, Modifier.weight(1f)) { onGreenHit(if (greenHit == false) null else false) }
+            ChoiceButton("Hit", state.greenHit == true, MSLColors.mslGreen, Modifier.weight(1f)) {
+                onStateChange(state.toggleGreenHit(true))
+            }
+            ChoiceButton("Miss", state.greenHit == false, MSLColors.mslRed, Modifier.weight(1f)) {
+                onStateChange(state.toggleGreenHit(false))
+            }
         }
-        if (greenHit == false) {
+        if (state.greenHit == false) {
             Spacer(Modifier.height(10.dp))
             Text("Missed…", fontSize = 14.sp, color = LabelGrey)
             Spacer(Modifier.height(6.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("left" to "Left", "right" to "Right", "short" to "Short", "long" to "Long").forEach { (id, label) ->
-                    DirectionChip(label, missDirs.contains(id), Modifier.weight(1f)) { onToggleMissDir(id) }
+                    DirectionChip(label, id in state.approachMisses, Modifier.weight(1f)) {
+                        onStateChange(state.toggleApproachMiss(id))
+                    }
                 }
             }
         }
@@ -237,11 +320,15 @@ private fun TrackTab(
             .background(CardBg, RoundedCornerShape(16.dp))
             .padding(horizontal = 16.dp, vertical = 4.dp)
     ) {
-        StatStepper("Putts", null, putts, onPutts)
+        StatStepper("Putts", null, state.putts) { onStateChange(state.copy(putts = it)) }
         ThinDivider()
-        StatStepper("Greenside bunker shots", "Shots played from a bunker by the green", bunker, onBunker)
+        StatStepper("Greenside bunker shots", "Shots played from a bunker by the green", state.bunkerShots) {
+            onStateChange(state.copy(bunkerShots = it))
+        }
         ThinDivider()
-        StatStepper("Penalties", "Penalty strokes on the hole", penalties, onPenalties)
+        StatStepper("Penalties", "Penalty strokes on the hole", state.penalties) {
+            onStateChange(state.copy(penalties = it))
+        }
     }
     Spacer(Modifier.height(24.dp))
 }
@@ -347,7 +434,7 @@ private fun DirectionChip(label: String, selected: Boolean, modifier: Modifier, 
 }
 
 @Composable
-private fun StatStepper(label: String, desc: String?, value: Int, onChange: (Int) -> Unit) {
+private fun StatStepper(label: String, desc: String?, value: Int?, onChange: (Int?) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -356,16 +443,30 @@ private fun StatStepper(label: String, desc: String?, value: Int, onChange: (Int
             Text(label, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = DarkText)
             if (desc != null) Text(desc, fontSize = 12.sp, color = LabelGrey)
         }
-        StepButton("−") { if (value > 0) onChange(value - 1) }
+        if (value != null) {
+            Text(
+                text = "Clear",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MSLColors.mslBlue,
+                modifier = Modifier
+                    .clickable { onChange(null) }
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+            )
+        }
+        StepButton("−") {
+            val next = decrementTrackedCounter(value)
+            if (next != value) onChange(next)
+        }
         Text(
-            "$value",
+            value?.toString() ?: "—",
             fontSize = 17.sp,
             fontWeight = FontWeight.Bold,
             color = DarkText,
             textAlign = TextAlign.Center,
             modifier = Modifier.widthIn(min = 28.dp).padding(horizontal = 4.dp)
         )
-        StepButton("+") { onChange(value + 1) }
+        StepButton("+") { onChange(incrementTrackedCounter(value)) }
     }
 }
 

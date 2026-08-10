@@ -12,7 +12,8 @@ class BulkSyncRoundUseCase @Inject constructor(
     private val roundLocalDbRepository: RoundLocalDbRepository,
     private val sogoMongoRepository: SogoMongoRepository,
     private val networkChecker: NetworkChecker,
-    private val getActiveTodayRoundUseCase: GetActiveTodayRoundUseCase
+    private val getActiveTodayRoundUseCase: GetActiveTodayRoundUseCase,
+    private val roundSyncCoordinator: RoundSyncCoordinator
 ) {
     suspend operator fun invoke(): Boolean {
         try {
@@ -24,41 +25,46 @@ class BulkSyncRoundUseCase @Inject constructor(
                 return false
             }
             
-            // Check if there's an active round
-            val activeRound = getActiveTodayRoundUseCase()
-            if (activeRound == null) {
-                Log.d("BulkSyncRound", "ℹ️ No active round found - skipping bulk sync")
-                return false
-            }
-            
-            // Check if round needs syncing
-            if (activeRound.isSynced) {
-                Log.d("BulkSyncRound", "✅ Round already synced - skipping bulk sync")
-                return false
-            }
-            
-            Log.d("BulkSyncRound", "🚀 Performing bulk sync for round ${activeRound.id}")
-            
-            // Perform bulk sync
-            when (val result = sogoMongoRepository.updateAllHoleScores(activeRound.id, activeRound)) {
-                is NetworkResult.Success -> {
-                    Log.d("BulkSyncRound", "✅ Bulk sync successful")
-                    
-                    // Mark round as synced
-                    val syncedRound = activeRound.copy(
-                        isSynced = true,
-                        lastUpdated = System.currentTimeMillis()
-                    )
-                    roundLocalDbRepository.saveRound(syncedRound)
-                    
-                    return true
+            return roundSyncCoordinator.withRoundSync {
+                // This read deliberately happens after acquiring the app-wide gate. Every
+                // whole-Round writer below therefore starts from the latest committed Room row.
+                val activeRound = getActiveTodayRoundUseCase()
+                if (activeRound == null) {
+                    Log.d("BulkSyncRound", "ℹ️ No active round found - skipping bulk sync")
+                    return@withRoundSync false
                 }
-                is NetworkResult.Error -> {
-                    Log.w("BulkSyncRound", "⚠️ Bulk sync failed (silent): ${result.error}")
-                    return false
+
+                if (activeRound.isSynced) {
+                    Log.d("BulkSyncRound", "✅ Round already synced - skipping bulk sync")
+                    return@withRoundSync false
                 }
-                is NetworkResult.Loading -> {
-                    return false
+
+                Log.d("BulkSyncRound", "🚀 Performing bulk sync for round ${activeRound.id}")
+
+                when (val result = sogoMongoRepository.updateAllHoleScores(activeRound.id, activeRound)) {
+                    is NetworkResult.Success -> {
+                        Log.d("BulkSyncRound", "✅ Bulk sync successful")
+
+                        // Keep the guard for any Room writer outside this coordinator. If one
+                        // appears, leave the latest row dirty so a later bulk pass self-heals.
+                        val latestRound = roundLocalDbRepository.getRoundById(activeRound.id)
+                        if (!canMarkBulkSnapshotSynced(activeRound, latestRound)) {
+                            Log.d("BulkSyncRound", "↪️ Round changed during sync; leaving latest copy dirty for retry")
+                            return@withRoundSync false
+                        }
+
+                        val syncedRound = requireNotNull(latestRound).copy(
+                            isSynced = true,
+                            lastUpdated = System.currentTimeMillis()
+                        )
+                        roundLocalDbRepository.saveRound(syncedRound)
+                        true
+                    }
+                    is NetworkResult.Error -> {
+                        Log.w("BulkSyncRound", "⚠️ Bulk sync failed (silent): ${result.error}")
+                        false
+                    }
+                    is NetworkResult.Loading -> false
                 }
             }
         } catch (e: Exception) {
@@ -67,3 +73,6 @@ class BulkSyncRoundUseCase @Inject constructor(
         }
     }
 }
+
+internal fun canMarkBulkSnapshotSynced(snapshot: Round, latest: Round?): Boolean =
+    latest != null && latest.id == snapshot.id && latest.lastUpdated == snapshot.lastUpdated

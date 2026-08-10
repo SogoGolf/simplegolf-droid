@@ -25,23 +25,49 @@ class UpdateHoleScoreUseCase @Inject constructor(
     private val calcStrokeUseCase: CalcStrokeUseCase,
     private val getLocalCompetitionUseCase: GetLocalCompetitionUseCase,
     private val getLocalGameUseCase: GetLocalGameUseCase,
-    private val getMslGolferUseCase: GetMslGolferUseCase
+    private val getMslGolferUseCase: GetMslGolferUseCase,
+    private val roundSyncCoordinator: RoundSyncCoordinator
 ) {
     suspend operator fun invoke(
         round: Round,
         holeNumber: Int,
         newStrokes: Int,
         isMainGolfer: Boolean
-    ) {
-        try {
-            val updatedRound = updateRoundHoleScores(round, holeNumber, newStrokes, isMainGolfer)
-            roundLocalDbRepository.saveRound(updatedRound)
-            Log.d("UpdateHoleScore", "✅ Round updated in Room database")
+    ): Round = updateFromCurrent(round, holeNumber, isMainGolfer) { _, _ -> newStrokes }
 
-            if (networkChecker.isNetworkAvailable()) {
-                syncToMongoDB(updatedRound, holeNumber)
-            } else {
-                Log.d("UpdateHoleScore", "⚠️ No internet connection - skipping MongoDB sync")
+    /** Compute the next absolute stroke value from the authoritative row while holding the gate. */
+    suspend fun updateFromCurrent(
+        round: Round,
+        holeNumber: Int,
+        isMainGolfer: Boolean,
+        updateLogic: (currentStrokes: Int, par: Int) -> Int
+    ): Round {
+        try {
+            return roundSyncCoordinator.withRoundSync {
+                val authoritativeRound = roundLocalDbRepository.getRoundById(round.id)
+                    ?: error("Round ${round.id} is no longer available")
+                val authoritativeHole = if (isMainGolfer) {
+                    authoritativeRound.holeScores.firstOrNull { it.holeNumber == holeNumber }
+                } else {
+                    authoritativeRound.playingPartnerRound?.holeScores
+                        ?.firstOrNull { it.holeNumber == holeNumber }
+                } ?: error("Hole $holeNumber is no longer available")
+                val newStrokes = updateLogic(authoritativeHole.strokes, authoritativeHole.par)
+                val updatedRound = updateRoundHoleScores(
+                    authoritativeRound,
+                    holeNumber,
+                    newStrokes,
+                    isMainGolfer
+                )
+                roundLocalDbRepository.saveRound(updatedRound)
+                Log.d("UpdateHoleScore", "✅ Round updated in Room database")
+
+                if (networkChecker.isNetworkAvailable()) {
+                    syncToMongoDB(updatedRound, holeNumber)
+                } else {
+                    Log.d("UpdateHoleScore", "⚠️ No internet connection - skipping MongoDB sync")
+                }
+                updatedRound
             }
         } catch (e: Exception) {
             Log.e("UpdateHoleScore", "❌ Error updating hole score", e)
